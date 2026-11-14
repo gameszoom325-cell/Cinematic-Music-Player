@@ -74,7 +74,7 @@ class UpdateInfo {
 
 /// In-app GitHub release update service
 class UpdateService {
-  static String githubRepo = "CinematicAudioWorks/cinematic_music_player";
+  static String githubRepo = "gameszoom325-cell/Cinematic-Music-Player";
 
   /// Checks GitHub releases API for newer version
   static Future<UpdateInfo?> checkForUpdates() async {

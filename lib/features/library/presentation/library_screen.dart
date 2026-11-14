@@ -213,8 +213,28 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                             isCurrent: isCurrent,
                             isPlaying: isCurrent && playerState.isPlaying,
                             formattedDuration: _formatDuration(song.durationMs),
-                            onTap: () {
-                              playerNotifier.playTrack(filteredSongs, index);
+                            onTap: () async {
+                              if (!song.isLocalFileAvailable) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Audio file unavailable. Please import this song again."),
+                                    backgroundColor: Colors.redAccent,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                                return;
+                              }
+                              final success = await playerNotifier.playTrack(filteredSongs, index);
+                              if (!success && context.mounted) {
+                                final err = ref.read(playerProvider).errorMessage ?? "Audio file unavailable. Please import this song again.";
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(err),
+                                    backgroundColor: Colors.redAccent,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
                             },
                           );
                         },

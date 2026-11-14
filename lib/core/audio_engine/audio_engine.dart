@@ -92,13 +92,17 @@ class AudioEngine {
     }
   }
 
-  Future<void> playTrack(List<SongModel> queue, int index) async {
-    if (_handler == null) return;
+  Future<bool> playTrack(List<SongModel> queue, int index) async {
+    if (_handler == null) {
+      throw StateError("Audio service handler is not initialized");
+    }
     try {
       await _handler!.setQueue(queue, initialIndex: index);
       await _handler!.play();
-    } catch (e) {
-      debugPrint("AudioEngine.playTrack error: $e");
+      return true;
+    } catch (e, stack) {
+      debugPrint("AudioEngine.playTrack error: $e\n$stack");
+      rethrow;
     }
   }
 

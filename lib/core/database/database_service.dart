@@ -71,7 +71,11 @@ class DatabaseService {
             final songList = data['songs'] as List;
             for (final item in songList) {
               final song = SongModel.fromMap(item as Map<String, dynamic>);
-              _songs[song.id] = song;
+              if (song.isLocalFileAvailable) {
+                _songs[song.id] = song;
+              } else {
+                debugPrint("Filtered out unplayable track from library: '${song.title}' (Path not found: ${song.path})");
+              }
             }
           }
 
@@ -168,26 +172,32 @@ class DatabaseService {
   }
 
   // --- Song Operations ---
-  List<SongModel> getAllSongs() => _songs.values.toList();
+  List<SongModel> getAllSongs() => _songs.values.where((s) => s.isLocalFileAvailable).toList();
 
-  SongModel? getSongById(String id) => _songs[id];
+  List<SongModel> getPlayableSongs() => _songs.values.where((s) => s.isLocalFileAvailable).toList();
+
+  SongModel? getSongById(String id) {
+    final song = _songs[id];
+    if (song != null && song.isLocalFileAvailable) return song;
+    return null;
+  }
 
   List<SongModel> getRecentlyPlayedSongs() {
     final List<SongModel> recents = [];
     for (final id in _historySongIds) {
       final song = _songs[id];
-      if (song != null) recents.add(song);
+      if (song != null && song.isLocalFileAvailable) recents.add(song);
     }
     return recents;
   }
 
   List<SongModel> getFavorites() {
-    return _songs.values.where((s) => s.isFavorite).toList();
+    return _songs.values.where((s) => s.isFavorite && s.isLocalFileAvailable).toList();
   }
 
   List<AlbumSummary> getAllAlbums() {
     final Map<String, List<SongModel>> albumMap = {};
-    for (final s in _songs.values) {
+    for (final s in _songs.values.where((s) => s.isLocalFileAvailable)) {
       final key = "${s.album}:::${s.artist}";
       albumMap.putIfAbsent(key, () => []).add(s);
     }
@@ -211,7 +221,7 @@ class DatabaseService {
 
   List<ArtistSummary> getAllArtists() {
     final Map<String, List<SongModel>> artistMap = {};
-    for (final s in _songs.values) {
+    for (final s in _songs.values.where((s) => s.isLocalFileAvailable)) {
       artistMap.putIfAbsent(s.artist, () => []).add(s);
     }
 
@@ -234,7 +244,11 @@ class DatabaseService {
 
   Future<void> upsertSongs(List<SongModel> newSongs) async {
     for (final song in newSongs) {
-      _songs[song.id] = song;
+      if (song.isLocalFileAvailable) {
+        _songs[song.id] = song;
+      } else {
+        debugPrint("Rejected song without local audio file: '${song.title}' (${song.path})");
+      }
     }
     await _persistDb();
   }
@@ -350,9 +364,10 @@ class DatabaseService {
 
   // --- Search ---
   List<SongModel> searchSongs(String query) {
-    if (query.trim().isEmpty) return getAllSongs();
+    final baseList = getPlayableSongs();
+    if (query.trim().isEmpty) return baseList;
     final lower = query.toLowerCase();
-    return _songs.values.where((s) {
+    return baseList.where((s) {
       return s.title.toLowerCase().contains(lower) ||
           s.artist.toLowerCase().contains(lower) ||
           s.album.toLowerCase().contains(lower) ||

@@ -14,6 +14,7 @@ class CinematicPlayerState {
   final double volume;
   final double speed;
   final WaveformCacheModel? currentWaveform;
+  final String? errorMessage;
 
   const CinematicPlayerState({
     this.currentSong,
@@ -28,6 +29,7 @@ class CinematicPlayerState {
     this.volume = 1.0,
     this.speed = 1.0,
     this.currentWaveform,
+    this.errorMessage,
   });
 
   CinematicPlayerState copyWith({
@@ -43,6 +45,8 @@ class CinematicPlayerState {
     double? volume,
     double? speed,
     WaveformCacheModel? currentWaveform,
+    String? errorMessage,
+    bool clearError = false,
   }) {
     return CinematicPlayerState(
       currentSong: currentSong ?? this.currentSong,
@@ -57,6 +61,7 @@ class CinematicPlayerState {
       volume: volume ?? this.volume,
       speed: speed ?? this.speed,
       currentWaveform: currentWaveform ?? this.currentWaveform,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 }

@@ -17,7 +17,12 @@ class ScannerService {
   };
 
   static Future<bool> requestStoragePermissions() async {
+    if (kIsWeb) return true;
     if (defaultTargetPlatform == TargetPlatform.android) {
+      if (await Permission.audio.isGranted || await Permission.storage.isGranted) {
+        return true;
+      }
+
       final audioStatus = await Permission.audio.request();
       if (audioStatus.isGranted) return true;
 
@@ -53,8 +58,7 @@ class ScannerService {
 
     try {
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['mp3', 'flac', 'wav', 'm4a', 'ogg', 'aac'],
+        type: FileType.audio,
         allowMultiple: true,
         dialogTitle: "Import Audio Tracks",
       );
@@ -63,6 +67,7 @@ class ScannerService {
         return result.paths
             .whereType<String>()
             .map((path) => File(path))
+            .where((file) => file.existsSync())
             .toList();
       }
     } catch (e) {
@@ -82,12 +87,16 @@ class ScannerService {
     } else if (Platform.isAndroid) {
       paths.add('/storage/emulated/0/Music');
       paths.add('/storage/emulated/0/Download');
+      paths.add('/storage/emulated/0/Downloads');
+      paths.add('/storage/emulated/0/Audio');
+      paths.add('/storage/emulated/0/media');
       paths.add('/sdcard/Music');
+      paths.add('/sdcard/Download');
     }
     return paths;
   }
 
-  // Import a custom batch of files
+  // Import a custom batch of files with persistent caching for temporary picker paths
   static Future<List<SongModel>> importFiles(
     List<File> files, {
     void Function(int current, int total)? onProgress,
@@ -95,20 +104,43 @@ class ScannerService {
     final List<SongModel> importedSongs = [];
     final cacheDir = await getApplicationDocumentsDirectory();
     final artDir = Directory(p.join(cacheDir.path, 'CinematicMusicPlayer', 'art_cache'));
+    final musicDir = Directory(p.join(cacheDir.path, 'CinematicMusicPlayer', 'imported_music'));
     if (!await artDir.exists()) await artDir.create(recursive: true);
+    if (!await musicDir.exists()) await musicDir.create(recursive: true);
 
     final total = files.length;
     for (int i = 0; i < total; i++) {
       final file = files[i];
-      final song = await _processAudioFile(file, artDir);
-      if (song != null) {
+      if (!file.existsSync()) continue;
+
+      File targetFile = file;
+      final lowerPath = file.path.toLowerCase();
+      // If file was picked from a temporary cache directory, make a permanent copy
+      if (lowerPath.contains('/cache/') ||
+          lowerPath.contains('\\cache\\') ||
+          lowerPath.contains('file_picker') ||
+          lowerPath.contains('/tmp/') ||
+          lowerPath.contains('\\temp\\')) {
+        try {
+          final destPath = p.join(musicDir.path, p.basename(file.path));
+          targetFile = await file.copy(destPath);
+        } catch (e) {
+          debugPrint("Note: Kept original file path: $e");
+          targetFile = file;
+        }
+      }
+
+      final song = await _processAudioFile(targetFile, artDir);
+      if (song != null && song.isLocalFileAvailable) {
         importedSongs.add(song);
         WaveformAnalyzer.analyzeSong(song.id, song.path).ignore();
       }
       onProgress?.call(i + 1, total);
     }
 
-    await DatabaseService.instance.upsertSongs(importedSongs);
+    if (importedSongs.isNotEmpty) {
+      await DatabaseService.instance.upsertSongs(importedSongs);
+    }
     return importedSongs;
   }
 

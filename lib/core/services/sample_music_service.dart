@@ -2,12 +2,14 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import '../database/models/song_model.dart';
 import '../database/database_service.dart';
 import '../database/curated_catalogue.dart';
 import '../audio_engine/waveform_analyzer.dart';
+import 'audio_metadata_parser.dart';
 
 class SampleMusicService {
   static Future<void> ensureSampleTracks() async {
@@ -29,71 +31,123 @@ class SampleMusicService {
         }
       }
 
-      final existingSongs = DatabaseService.instance.getAllSongs();
-      if (existingSongs.isEmpty) {
-        // Track 1: Neon Horizon (Synthwave 120 BPM)
-        final track1 = await _generateTrack(
-          sampleDir: sampleDir,
-          artDir: artDir,
-          id: "demo_track_1",
-          filename: "neon_horizon.wav",
-          title: "Neon Horizon",
-          artist: "Aura Synths",
-          album: "Cybernetic Dreams",
-          bpm: 120.0,
-          durationSeconds: 16,
-          baseFreq: 55.0,
-          format: "WAV",
-          colorHex: 0xFF8B5CF6,
-        );
+      final List<SongModel> demoTracks = [];
 
-        // Track 2: Deep Space Pulse (Ambient 90 BPM)
-        final track2 = await _generateTrack(
-          sampleDir: sampleDir,
-          artDir: artDir,
-          id: "demo_track_2",
-          filename: "deep_space_pulse.wav",
-          title: "Deep Space Pulse",
-          artist: "Cosmic Frequency",
-          album: "Void Horizons",
-          bpm: 90.0,
-          durationSeconds: 20,
-          baseFreq: 65.41,
-          format: "WAV",
-          colorHex: 0xFF06B6D4,
-        );
-
-        // Track 3: Solar Flare (Melodic DnB 140 BPM)
-        final track3 = await _generateTrack(
-          sampleDir: sampleDir,
-          artDir: artDir,
-          id: "demo_track_3",
-          filename: "solar_flare.wav",
-          title: "Solar Flare",
-          artist: "Hyperion",
-          album: "Supernova",
-          bpm: 140.0,
-          durationSeconds: 14,
-          baseFreq: 73.42,
-          format: "WAV",
-          colorHex: 0xFFEC4899,
-        );
-
-        final demoTracks = [track1, track2, track3];
-        await DatabaseService.instance.upsertSongs(demoTracks);
-
-        // Create Demo Playlists
-        await DatabaseService.instance.createPlaylist(
-          "Synthwave Essentials",
-          description: "Studio demo tracks showcasing the cinematic audio reactive engine.",
-        );
-        final pl = DatabaseService.instance.getAllPlaylists().firstWhere(
-          (p) => p.name == "Synthwave Essentials",
-        );
-        for (final s in demoTracks) {
-          await DatabaseService.instance.addSongToPlaylist(pl.id, s.id);
-          await WaveformAnalyzer.analyzeSong(s.id, s.path);
+      // 1. Bundled Real MP3 Demo: Bairan
+      final mp3File = File(p.join(sampleDir.path, 'bairan_demo.mp3'));
+      if (!await mp3File.exists() || await mp3File.length() == 0) {
+        try {
+          final byteData = await rootBundle.load('assets/audio/bairan_demo.mp3');
+          await mp3File.writeAsBytes(byteData.buffer.asUint8List());
+        } catch (e) {
+          debugPrint("Note: Could not load assets/audio/bairan_demo.mp3 from bundle: $e");
         }
+      }
+
+      if (await mp3File.exists() && await mp3File.length() > 0) {
+        final parsed = await AudioMetadataParser.parseFile(mp3File);
+        String? artworkPath;
+        if (parsed.pictureBytes != null && parsed.pictureBytes!.isNotEmpty) {
+          final artFile = File(p.join(artDir.path, 'demo_bairan.jpg'));
+          await artFile.writeAsBytes(parsed.pictureBytes!);
+          artworkPath = artFile.path;
+        }
+
+        final bairanSong = SongModel(
+          id: "demo_track_bairan",
+          path: mp3File.path,
+          title: "Bairan (Demo)",
+          artist: parsed.artist != "Unknown Artist" ? "${parsed.artist} (Demo)" : "Amit Trivedi (Demo)",
+          album: "Cinematic Demos",
+          durationMs: parsed.durationMs > 0 ? parsed.durationMs : 151000,
+          bitrate: parsed.bitrate > 0 ? parsed.bitrate : 320,
+          sampleRate: parsed.sampleRate > 0 ? parsed.sampleRate : 44100,
+          format: "MP3",
+          fileSize: await mp3File.length(),
+          hasArtwork: artworkPath != null,
+          artworkPath: artworkPath,
+          bpm: 104.0,
+          genre: "Bollywood / Hindi (Demo)",
+          year: "2024",
+          isFavorite: true,
+          dateAdded: DateTime.now(),
+        );
+        demoTracks.add(bairanSong);
+      }
+
+      // 2. Track 1: Neon Horizon (Synthwave 120 BPM Demo)
+      final track1 = await _generateTrack(
+        sampleDir: sampleDir,
+        artDir: artDir,
+        id: "demo_track_1",
+        filename: "neon_horizon.wav",
+        title: "Neon Horizon (Demo)",
+        artist: "Aura Synths (Demo)",
+        album: "Cinematic Demos",
+        bpm: 120.0,
+        durationSeconds: 16,
+        baseFreq: 55.0,
+        format: "WAV",
+        colorHex: 0xFF8B5CF6,
+      );
+      demoTracks.add(track1);
+
+      // 3. Track 2: Deep Space Pulse (Ambient 90 BPM Demo)
+      final track2 = await _generateTrack(
+        sampleDir: sampleDir,
+        artDir: artDir,
+        id: "demo_track_2",
+        filename: "deep_space_pulse.wav",
+        title: "Deep Space Pulse (Demo)",
+        artist: "Cosmic Frequency (Demo)",
+        album: "Cinematic Demos",
+        bpm: 90.0,
+        durationSeconds: 20,
+        baseFreq: 65.41,
+        format: "WAV",
+        colorHex: 0xFF06B6D4,
+      );
+      demoTracks.add(track2);
+
+      // 4. Track 3: Solar Flare (Melodic DnB 140 BPM Demo)
+      final track3 = await _generateTrack(
+        sampleDir: sampleDir,
+        artDir: artDir,
+        id: "demo_track_3",
+        filename: "solar_flare.wav",
+        title: "Solar Flare (Demo)",
+        artist: "Hyperion (Demo)",
+        album: "Cinematic Demos",
+        bpm: 140.0,
+        durationSeconds: 14,
+        baseFreq: 73.42,
+        format: "WAV",
+        colorHex: 0xFFEC4899,
+      );
+      demoTracks.add(track3);
+
+      // Only upsert playable tracks with valid local files
+      final validDemoTracks = demoTracks.where((t) => t.isLocalFileAvailable).toList();
+      await DatabaseService.instance.upsertSongs(validDemoTracks);
+
+      // Ensure Demo Playlist exists
+      final allPlaylists = DatabaseService.instance.getAllPlaylists();
+      final hasDemoPlaylist = allPlaylists.any((p) => p.name == "Cinematic Demos");
+      if (!hasDemoPlaylist) {
+        await DatabaseService.instance.createPlaylist(
+          "Cinematic Demos",
+          description: "Studio high-fidelity demo tracks with audio reactive visualizers.",
+        );
+      }
+
+      final pl = DatabaseService.instance.getAllPlaylists().firstWhere(
+        (p) => p.name == "Cinematic Demos",
+        orElse: () => allPlaylists.first,
+      );
+
+      for (final s in validDemoTracks) {
+        await DatabaseService.instance.addSongToPlaylist(pl.id, s.id);
+        WaveformAnalyzer.analyzeSong(s.id, s.path).ignore();
       }
     } catch (e) {
       debugPrint("Error creating sample demo tracks: $e");

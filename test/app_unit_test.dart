@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cinematic_music_player/auth/user_model.dart';
 import 'package:cinematic_music_player/sync/cloud_database.dart';
@@ -6,6 +7,8 @@ import 'package:cinematic_music_player/core/services/lyrics_parser.dart';
 import 'package:cinematic_music_player/core/services/update_service.dart';
 import 'package:cinematic_music_player/core/database/models/song_model.dart';
 import 'package:cinematic_music_player/core/services/shader_capability_service.dart';
+import 'package:cinematic_music_player/core/audio_engine/audio_service_handler.dart';
+import 'package:cinematic_music_player/core/services/audio_metadata_parser.dart';
 
 void main() {
   group('1. UserModel & DeviceModel Schema Tests', () {
@@ -162,6 +165,58 @@ void main() {
       // Test manual fallback switch
       service.forceCanvasFallback();
       expect(service.areShadersSupported, isFalse);
+    });
+  });
+
+  group('8. Real Audio File & Metadata Parsing Tests', () {
+    test('AudioMetadataParser parses real MP3 audio properties accurately', () async {
+      final mp3File = File('assets/audio/bairan_demo.mp3');
+      if (mp3File.existsSync()) {
+        final parsed = await AudioMetadataParser.parseFile(mp3File);
+        expect(parsed.format, equals('MP3'));
+        expect(parsed.durationMs, greaterThan(0));
+        expect(parsed.title, isNotEmpty);
+      }
+    });
+
+    test('parseAudioUri parses content and file schemes safely', () {
+      final fileUri = CinematicAudioHandler.parseAudioUri('/storage/emulated/0/Music/song.mp3');
+      expect(fileUri.scheme, equals('file'));
+
+      final contentUri = CinematicAudioHandler.parseAudioUri('content://media/external/audio/123');
+      expect(contentUri.scheme, equals('content'));
+
+      final emptyUri = CinematicAudioHandler.parseAudioUri('');
+      expect(emptyUri.toString(), equals(''));
+    });
+  });
+
+  group('9. Playable Song Availability Verification Tests', () {
+    test('SongModel.isLocalFileAvailable returns false for non-existent paths', () {
+      final fakeSong = SongModel(
+        id: 'fake_1',
+        title: 'Non Existent Track',
+        artist: 'Ghost',
+        album: 'Void',
+        path: 'C:\\NonExistentFolder\\ghost_track.mp3',
+        durationMs: 180000,
+        dateAdded: DateTime.now(),
+      );
+      expect(fakeSong.isLocalFileAvailable, isFalse);
+    });
+
+    test('SongModel.isLocalFileAvailable returns true for existing local files', () {
+      final existingFile = File('assets/audio/bairan_demo.mp3');
+      final validSong = SongModel(
+        id: 'real_1',
+        title: 'Bairan Demo',
+        artist: 'Amit Trivedi',
+        album: 'Cinematic Demos',
+        path: existingFile.absolute.path,
+        durationMs: 151000,
+        dateAdded: DateTime.now(),
+      );
+      expect(validSong.isLocalFileAvailable, isTrue);
     });
   });
 }

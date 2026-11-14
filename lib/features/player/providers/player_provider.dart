@@ -81,13 +81,68 @@ class PlayerNotifier extends StateNotifier<CinematicPlayerState> {
     }
   }
 
-  Future<void> playTrack(List<SongModel> queue, int index) async {
-    state = state.copyWith(queue: queue, currentIndex: index);
-    await AudioEngine.instance.playTrack(queue, index);
+  Future<bool> playTrack(List<SongModel> queue, int index) async {
+    if (queue.isEmpty || index < 0 || index >= queue.length) {
+      state = state.copyWith(errorMessage: "No playable track selected.");
+      return false;
+    }
+
+    final targetSong = queue[index];
+    if (!targetSong.isLocalFileAvailable) {
+      const msg = "Audio file unavailable. Please import this song again.";
+      debugPrint("Blocked playTrack: '${targetSong.title}' file does not exist at '${targetSong.path}'");
+      state = state.copyWith(errorMessage: msg, isPlaying: false);
+      return false;
+    }
+
+    // Filter queue to verified local audio files
+    final validQueue = queue.where((s) => s.isLocalFileAvailable).toList();
+    final validIndex = validQueue.indexWhere((s) => s.id == targetSong.id);
+
+    try {
+      state = state.copyWith(
+        queue: validQueue,
+        currentIndex: validIndex >= 0 ? validIndex : 0,
+        currentSong: targetSong,
+        clearError: true,
+      );
+      await AudioEngine.instance.playTrack(validQueue, validIndex >= 0 ? validIndex : 0);
+      return true;
+    } catch (e, stack) {
+      final msg = "Playback failed for '${targetSong.title}': $e";
+      debugPrint("CRITICAL PLAYBACK ERROR: $msg\n$stack");
+      state = state.copyWith(errorMessage: msg, isPlaying: false);
+      return false;
+    }
   }
 
   Future<void> togglePlayPause() async {
-    await AudioEngine.instance.togglePlayPause();
+    try {
+      if (state.currentSong == null) {
+        final playable = DatabaseService.instance.getPlayableSongs();
+        if (playable.isNotEmpty) {
+          await playTrack(playable, 0);
+          return;
+        } else {
+          state = state.copyWith(errorMessage: "Your music library is empty. Please import audio files first.");
+          return;
+        }
+      }
+
+      if (!state.currentSong!.isLocalFileAvailable) {
+        state = state.copyWith(
+          errorMessage: "Audio file unavailable. Please import this song again.",
+          isPlaying: false,
+        );
+        return;
+      }
+
+      await AudioEngine.instance.togglePlayPause();
+    } catch (e, stack) {
+      final msg = "Playback toggle error: $e";
+      debugPrint("CRITICAL PLAYBACK TOGGLE ERROR: $msg\n$stack");
+      state = state.copyWith(errorMessage: msg);
+    }
   }
 
   Future<void> seek(Duration position) async {

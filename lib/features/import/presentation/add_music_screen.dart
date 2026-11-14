@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/cinematic_colors.dart';
@@ -57,6 +58,20 @@ class _AddMusicScreenState extends ConsumerState<AddMusicScreen> {
   }
 
   Future<void> _handleScanDevice() async {
+    final granted = await ScannerService.requestStoragePermissions();
+    if (!granted && defaultTargetPlatform == TargetPlatform.android) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Storage / Audio permission required to scan device music folders."),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+
     final dirs = ScannerService.getStandardMusicDirectories();
     setState(() {
       _isImporting = true;

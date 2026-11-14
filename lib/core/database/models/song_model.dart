@@ -25,6 +25,8 @@ class SongModel {
   final String year;
   final String? lyrics;
   final String? lrcPath;        // lyricsPath
+  final String sourceType;      // 'local', 'cloud', 'external'
+  final String? sourceId;       // identifier of the originating source
 
   const SongModel({
     required this.id,
@@ -50,6 +52,8 @@ class SongModel {
     this.year = "",
     this.lyrics,
     this.lrcPath,
+    this.sourceType = "local",
+    this.sourceId,
   });
 
   factory SongModel.empty() {
@@ -71,10 +75,11 @@ class SongModel {
 
   Duration get duration => Duration(milliseconds: durationMs);
 
-  bool get isCloudSong => path.startsWith('http://') || path.startsWith('https://');
+  bool get isCloudSong => sourceType == 'cloud' || path.startsWith('http://') || path.startsWith('https://');
+  bool get isExternal => sourceType == 'external';
 
   bool get isLocalFileAvailable {
-    if (isCloudSong) return true;
+    if (isCloudSong || isExternal) return true;
     if (path.isEmpty) return false;
     try {
       return File(path).existsSync();
@@ -110,6 +115,8 @@ class SongModel {
     String? year,
     String? lyrics,
     String? lrcPath,
+    String? sourceType,
+    String? sourceId,
   }) {
     return SongModel(
       id: id ?? this.id,
@@ -135,6 +142,8 @@ class SongModel {
       year: year ?? this.year,
       lyrics: lyrics ?? this.lyrics,
       lrcPath: lrcPath ?? this.lrcPath,
+      sourceType: sourceType ?? this.sourceType,
+      sourceId: sourceId ?? this.sourceId,
     );
   }
 
@@ -163,13 +172,18 @@ class SongModel {
       'year': year,
       'lyrics': lyrics,
       'lrcPath': lrcPath,
+      'sourceType': sourceType,
+      'sourceId': sourceId,
     };
   }
 
   factory SongModel.fromMap(Map<String, dynamic> map) {
+    final rawPath = map['path'] as String? ?? '';
+    final defaultSourceType = (rawPath.startsWith('http://') || rawPath.startsWith('https://')) ? 'cloud' : 'local';
+
     return SongModel(
       id: map['id'] as String,
-      path: map['path'] as String,
+      path: rawPath,
       title: map['title'] as String,
       artist: map['artist'] as String,
       album: map['album'] as String,
@@ -193,6 +207,8 @@ class SongModel {
       year: (map['year'] as String?) ?? "",
       lyrics: map['lyrics'] as String?,
       lrcPath: map['lrcPath'] as String?,
+      sourceType: (map['sourceType'] as String?) ?? defaultSourceType,
+      sourceId: map['sourceId'] as String?,
     );
   }
 

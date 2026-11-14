@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.0.3-blueviolet.svg?style=flat-square" alt="Latest Release"></a>
+  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.1.0-blueviolet.svg?style=flat-square" alt="Latest Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Android-success.svg?style=flat-square" alt="Platforms">
 </p>
@@ -18,6 +18,12 @@
 ---
 
 ## Key Features
+
+- **Decoupled Multi-Source Music Architecture (Metrolist/InnerTubeX Inspired)**:
+  - Unified abstract `MusicSource` provider layer cleanly decoupling audio playback from data provenance.
+  - Seamless support for `LocalMusicSource` (offline encrypted vault), `CloudMusicSource` (Supabase storage & catalog), and `ExternalProviderSource` (custom streaming gateways).
+  - Central `MusicSourceRepository` registry with federated multi-source search and smart lazy stream URI resolution with TTL-based caching.
+  - Decoupled `SongModel` data flow: `MusicSource` $\rightarrow$ `SongModel` $\rightarrow$ `AudioEngine` $\rightarrow$ `audio_service` (Background Playback) $\rightarrow$ Cinematic UI.
 
 - **Private Cloud Music Streaming Platform (Spotify-Style)**:
   - Stream master tracks on-demand with HTTP byte-range requests directly from Supabase Storage.
@@ -80,13 +86,13 @@ Get the latest verified production release from [GitHub Releases](https://github
 
 ---
 
-## Release Downloads Matrix
+## Release Downloads Matrix (v1.1.0)
 
-| Target Platform | Asset Filename | Package Type | Size | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| **Windows Desktop** | [CinematicMusicPlayerSetup.exe](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.0.1/CinematicMusicPlayerSetup.exe) | Self-Contained Installer | ~35.5 MB | Complete Windows installer wizard with Start Menu and Desktop shortcuts. |
-| **Windows Desktop** | [CinematicMusicPlayer-Windows.zip](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.0.1/CinematicMusicPlayer-Windows.zip) | Portable Archive | ~46.5 MB | Standalone portable folder with executable, DLLs, and shaders. |
-| **Android Mobile** | [CinematicMusicPlayer.apk](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.0.1/CinematicMusicPlayer.apk) | Signed Release APK | ~66.9 MB | Direct installable APK targeting Android 6.0 through Android 14+. |
+| Target Platform | Asset Filename | Package Type | Description |
+| :--- | :--- | :--- | :--- |
+| **Windows Desktop** | [CinematicMusicPlayerSetup.exe](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.1.0/CinematicMusicPlayerSetup.exe) | Self-Contained Installer | Complete Windows installer wizard with Start Menu and Desktop shortcuts. |
+| **Windows Desktop** | [CinematicMusicPlayer-Windows.zip](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.1.0/CinematicMusicPlayer-Windows.zip) | Portable Archive | Standalone portable folder with executable, DLLs, and shaders. |
+| **Android Mobile** | [CinematicMusicPlayer.apk](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.1.0/CinematicMusicPlayer.apk) | Signed Release APK | Direct installable APK targeting Android 6.0 through Android 14+. |
 
 ---
 

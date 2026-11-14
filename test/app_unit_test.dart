@@ -16,6 +16,11 @@ import 'package:cinematic_music_player/core/database/models/cloud_artist_model.d
 import 'package:cinematic_music_player/core/database/models/cloud_album_model.dart';
 import 'package:cinematic_music_player/core/services/cloud_music_service.dart';
 import 'package:cinematic_music_player/core/database/database_service.dart';
+import 'package:cinematic_music_player/core/sources/music_source_type.dart';
+import 'package:cinematic_music_player/core/sources/local_music_source.dart';
+import 'package:cinematic_music_player/core/sources/cloud_music_source.dart';
+import 'package:cinematic_music_player/core/sources/external_provider_source.dart';
+import 'package:cinematic_music_player/core/sources/music_source_repository.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -348,6 +353,83 @@ void main() {
     test('DatabaseService checks favorites for cloud songs accurately', () {
       final db = DatabaseService.instance;
       expect(db.isFavorite('non_existent_cloud_song'), isFalse);
+    });
+  });
+
+  group('13. MusicSource Architecture & Provider Abstraction Tests', () {
+    test('MusicSourceType enum maps correctly to strings and IDs', () {
+      expect(MusicSourceType.local.id, 'local');
+      expect(MusicSourceType.cloud.id, 'cloud');
+      expect(MusicSourceType.externalProvider.id, 'external');
+
+      expect(MusicSourceType.fromString('local'), MusicSourceType.local);
+      expect(MusicSourceType.fromString('cloud'), MusicSourceType.cloud);
+      expect(MusicSourceType.fromString('external'), MusicSourceType.externalProvider);
+      expect(MusicSourceType.fromString('other'), MusicSourceType.local);
+    });
+
+    test('LocalMusicSource, CloudMusicSource, ExternalProviderSource instantiate with correct types', () {
+      final local = LocalMusicSource();
+      expect(local.type, MusicSourceType.local);
+      expect(local.id, 'local');
+      expect(local.isAvailable, isTrue);
+
+      final cloud = CloudMusicSource();
+      expect(cloud.type, MusicSourceType.cloud);
+      expect(cloud.id, 'cloud');
+
+      final ext = ExternalProviderSource();
+      expect(ext.type, MusicSourceType.externalProvider);
+      expect(ext.id, 'external_provider');
+      expect(ext.isAvailable, isTrue);
+    });
+
+    test('MusicSourceRepository initializes default sources and executes federated search', () async {
+      final repo = MusicSourceRepository.instance;
+      expect(repo.allSources, hasLength(3));
+
+      expect(repo.getSource(MusicSourceType.local), isNotNull);
+      expect(repo.getSource(MusicSourceType.cloud), isNotNull);
+      expect(repo.getSource(MusicSourceType.externalProvider), isNotNull);
+
+      // Search all sources
+      final results = await repo.searchAll('Acoustic');
+      expect(results, isNotEmpty);
+      expect(results.any((s) => s.title.toLowerCase().contains('acoustic')), isTrue);
+    });
+
+    test('ExternalProviderSource resolves playback URI on-demand and caches stream tokens', () async {
+      final extSource = ExternalProviderSource();
+      final songs = await extSource.getSongs();
+      expect(songs, isNotEmpty);
+
+      final song = songs.first;
+      final uri = await extSource.resolvePlaybackUri(song);
+      expect(uri, isNotEmpty);
+      expect(uri.startsWith('http'), isTrue);
+
+      // Second call should hit the in-memory cache
+      final cachedUri = await extSource.resolvePlaybackUri(song);
+      expect(cachedUri, uri);
+    });
+
+    test('MusicSourceRepository resolvePlayableSong routes to originating source', () async {
+      final repo = MusicSourceRepository.instance;
+      final externalSong = SongModel(
+        id: 'ext_test_99',
+        path: 'https://cdn.example.com/stream.mp3',
+        title: 'Streaming Test',
+        artist: 'Tester',
+        album: 'Test Album',
+        durationMs: 180000,
+        dateAdded: DateTime.now(),
+        sourceType: 'external',
+      );
+
+      final resolved = await repo.resolvePlayableSong(externalSong);
+      expect(resolved.id, 'ext_test_99');
+      expect(resolved.isLocalFileAvailable, isTrue);
+      expect(resolved.path, 'https://cdn.example.com/stream.mp3');
     });
   });
 }

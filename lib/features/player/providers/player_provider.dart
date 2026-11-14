@@ -6,6 +6,7 @@ import '../../../core/audio_engine/audio_engine.dart';
 import '../../../core/audio_engine/waveform_analyzer.dart';
 import '../../../core/database/database_service.dart';
 import '../../../core/database/models/song_model.dart';
+import '../../../core/sources/music_source_repository.dart';
 import '../models/player_state.dart';
 import '../../visualizer/providers/visualizer_provider.dart';
 import '../../../sync/sync_manager.dart';
@@ -98,7 +99,10 @@ class PlayerNotifier extends StateNotifier<CinematicPlayerState> {
       return false;
     }
 
-    final targetSong = queue[index];
+    // Resolve playable URI through MusicSource abstraction layer
+    final rawTarget = queue[index];
+    final targetSong = await MusicSourceRepository.instance.resolvePlayableSong(rawTarget);
+
     if (!targetSong.isLocalFileAvailable) {
       const msg = "Audio file unavailable. Please import this song again.";
       debugPrint("Blocked playTrack: '${targetSong.title}' file does not exist at '${targetSong.path}'");
@@ -106,7 +110,7 @@ class PlayerNotifier extends StateNotifier<CinematicPlayerState> {
       return false;
     }
 
-    // Filter queue to verified local audio files
+    // Filter queue to verified audio files
     final validQueue = queue.where((s) => s.isLocalFileAvailable).toList();
     final validIndex = validQueue.indexWhere((s) => s.id == targetSong.id);
 

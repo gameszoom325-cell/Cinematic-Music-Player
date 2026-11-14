@@ -23,6 +23,12 @@ import 'package:cinematic_music_player/core/sources/online_music_source.dart';
 import 'package:cinematic_music_player/core/sources/external_provider_source.dart';
 import 'package:cinematic_music_player/core/sources/music_source_repository.dart';
 import 'package:cinematic_music_player/core/sources/base_music_source.dart';
+import 'package:cinematic_music_player/core/catalog/models/catalog_song.dart';
+import 'package:cinematic_music_player/core/catalog/models/catalog_artist.dart';
+import 'package:cinematic_music_player/core/catalog/models/catalog_album.dart';
+import 'package:cinematic_music_player/core/catalog/catalog_database_service.dart';
+import 'package:cinematic_music_player/core/catalog/catalog_recommendation_engine.dart';
+import 'package:cinematic_music_player/core/catalog/catalog_music_source.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -388,11 +394,12 @@ void main() {
 
     test('MusicSourceRepository initializes default sources and executes federated search', () async {
       final repo = MusicSourceRepository.instance;
-      expect(repo.allSources, hasLength(4));
+      expect(repo.allSources, hasLength(5));
 
       expect(repo.getSource(MusicSourceType.local), isNotNull);
       expect(repo.getSource(MusicSourceType.cloud), isNotNull);
       expect(repo.getSource(MusicSourceType.online), isNotNull);
+      expect(repo.getSource(MusicSourceType.catalog), isNotNull);
       expect(repo.getSource(MusicSourceType.externalProvider), isNotNull);
 
       // Search all sources
@@ -522,6 +529,181 @@ void main() {
       expect(resolvedSong.isLocalFileAvailable, isTrue);
       expect(resolvedSong.path.startsWith('http'), isTrue);
       expect(resolvedSong.title, 'Acoustic Breeze');
+    });
+  });
+
+  group('15. Bollywood & Global Catalog System Tests (v1.1.1)', () {
+    test('CatalogSong, CatalogArtist, and CatalogAlbum models instantiate and serialize accurately', () {
+      final song = CatalogSong(
+        id: 'test_bwd_1',
+        title: 'Channa Mereya',
+        artist: 'Arijit Singh, Pritam',
+        album: 'Ae Dil Hai Mushkil',
+        year: '2016',
+        artwork: 'https://images.example.com/adhm.jpg',
+        source: 'bollywood_dataset',
+        durationMs: 289000,
+        genre: 'Bollywood Sufi Soul',
+        playCount: 95000,
+        dateAdded: DateTime(2026, 11, 1),
+      );
+
+      expect(song.id, 'test_bwd_1');
+      expect(song.title, 'Channa Mereya');
+      expect(song.artist, 'Arijit Singh, Pritam');
+      expect(song.album, 'Ae Dil Hai Mushkil');
+      expect(song.year, '2016');
+      expect(song.artwork, 'https://images.example.com/adhm.jpg');
+      expect(song.source, 'bollywood_dataset');
+
+      // Serialization
+      final map = song.toMap();
+      final revived = CatalogSong.fromMap(map);
+      expect(revived.id, song.id);
+      expect(revived.title, song.title);
+      expect(revived.artist, song.artist);
+      expect(revived.album, song.album);
+      expect(revived.year, song.year);
+      expect(revived.artwork, song.artwork);
+      expect(revived.source, song.source);
+
+      // Artist model
+      const artist = CatalogArtist(
+        name: 'Arijit Singh',
+        image: 'https://images.example.com/arijit.jpg',
+        songCount: 15,
+        albumCount: 12,
+        genres: ['Bollywood Romantic'],
+      );
+      expect(artist.name, 'Arijit Singh');
+      expect(artist.image, isNotEmpty);
+      expect(artist.toArtistSummary().name, 'Arijit Singh');
+
+      // Album model
+      const album = CatalogAlbum(
+        title: 'Ae Dil Hai Mushkil',
+        cover: 'https://images.example.com/cover.jpg',
+        year: '2016',
+        artist: 'Pritam',
+        songCount: 6,
+      );
+      expect(album.title, 'Ae Dil Hai Mushkil');
+      expect(album.cover, isNotEmpty);
+      expect(album.toAlbumSummary().name, 'Ae Dil Hai Mushkil');
+    });
+
+    test('CatalogSong.toSongModel() converts into playable SongModel format', () {
+      final song = CatalogSong(
+        id: 'bwd_kesariya',
+        title: 'Kesariya',
+        artist: 'Arijit Singh, Pritam',
+        album: 'Brahmastra',
+        year: '2022',
+        artwork: 'https://images.example.com/kesariya.jpg',
+        source: 'bollywood_dataset',
+        durationMs: 268000,
+        genre: 'Bollywood Romantic',
+        dateAdded: DateTime(2026, 10, 1),
+      );
+
+      final songModel = song.toSongModel();
+      expect(songModel.id, 'bwd_kesariya');
+      expect(songModel.title, 'Kesariya');
+      expect(songModel.artist, 'Arijit Singh, Pritam');
+      expect(songModel.album, 'Brahmastra');
+      expect(songModel.year, '2022');
+      expect(songModel.artwork, 'https://images.example.com/kesariya.jpg');
+      expect(songModel.thumbnail, 'https://images.example.com/kesariya.jpg');
+      expect(songModel.source, 'catalog');
+      expect(songModel.sourceType, 'catalog');
+      expect(songModel.sourceId, 'bollywood_dataset');
+      expect(songModel.isCatalog, isTrue);
+      expect(songModel.isRemoteStream, isTrue);
+      expect(songModel.isLocalFileAvailable, isTrue);
+      expect(songModel.duration.inSeconds, 268);
+    });
+
+    test('CatalogDatabaseService retrieves dataset songs, artists, and albums', () async {
+      final catalogDb = CatalogDatabaseService.instance;
+      await catalogDb.init();
+
+      final songs = catalogDb.getAllSongs();
+      expect(songs, isNotEmpty);
+      expect(songs.length, greaterThanOrEqualTo(15));
+
+      final artists = catalogDb.getAllArtists();
+      expect(artists, isNotEmpty);
+      expect(artists.any((a) => a.name.contains('Arijit Singh')), isTrue);
+
+      final albums = catalogDb.getAllAlbums();
+      expect(albums, isNotEmpty);
+      expect(albums.any((a) => a.title.contains('Brahmastra')), isTrue);
+    });
+
+    test('CatalogDatabaseService searches songs, artists, and albums accurately', () {
+      final catalogDb = CatalogDatabaseService.instance;
+
+      // Search by song title
+      final kesariya = catalogDb.searchSongs('Kesariya');
+      expect(kesariya, isNotEmpty);
+      expect(kesariya.first.album, 'Brahmastra');
+
+      // Search by artist
+      final arijitSongs = catalogDb.searchSongs('Arijit Singh');
+      expect(arijitSongs.length, greaterThanOrEqualTo(4));
+
+      // Search artists
+      final shreya = catalogDb.searchArtists('Shreya');
+      expect(shreya, isNotEmpty);
+      expect(shreya.first.name, contains('Shreya Ghoshal'));
+
+      // Search albums
+      final animal = catalogDb.searchAlbums('Animal');
+      expect(animal, isNotEmpty);
+      expect(animal.first.title, 'Animal');
+    });
+
+    test('Catalog Trending and Recently Added calculations sort correctly', () {
+      final catalogDb = CatalogDatabaseService.instance;
+
+      final trending = catalogDb.getTrendingSongs(limit: 5);
+      expect(trending, isNotEmpty);
+      for (int i = 0; i < trending.length - 1; i++) {
+        expect(trending[i].playCount, greaterThanOrEqualTo(trending[i + 1].playCount));
+      }
+
+      final recent = catalogDb.getRecentlyAddedSongs(limit: 5);
+      expect(recent, isNotEmpty);
+      expect(recent.first.year, anyOf('2024', '2023', '2022'));
+    });
+
+    test('Catalog Recommendations Foundation computes related and personalized tracks', () {
+      final catalogDb = CatalogDatabaseService.instance;
+
+      // Content-based related tracks for Kesariya
+      final related = catalogDb.getRelatedSongs('bwd_001', limit: 5);
+      expect(related, isNotEmpty);
+      expect(related.any((s) => s.id == 'bwd_001'), isFalse); // Does not recommend self
+      expect(related.any((s) => s.artist.contains('Arijit Singh') || s.album == 'Brahmastra'), isTrue);
+
+      // Personalized recommendations
+      final personalized = catalogDb.getPersonalizedRecommendations(limit: 5);
+      expect(personalized, isNotEmpty);
+    });
+
+    test('CatalogMusicSource connects cleanly to MusicSourceRepository and resolves playback', () async {
+      final repo = MusicSourceRepository.instance;
+      final catalogSource = repo.getSource(MusicSourceType.catalog);
+      expect(catalogSource, isNotNull);
+
+      final songs = await catalogSource!.searchSongs('Kesariya');
+      expect(songs, isNotEmpty);
+
+      final target = songs.first;
+      final resolved = await repo.resolvePlayableSong(target);
+      expect(resolved.id, target.id);
+      expect(resolved.path.startsWith('http'), isTrue);
+      expect(resolved.isLocalFileAvailable, isTrue);
     });
   });
 }

@@ -85,10 +85,12 @@ class SongModel {
       path.startsWith('http://') ||
       path.startsWith('https://');
   bool get isOnline => sourceType == 'online';
+  bool get isCatalog => sourceType == 'catalog';
   bool get isExternal => sourceType == 'external';
   bool get isRemoteStream =>
       isCloudSong ||
       isOnline ||
+      isCatalog ||
       isExternal ||
       path.startsWith('http://') ||
       path.startsWith('https://');

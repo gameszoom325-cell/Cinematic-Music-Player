@@ -147,6 +147,8 @@ class _MusicSearchScreenState extends ConsumerState<MusicSearchScreen> with Sing
         children: [
           _buildFilterChip("All Sources", null),
           const SizedBox(width: 8),
+          _buildFilterChip("Bollywood Catalog", MusicSourceType.catalog),
+          const SizedBox(width: 8),
           _buildFilterChip("Online Music (InnerTubeX)", MusicSourceType.online),
           const SizedBox(width: 8),
           _buildFilterChip("Private Cloud", MusicSourceType.cloud),
@@ -539,6 +541,10 @@ class _MusicSearchScreenState extends ConsumerState<MusicSearchScreen> with Sing
       case 'cloud':
         badgeColor = const Color(0xFFA855F7); // Purple
         label = "CLOUD";
+        break;
+      case 'catalog':
+        badgeColor = const Color(0xFFF59E0B); // Amber / Gold
+        label = "CATALOG";
         break;
       case 'local':
       default:

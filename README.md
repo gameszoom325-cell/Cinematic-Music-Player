@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.1.0-blueviolet.svg?style=flat-square" alt="Latest Release"></a>
+  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.1.1-blueviolet.svg?style=flat-square" alt="Latest Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Android-success.svg?style=flat-square" alt="Platforms">
 </p>
@@ -18,6 +18,16 @@
 ---
 
 ## Key Features
+
+- **Searchable Bollywood & Global Music Catalog System (Open-Source Datasets)**:
+  - Integrated music catalog synthesized from open-source datasets:
+    - [devensinghbhagtani/Bollywood-Songs-Dataset](https://github.com/devensinghbhagtani/Bollywood-Songs-Dataset)
+    - [MrAsacker/bollywood-songs-metadata](https://github.com/MrAsacker/bollywood-songs-metadata)
+    - [MusicMoveArr/Datasets](https://github.com/MusicMoveArr/Datasets)
+  - Dedicated **Song Database**, **Artist Database**, and **Album Database** converted into unified app-friendly models.
+  - **Trending Section**: Popularity-ranked tracks calculated with weighted playcount metrics.
+  - **Recently Added**: Chronologically indexed releases showcasing modern hits and classic remasters.
+  - **Recommendations Foundation**: Content-based similarity engine matching artists, albums, genres, and release eras ($\pm 3$ years) with personalized user taste profiling.
 
 - **Decoupled Multi-Source Music Architecture (Metrolist/InnerTubeX Inspired)**:
   - Unified abstract `MusicSource` provider layer cleanly decoupling audio playback from data provenance.
@@ -86,13 +96,13 @@ Get the latest verified production release from [GitHub Releases](https://github
 
 ---
 
-## Release Downloads Matrix (v1.1.0)
+## Release Downloads Matrix (v1.1.1)
 
 | Target Platform | Asset Filename | Package Type | Description |
 | :--- | :--- | :--- | :--- |
-| **Windows Desktop** | [CinematicMusicPlayerSetup.exe](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.1.0/CinematicMusicPlayerSetup.exe) | Self-Contained Installer | Complete Windows installer wizard with Start Menu and Desktop shortcuts. |
-| **Windows Desktop** | [CinematicMusicPlayer-Windows.zip](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.1.0/CinematicMusicPlayer-Windows.zip) | Portable Archive | Standalone portable folder with executable, DLLs, and shaders. |
-| **Android Mobile** | [CinematicMusicPlayer.apk](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.1.0/CinematicMusicPlayer.apk) | Signed Release APK | Direct installable APK targeting Android 6.0 through Android 14+. |
+| **Windows Desktop** | [CinematicMusicPlayerSetup.exe](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.1.1/CinematicMusicPlayerSetup.exe) | Self-Contained Installer | Complete Windows installer wizard with Start Menu and Desktop shortcuts. |
+| **Windows Desktop** | [CinematicMusicPlayer-Windows.zip](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.1.1/CinematicMusicPlayer-Windows.zip) | Portable Archive | Standalone portable folder with executable, DLLs, and shaders. |
+| **Android Mobile** | [CinematicMusicPlayer.apk](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.1.1/CinematicMusicPlayer.apk) | Signed Release APK | Direct installable APK targeting Android 6.0 through Android 14+. |
 
 ---
 

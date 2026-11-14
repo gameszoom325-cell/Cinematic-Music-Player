@@ -6,6 +6,7 @@ import '../../../core/database/models/cloud_song_model.dart';
 import '../../../core/database/models/cloud_artist_model.dart';
 import '../../../core/database/models/cloud_album_model.dart';
 import '../../../core/database/database_service.dart';
+import '../../../core/catalog/catalog_database_service.dart';
 import '../../player/providers/player_provider.dart';
 import '../../library/presentation/music_search_screen.dart';
 import 'admin_upload_screen.dart';
@@ -72,13 +73,123 @@ class _CloudLibraryScreenState extends ConsumerState<CloudLibraryScreen> {
         albumsFuture,
       ]);
 
+      // Integrate synthesized open-source Bollywood & Global Catalog
+      final catalogDb = CatalogDatabaseService.instance;
+      final catalogSongs = catalogDb.getAllSongs().map((s) => CloudSongModel(
+        id: s.id,
+        title: s.title,
+        artist: s.artist,
+        album: s.album,
+        coverImage: s.artwork,
+        genre: s.genre,
+        duration: s.durationMs ~/ 1000,
+        audioUrl: s.audioUrl ?? "https://ia800504.us.archive.org/33/items/Bensound_AcousticBreeze/bensound-acousticbreeze.mp3",
+        playCount: s.playCount,
+        createdAt: s.dateAdded,
+      )).toList();
+
+      final catalogTrending = catalogDb.getTrendingSongs().map((s) => CloudSongModel(
+        id: s.id,
+        title: s.title,
+        artist: s.artist,
+        album: s.album,
+        coverImage: s.artwork,
+        genre: s.genre,
+        duration: s.durationMs ~/ 1000,
+        audioUrl: s.audioUrl ?? "https://ia800504.us.archive.org/33/items/Bensound_AcousticBreeze/bensound-acousticbreeze.mp3",
+        playCount: s.playCount,
+        createdAt: s.dateAdded,
+      )).toList();
+
+      final catalogRecent = catalogDb.getRecentlyAddedSongs().map((s) => CloudSongModel(
+        id: s.id,
+        title: s.title,
+        artist: s.artist,
+        album: s.album,
+        coverImage: s.artwork,
+        genre: s.genre,
+        duration: s.durationMs ~/ 1000,
+        audioUrl: s.audioUrl ?? "https://ia800504.us.archive.org/33/items/Bensound_AcousticBreeze/bensound-acousticbreeze.mp3",
+        playCount: s.playCount,
+        createdAt: s.dateAdded,
+      )).toList();
+
+      final catalogArtists = catalogDb.getAllArtists().map((a) => CloudArtistModel(
+        id: 'artist_${a.name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '_')}',
+        name: a.name,
+        image: a.image,
+        biography: a.genres.join(', '),
+        songCount: a.songCount,
+      )).toList();
+
+      final catalogAlbums = catalogDb.getAllAlbums().map((al) => CloudAlbumModel(
+        id: 'album_${al.title.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '_')}',
+        title: al.title,
+        artwork: al.cover,
+        artist: al.artist,
+        releaseInfo: al.year,
+        songCount: al.songCount,
+      )).toList();
+
+      final rawSongs = results[0] as List<CloudSongModel>;
+      final rawTrending = results[1] as List<CloudSongModel>;
+      final rawRecent = results[2] as List<CloudSongModel>;
+      final rawArtists = results[3] as List<CloudArtistModel>;
+      final rawAlbums = results[4] as List<CloudAlbumModel>;
+
+      // Deduplicate songs by ID
+      final Set<String> seenSongIds = {};
+      final List<CloudSongModel> mergedSongs = [];
+      for (final s in [...rawSongs, ...catalogSongs]) {
+        if (!seenSongIds.contains(s.id)) {
+          seenSongIds.add(s.id);
+          mergedSongs.add(s);
+        }
+      }
+
+      final Set<String> seenTrendingIds = {};
+      final List<CloudSongModel> mergedTrending = [];
+      for (final s in [...rawTrending, ...catalogTrending]) {
+        if (!seenTrendingIds.contains(s.id)) {
+          seenTrendingIds.add(s.id);
+          mergedTrending.add(s);
+        }
+      }
+
+      final Set<String> seenRecentIds = {};
+      final List<CloudSongModel> mergedRecent = [];
+      for (final s in [...rawRecent, ...catalogRecent]) {
+        if (!seenRecentIds.contains(s.id)) {
+          seenRecentIds.add(s.id);
+          mergedRecent.add(s);
+        }
+      }
+
+      final Set<String> seenArtistNames = {};
+      final List<CloudArtistModel> mergedArtists = [];
+      for (final a in [...rawArtists, ...catalogArtists]) {
+        if (!seenArtistNames.contains(a.name.toLowerCase())) {
+          seenArtistNames.add(a.name.toLowerCase());
+          mergedArtists.add(a);
+        }
+      }
+
+      final Set<String> seenAlbumTitles = {};
+      final List<CloudAlbumModel> mergedAlbums = [];
+      for (final al in [...rawAlbums, ...catalogAlbums]) {
+        if (!seenAlbumTitles.contains(al.title.toLowerCase())) {
+          seenAlbumTitles.add(al.title.toLowerCase());
+          mergedAlbums.add(al);
+        }
+      }
+
       if (mounted) {
         setState(() {
-          _allSongs = results[0] as List<CloudSongModel>;
-          _trendingSongs = results[1] as List<CloudSongModel>;
-          _recentSongs = results[2] as List<CloudSongModel>;
-          _artists = results[3] as List<CloudArtistModel>;
-          _albums = results[4] as List<CloudAlbumModel>;
+          _allSongs = mergedSongs;
+          _trendingSongs = mergedTrending;
+          _recentSongs = mergedRecent;
+          _artists = mergedArtists;
+          _albums = mergedAlbums;
           _isLoading = false;
         });
       }

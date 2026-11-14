@@ -195,6 +195,9 @@ class DatabaseService {
     return _songs.values.where((s) => s.isFavorite && s.isLocalFileAvailable).toList();
   }
 
+  List<String> getFavoriteSongIds() => getFavorites().map((s) => s.id).toList();
+  List<String> getHistorySongIds() => getRecentlyPlayedSongs().map((s) => s.id).toList();
+
   bool isFavorite(String songId) => _songs[songId]?.isFavorite ?? false;
 
   List<AlbumSummary> getAllAlbums() {

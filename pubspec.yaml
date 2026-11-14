@@ -1,0 +1,56 @@
+name: cinematic_music_player
+description: "A premium cross-platform cinematic music player built with Flutter for Android and Windows."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Architecture & State Management
+  flutter_riverpod: ^2.5.1
+
+  # Audio Playback & System Background Service
+  just_audio: ^0.9.36
+  just_audio_windows: ^0.2.2
+  audio_service: ^0.18.12
+  audio_session: ^0.1.18
+
+  # File, Storage & Hardware Permissions
+  file_picker: ^8.0.0
+  permission_handler: ^11.3.1
+  path: ^1.9.0
+  path_provider: ^2.1.2
+  crypto: ^3.0.3
+  shared_preferences: ^2.2.2
+  http: ^1.2.1
+
+  # UI, Icons, Glassmorphism & Animations
+  cupertino_icons: ^1.0.6
+  palette_generator: ^0.3.3+3
+
+  # Windows Desktop Integration & External Launchers
+  window_manager: ^0.3.8
+  url_launcher: ^6.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Shaders used for real-time GPU visualizers
+  shaders:
+    - shaders/orb_visualizer.frag
+    - shaders/aurora_mesh.frag
+
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/lyrics/

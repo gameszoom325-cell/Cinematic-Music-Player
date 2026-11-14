@@ -1,0 +1,16 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    avoid_print: ignore
+    prefer_const_constructors: info
+    prefer_const_literals_to_create_immutables: info
+
+linter:
+  rules:
+    prefer_single_quotes: false
+    always_declare_return_types: true
+    avoid_empty_else: true
+    cancel_subscriptions: true
+    close_sinks: true
+    unnecessary_null_aware_assignments: true

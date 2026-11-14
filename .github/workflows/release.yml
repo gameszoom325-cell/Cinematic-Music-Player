@@ -1,0 +1,139 @@
+name: Production Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version_tag:
+        description: 'Release Tag (e.g. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build_android:
+    name: Build Android Release APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Release APK
+        run: flutter build apk --release
+
+      - name: Prepare Artifact
+        id: prep
+        run: |
+          VERSION="${GITHUB_REF_NAME:-${{ inputs.version_tag }}}"
+          mkdir -p dist/android
+          cp build/app/outputs/flutter-apk/app-release.apk dist/android/CinematicMusicPlayer-${VERSION}.apk
+          echo "tag=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Upload Android Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-apk
+          path: dist/android/*.apk
+
+  build_windows:
+    name: Build Windows Desktop Release
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Enable Windows Desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Windows Executable
+        run: flutter build windows --release
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Compile Inno Setup Installer
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" windows/installer/cinematic_music_player.iss
+
+      - name: Package Portable Zip
+        shell: pwsh
+        run: |
+          $VERSION = if ($env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME } else { "${{ inputs.version_tag }}" }
+          $ReleaseDir = "build/windows/x64/runner/Release"
+          $ZipPath = "dist/windows/CinematicMusicPlayer-${VERSION}-Windows-x64.zip"
+          if (-not (Test-Path "dist/windows")) { New-Item -ItemType Directory -Path "dist/windows" -Force }
+          Compress-Archive -Path "$ReleaseDir/*" -DestinationPath $ZipPath -Force
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-release-artifacts
+          path: dist/windows/*
+
+  publish_release:
+    name: Publish GitHub Release
+    needs: [build_android, build_windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release_assets
+
+      - name: Flatten Asset Directory
+        run: |
+          mkdir -p final_assets
+          find release_assets -type f -exec cp {} final_assets/ \;
+          ls -la final_assets/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name || inputs.version_tag }}
+          name: Cinematic Music Player ${{ github.ref_name || inputs.version_tag }}
+          body: |
+            ## Cinematic Music Player Release
+            
+            ### Artifacts Included
+            - **Android APK**: `CinematicMusicPlayer-*.apk` (Install directly on Android mobile devices)
+            - **Windows Installer**: `CinematicMusicPlayer-Setup-*.exe` (Standard Windows installation wizard)
+            - **Windows Portable**: `CinematicMusicPlayer-*-Windows-x64.zip` (Portable extracted build)
+            
+            ### Verification
+            Sha256 checksums and release documentation are tracked in the repository.
+          files: final_assets/*
+          draft: false
+          prerelease: false

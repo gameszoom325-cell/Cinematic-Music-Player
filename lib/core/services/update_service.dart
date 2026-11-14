@@ -1,0 +1,353 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
+import '../theme/cinematic_colors.dart';
+import '../theme/glassmorphism.dart';
+
+/// Semantic version specification and comparison utilities
+class AppVersion {
+  static const String current = "1.0.0";
+  static const int buildNumber = 1;
+  static const String releaseStage = "Release";
+
+  /// Compares two semver strings (e.g. "1.0.0" and "1.1.0")
+  /// Returns > 0 if v1 > v2, < 0 if v1 < v2, and 0 if equal.
+  static int compare(String v1, String v2) {
+    final clean1 = _clean(v1);
+    final clean2 = _clean(v2);
+
+    final parts1 = clean1.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+    final parts2 = clean2.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+
+    while (parts1.length < 3) {
+      parts1.add(0);
+    }
+    while (parts2.length < 3) {
+      parts2.add(0);
+    }
+
+    for (int i = 0; i < 3; i++) {
+      if (parts1[i] > parts2[i]) return 1;
+      if (parts1[i] < parts2[i]) return -1;
+    }
+    return 0;
+  }
+
+  static String _clean(String ver) {
+    var v = ver.trim();
+    if (v.startsWith('v') || v.startsWith('V')) {
+      v = v.substring(1);
+    }
+    final plusIdx = v.indexOf('+');
+    if (plusIdx != -1) {
+      v = v.substring(0, plusIdx);
+    }
+    return v;
+  }
+}
+
+/// Metadata describing an available update
+class UpdateInfo {
+  final String currentVersion;
+  final String latestVersion;
+  final String releaseName;
+  final String releaseNotes;
+  final String htmlUrl;
+  final String? directDownloadUrl;
+  final DateTime publishedAt;
+  final bool hasUpdate;
+
+  const UpdateInfo({
+    required this.currentVersion,
+    required this.latestVersion,
+    required this.releaseName,
+    required this.releaseNotes,
+    required this.htmlUrl,
+    this.directDownloadUrl,
+    required this.publishedAt,
+    required this.hasUpdate,
+  });
+}
+
+/// In-app GitHub release update service
+class UpdateService {
+  static String githubRepo = "CinematicAudioWorks/cinematic_music_player";
+
+  /// Checks GitHub releases API for newer version
+  static Future<UpdateInfo?> checkForUpdates() async {
+    try {
+      final uri = Uri.parse("https://api.github.com/repos/$githubRepo/releases/latest");
+      final response = await http.get(
+        uri,
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'CinematicMusicPlayer-App',
+        },
+      ).timeout(const Duration(seconds: 6));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final rawTag = data['tag_name'] as String? ?? '1.0.0';
+        final releaseName = data['name'] as String? ?? rawTag;
+        final releaseNotes = data['body'] as String? ?? 'Bug fixes and performance improvements.';
+        final htmlUrl = data['html_url'] as String? ?? 'https://github.com/$githubRepo/releases';
+        final publishedStr = data['published_at'] as String? ?? '';
+        final publishedAt = DateTime.tryParse(publishedStr) ?? DateTime.now();
+
+        final hasNewer = AppVersion.compare(rawTag, AppVersion.current) > 0;
+
+        // Resolve platform specific download asset
+        String? downloadUrl;
+        final assets = (data['assets'] as List<dynamic>?) ?? [];
+        if (Platform.isAndroid) {
+          final apkAsset = assets.firstWhere(
+            (a) => (a['name'] as String? ?? '').endsWith('.apk'),
+            orElse: () => null,
+          );
+          if (apkAsset != null) {
+            downloadUrl = apkAsset['browser_download_url'] as String?;
+          }
+        } else if (Platform.isWindows) {
+          final exeAsset = assets.firstWhere(
+            (a) => (a['name'] as String? ?? '').endsWith('.exe'),
+            orElse: () => assets.firstWhere(
+              (a) => (a['name'] as String? ?? '').endsWith('.zip'),
+              orElse: () => null,
+            ),
+          );
+          if (exeAsset != null) {
+            downloadUrl = exeAsset['browser_download_url'] as String?;
+          }
+        }
+
+        return UpdateInfo(
+          currentVersion: AppVersion.current,
+          latestVersion: AppVersion._clean(rawTag),
+          releaseName: releaseName,
+          releaseNotes: releaseNotes,
+          htmlUrl: htmlUrl,
+          directDownloadUrl: downloadUrl,
+          publishedAt: publishedAt,
+          hasUpdate: hasNewer,
+        );
+      }
+    } catch (e) {
+      debugPrint("Update check fallback: $e");
+    }
+    return null;
+  }
+
+  /// Check and prompt update dialog if newer version is available
+  static Future<void> checkAndShowDialog(BuildContext context, {bool isManual = false}) async {
+    final info = await checkForUpdates();
+
+    if (!context.mounted) return;
+
+    if (info != null && info.hasUpdate) {
+      showDialog(
+        context: context,
+        barrierDismissible: true,
+        builder: (_) => _UpdateDialog(info: info),
+      );
+    } else if (isManual) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("You are using the latest version (${AppVersion.current})"),
+          backgroundColor: CinematicColors.electricViolet,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  /// Launch download URL in external browser
+  static Future<void> openDownload(String url) async {
+    final uri = Uri.parse(url);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      debugPrint("Could not launch update URL: $e");
+    }
+  }
+}
+
+class _UpdateDialog extends StatelessWidget {
+  final UpdateInfo info;
+
+  const _UpdateDialog({required this.info});
+
+  @override
+  Widget build(BuildContext context) {
+    final targetUrl = info.directDownloadUrl ?? info.htmlUrl;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: CinematicGlassCard(
+          padding: const EdgeInsets.all(24),
+          borderRadius: 24,
+          borderColor: CinematicColors.electricViolet.withOpacity(0.4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [CinematicColors.electricViolet, CinematicColors.deepPlum],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: CinematicColors.electricViolet.withOpacity(0.35),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Text("🚀", style: TextStyle(fontSize: 22)),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Update Available",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          "A new version of Cinematic Music Player is ready.",
+                          style: TextStyle(color: Colors.white54, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Version Badges
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.04),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("INSTALLED", style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 2),
+                        Text(
+                          "v${info.currentVersion}",
+                          style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const Icon(Icons.arrow_forward_rounded, color: CinematicColors.electricViolet, size: 20),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text("LATEST", style: TextStyle(color: CinematicColors.neonCyan, fontSize: 10, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 2),
+                        Text(
+                          "v${info.latestVersion}",
+                          style: const TextStyle(color: CinematicColors.neonCyan, fontSize: 15, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Release notes
+              const Text(
+                "WHAT'S NEW",
+                style: TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                constraints: const BoxConstraints(maxHeight: 140),
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.02),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: SingleChildScrollView(
+                  child: Text(
+                    info.releaseNotes.trim(),
+                    style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 12, height: 1.4),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white70,
+                        side: BorderSide(color: Colors.white.withOpacity(0.18)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("Later", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: CinematicColors.electricViolet,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        UpdateService.openDownload(targetUrl);
+                      },
+                      child: const Text("Update Now", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

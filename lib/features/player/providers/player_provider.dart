@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/audio_engine/audio_engine.dart';
 import '../../../core/audio_engine/waveform_analyzer.dart';
@@ -20,42 +21,64 @@ class PlayerNotifier extends StateNotifier<CinematicPlayerState> {
   }
 
   void _bindEngineStreams() {
-    final engine = AudioEngine.instance;
+    try {
+      final engine = AudioEngine.instance;
 
-    _playingSub = engine.isPlayingStream.listen((playing) {
-      state = state.copyWith(isPlaying: playing);
-      _ref.read(fftEngineProvider).updatePlaybackState(playing);
-    });
+      _playingSub = engine.isPlayingStream.listen(
+        (playing) {
+          state = state.copyWith(isPlaying: playing);
+          try {
+            _ref.read(fftEngineProvider).updatePlaybackState(playing);
+          } catch (_) {}
+        },
+        onError: (e) => debugPrint("isPlayingStream error: $e"),
+      );
 
-    _posSub = engine.positionStream.listen((pos) {
-      state = state.copyWith(position: pos);
-    });
+      _posSub = engine.positionStream.listen(
+        (pos) {
+          state = state.copyWith(position: pos);
+        },
+        onError: (e) => debugPrint("positionStream error: $e"),
+      );
 
-    _durSub = engine.durationStream.listen((dur) {
-      if (dur != null) {
-        state = state.copyWith(duration: dur);
-      }
-    });
+      _durSub = engine.durationStream.listen(
+        (dur) {
+          if (dur != null) {
+            state = state.copyWith(duration: dur);
+          }
+        },
+        onError: (e) => debugPrint("durationStream error: $e"),
+      );
 
-    _indexSub = engine.currentIndexStream.listen((index) async {
-      if (index != null && index >= 0 && index < state.queue.length) {
-        final song = state.queue[index];
-        state = state.copyWith(
-          currentIndex: index,
-          currentSong: song,
-        );
+      _indexSub = engine.currentIndexStream.listen(
+        (index) async {
+          try {
+            if (index != null && index >= 0 && index < state.queue.length) {
+              final song = state.queue[index];
+              state = state.copyWith(
+                currentIndex: index,
+                currentSong: song,
+              );
 
-        // Update dynamic album palette smoothly
-        _ref.read(dynamicPaletteProvider.notifier).updateForSong(song);
+              // Update dynamic album palette smoothly
+              _ref.read(dynamicPaletteProvider.notifier).updateForSong(song);
 
-        // Fetch / Pre-Analyze Waveform for scrub timeline
-        final waveform = await WaveformAnalyzer.analyzeSong(song.id, song.path);
-        state = state.copyWith(currentWaveform: waveform);
+              // Fetch / Pre-Analyze Waveform for scrub timeline
+              final waveform = await WaveformAnalyzer.analyzeSong(song.id, song.path);
+              state = state.copyWith(currentWaveform: waveform);
 
-        // Record play count & history in local database
-        DatabaseService.instance.recordPlay(song.id);
-      }
-    });
+              // Record play count & history in local database
+              DatabaseService.instance.recordPlay(song.id);
+            }
+          } catch (e) {
+            debugPrint("Index stream handling error: $e");
+          }
+        },
+        onError: (e) => debugPrint("currentIndexStream error: $e"),
+      );
+    } catch (e) {
+      debugPrint("PlayerNotifier._bindEngineStreams error: $e");
+    }
   }
 
   Future<void> playTrack(List<SongModel> queue, int index) async {

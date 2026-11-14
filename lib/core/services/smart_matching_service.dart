@@ -47,6 +47,15 @@ class SmartMatchingService {
 
     for (final entry in CuratedCatalogue.allSongs) {
       final normalizedEntryTitle = normalize(entry.title);
+      final normalizedEntryArtist = normalize(entry.artist);
+
+      // Artist + Title compound match
+      if (normalizedTagArtist.isNotEmpty && normalizedEntryArtist.contains(normalizedTagArtist)) {
+        if (normalizedFileName.contains(normalizedEntryTitle) ||
+            normalizedTagTitle.contains(normalizedEntryTitle)) {
+          return entry;
+        }
+      }
 
       // Exact normalized title match
       if (normalizedFileName == normalizedEntryTitle ||

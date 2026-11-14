@@ -194,6 +194,7 @@ class DatabaseService {
 
     return albumMap.entries.map((e) {
       final songs = e.value;
+      if (songs.isEmpty) return null;
       final firstWithArt = songs.firstWhere(
         (s) => s.artworkPath != null,
         orElse: () => songs.first,
@@ -205,7 +206,7 @@ class DatabaseService {
         songCount: songs.length,
         songIds: songs.map((s) => s.id).toList(),
       );
-    }).toList();
+    }).whereType<AlbumSummary>().toList();
   }
 
   List<ArtistSummary> getAllArtists() {
@@ -216,6 +217,7 @@ class DatabaseService {
 
     return artistMap.entries.map((e) {
       final songs = e.value;
+      if (songs.isEmpty) return null;
       final albums = songs.map((s) => s.album).toSet();
       final firstWithArt = songs.firstWhere(
         (s) => s.artworkPath != null,
@@ -227,7 +229,7 @@ class DatabaseService {
         albumCount: albums.length,
         sampleArtworkPath: firstWithArt.artworkPath,
       );
-    }).toList();
+    }).whereType<ArtistSummary>().toList();
   }
 
   Future<void> upsertSongs(List<SongModel> newSongs) async {

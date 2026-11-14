@@ -50,7 +50,6 @@ class CinematicGlassCard extends StatelessWidget {
           child: Container(
             padding: padding,
             decoration: BoxDecoration(
-              color: tintColor.withOpacity(tintOpacity),
               borderRadius: BorderRadius.circular(borderRadius),
               border: Border.all(
                 width: 1.2,
@@ -60,8 +59,8 @@ class CinematicGlassCard extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.white.withOpacity(borderOpacity * 0.9),
-                  Colors.white.withOpacity(borderOpacity * 0.1),
+                  tintColor.withOpacity(tintOpacity.clamp(0.0, 1.0)),
+                  tintColor.withOpacity((tintOpacity * 0.4).clamp(0.0, 1.0)),
                 ],
               ),
             ),

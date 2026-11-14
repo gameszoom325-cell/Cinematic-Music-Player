@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'package:flutter/foundation.dart';
 
 class AudioSpectrumFrame {
   final List<double> bands; // 7 normalized perceptual bands (0.0 to 1.0)

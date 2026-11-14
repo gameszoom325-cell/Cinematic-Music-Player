@@ -5,6 +5,7 @@ import 'package:cinematic_music_player/core/config/supabase_config.dart';
 import 'package:cinematic_music_player/core/services/lyrics_parser.dart';
 import 'package:cinematic_music_player/core/services/update_service.dart';
 import 'package:cinematic_music_player/core/database/models/song_model.dart';
+import 'package:cinematic_music_player/core/services/shader_capability_service.dart';
 
 void main() {
   group('1. UserModel & DeviceModel Schema Tests', () {
@@ -146,6 +147,21 @@ void main() {
       expect(song.bitrate, 320);
       expect(song.isFavorite, true);
       expect(song.durationMs, 225000);
+    });
+  });
+
+  group('7. ShaderCapabilityService Runtime Fallback Tests', () {
+    test('ShaderCapabilityService defaults safely and detects fallback without crashing', () async {
+      final service = ShaderCapabilityService.instance;
+      expect(service, isNotNull);
+      // In headless test environments, checkShaderSupport should execute cleanly and safely default
+      await service.checkShaderSupport();
+      expect(service.hasBeenChecked, isTrue);
+      expect(service.areShadersSupported, isA<bool>());
+
+      // Test manual fallback switch
+      service.forceCanvasFallback();
+      expect(service.areShadersSupported, isFalse);
     });
   });
 }

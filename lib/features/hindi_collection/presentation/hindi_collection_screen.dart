@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/cinematic_colors.dart';
-import '../../../core/theme/glassmorphism.dart';
 import '../../../core/theme/typography.dart';
 import '../../../core/database/database_service.dart';
 import '../../../core/database/curated_catalogue.dart';
@@ -223,7 +222,13 @@ class _HindiCollectionScreenState extends ConsumerState<HindiCollectionScreen> {
 
                       return ListTile(
                         onTap: () => playerNotifier.playTrack(favs, index),
-                        title: Text(song.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        title: Text(
+                          song.title,
+                          style: TextStyle(
+                            color: isCurrent ? CinematicColors.electricViolet : Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         subtitle: Text("${song.artist} • ${song.album}", style: const TextStyle(color: Colors.white54, fontSize: 12)),
                         trailing: Text(_formatDuration(song.durationMs), style: CinematicTypography.timestamp),
                       );

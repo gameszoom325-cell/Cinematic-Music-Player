@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../../../../core/audio_engine/fft_engine.dart';
 import '../../../../core/theme/cinematic_colors.dart';
+import '../../../../core/services/shader_capability_service.dart';
 
 class OrbShaderVisualizer extends StatefulWidget {
   final AudioSpectrumFrame spectrum;
@@ -37,6 +38,11 @@ class _OrbShaderVisualizerState extends State<OrbShaderVisualizer>
   }
 
   Future<void> _loadShader() async {
+    if (!ShaderCapabilityService.instance.areShadersSupported) {
+      if (mounted) setState(() => _shaderLoadFailed = true);
+      return;
+    }
+
     try {
       final program = await ui.FragmentProgram.fromAsset('shaders/orb_visualizer.frag');
       if (mounted) {
@@ -46,6 +52,7 @@ class _OrbShaderVisualizerState extends State<OrbShaderVisualizer>
       }
     } catch (e) {
       debugPrint("FragmentShader load error, using high-performance 3D Canvas fallback: $e");
+      ShaderCapabilityService.instance.forceCanvasFallback();
       if (mounted) {
         setState(() {
           _shaderLoadFailed = true;
@@ -126,31 +133,36 @@ class _OrbShaderPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Pass uniforms to GLSL 460 fragment shader
-    shader.setFloat(0, size.width);
-    shader.setFloat(1, size.height);
-    shader.setFloat(2, time);
-    shader.setFloat(3, bass);
-    shader.setFloat(4, mid);
-    shader.setFloat(5, treble);
+    try {
+      // Pass uniforms to GLSL 460 fragment shader
+      shader.setFloat(0, size.width);
+      shader.setFloat(1, size.height);
+      shader.setFloat(2, time);
+      shader.setFloat(3, bass);
+      shader.setFloat(4, mid);
+      shader.setFloat(5, treble);
 
-    // Primary RGB
-    shader.setFloat(6, primary.red / 255.0);
-    shader.setFloat(7, primary.green / 255.0);
-    shader.setFloat(8, primary.blue / 255.0);
+      // Primary RGB
+      shader.setFloat(6, primary.red / 255.0);
+      shader.setFloat(7, primary.green / 255.0);
+      shader.setFloat(8, primary.blue / 255.0);
 
-    // Secondary RGB
-    shader.setFloat(9, secondary.red / 255.0);
-    shader.setFloat(10, secondary.green / 255.0);
-    shader.setFloat(11, secondary.blue / 255.0);
+      // Secondary RGB
+      shader.setFloat(9, secondary.red / 255.0);
+      shader.setFloat(10, secondary.green / 255.0);
+      shader.setFloat(11, secondary.blue / 255.0);
 
-    // Accent RGB
-    shader.setFloat(12, accent.red / 255.0);
-    shader.setFloat(13, accent.green / 255.0);
-    shader.setFloat(14, accent.blue / 255.0);
+      // Accent RGB
+      shader.setFloat(12, accent.red / 255.0);
+      shader.setFloat(13, accent.green / 255.0);
+      shader.setFloat(14, accent.blue / 255.0);
 
-    final paint = Paint()..shader = shader;
-    canvas.drawRect(Offset.zero & size, paint);
+      final paint = Paint()..shader = shader;
+      canvas.drawRect(Offset.zero & size, paint);
+    } catch (e) {
+      debugPrint("GPU shader execution error: $e");
+      ShaderCapabilityService.instance.forceCanvasFallback();
+    }
   }
 
   @override

@@ -258,81 +258,115 @@ class SyncService {
     DatabaseService db,
     SharedPreferences prefs,
   ) async {
-    final allSongs = db.getAllSongs();
-    final Map<String, String> sigToSongId = {
-      for (final s in allSongs) "${s.title.trim().toLowerCase()}:::${s.artist.trim().toLowerCase()}": s.id
-    };
+    try {
+      final allSongs = db.getAllSongs();
+      final Map<String, String> sigToSongId = {
+        for (final s in allSongs) "${s.title.trim().toLowerCase()}:::${s.artist.trim().toLowerCase()}": s.id
+      };
 
-    // 1. Apply Playlists
-    final List<PlaylistModel> playlistsToApply = [];
-    for (final pMap in payload.playlists) {
-      final rawSongIds = (pMap['songIds'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
-      final rawSigs = (pMap['songSignatures'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
+      // 1. Apply Playlists
+      final List<PlaylistModel> playlistsToApply = [];
+      for (final pMap in payload.playlists) {
+        final rawSongIds = (pMap['songIds'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
+        final rawSigs = (pMap['songSignatures'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [];
 
-      // Map signatures to local song IDs when possible
-      final Set<String> resolvedSongIds = Set.from(rawSongIds.where((id) => db.getSongById(id) != null));
-      for (final sig in rawSigs) {
-        final localId = sigToSongId[sig];
-        if (localId != null) resolvedSongIds.add(localId);
+        // Map signatures to local song IDs when possible
+        final Set<String> resolvedSongIds = Set.from(rawSongIds.where((id) => db.getSongById(id) != null));
+        for (final sig in rawSigs) {
+          final localId = sigToSongId[sig];
+          if (localId != null) resolvedSongIds.add(localId);
+        }
+
+        final playlistId = pMap['id']?.toString() ?? 'pl_${DateTime.now().millisecondsSinceEpoch}';
+        final playlistName = pMap['name']?.toString() ?? 'Playlist';
+        final isSmart = pMap['isSmartPlaylist'] == true || pMap['isSmartPlaylist'] == 1 || pMap['isSmartPlaylist'] == 'true';
+
+        playlistsToApply.add(
+          PlaylistModel(
+            id: playlistId,
+            name: playlistName,
+            description: pMap['description']?.toString() ?? '',
+            songIds: resolvedSongIds.toList(),
+            createdAt: DateTime.tryParse(pMap['createdAt']?.toString() ?? '') ?? DateTime.now(),
+            updatedAt: DateTime.tryParse(pMap['updatedAt']?.toString() ?? '') ?? DateTime.now(),
+            isSmartPlaylist: isSmart,
+          ),
+        );
+      }
+      await db.applyCloudPlaylists(playlistsToApply);
+
+      // 2. Apply Favorites
+      final Set<String> favSignatures = {};
+      for (final f in payload.favorites) {
+        final sig = f['signature']?.toString() ?? '';
+        if (sig.isNotEmpty) favSignatures.add(sig);
+        final id = f['id']?.toString() ?? '';
+        if (id.isNotEmpty) favSignatures.add(id);
+      }
+      await db.applyCloudFavorites(favSignatures);
+
+      // 3. Apply History & Recents
+      final Map<String, int> playCounts = {};
+      payload.listeningHistory.forEach((k, v) {
+        if (v is num) playCounts[k] = v.toInt();
+      });
+
+      final List<String> recentSignatures = payload.recentlyPlayed
+          .map((r) => r['signature']?.toString() ?? r['id']?.toString() ?? '')
+          .where((s) => s.isNotEmpty)
+          .toList();
+
+      await db.applyCloudHistory(playCounts, recentSignatures);
+
+      // 4. Apply Preferences & Settings to SharedPreferences
+      final up = payload.userPreferences;
+      if (up.containsKey('shuffleMode') && up['shuffleMode'] is bool) {
+        await prefs.setBool('cinematic_shuffle_mode', up['shuffleMode'] as bool);
+      }
+      if (up.containsKey('repeatMode') && up['repeatMode'] != null) {
+        await prefs.setString('cinematic_repeat_mode', up['repeatMode'].toString());
+      }
+      if (up.containsKey('volume') && up['volume'] is num) {
+        await prefs.setDouble('cinematic_volume', (up['volume'] as num).toDouble());
       }
 
-      playlistsToApply.add(
-        PlaylistModel(
-          id: pMap['id'] as String,
-          name: pMap['name'] as String,
-          description: pMap['description'] as String? ?? '',
-          songIds: resolvedSongIds.toList(),
-          createdAt: DateTime.tryParse(pMap['createdAt'] as String? ?? '') ?? DateTime.now(),
-          updatedAt: DateTime.tryParse(pMap['updatedAt'] as String? ?? '') ?? DateTime.now(),
-          isSmartPlaylist: pMap['isSmartPlaylist'] as bool? ?? false,
-        ),
-      );
+      final vs = payload.visualizerSettings;
+      if (vs.containsKey('preset') && vs['preset'] != null) {
+        await prefs.setString('cinematic_visualizer_preset', vs['preset'].toString());
+      }
+      if (vs.containsKey('atmosphere') && vs['atmosphere'] != null) {
+        await prefs.setString('cinematic_atmosphere_type', vs['atmosphere'].toString());
+      }
+      if (vs.containsKey('sensitivity') && vs['sensitivity'] is num) {
+        await prefs.setDouble('cinematic_visualizer_sensitivity', (vs['sensitivity'] as num).toDouble());
+      }
+
+      final ts = payload.themeSettings;
+      if (ts.containsKey('accentColor') && ts['accentColor'] is num) {
+        await prefs.setInt('cinematic_accent_color', (ts['accentColor'] as num).toInt());
+      }
+      if (ts.containsKey('glassBlur') && ts['glassBlur'] is num) {
+        await prefs.setDouble('cinematic_glass_blur', (ts['glassBlur'] as num).toDouble());
+      }
+      if (ts.containsKey('glassOpacity') && ts['glassOpacity'] is num) {
+        await prefs.setDouble('cinematic_glass_opacity', (ts['glassOpacity'] as num).toDouble());
+      }
+
+      final lp = payload.lyricsPreferences;
+      if (lp.containsKey('fontSize') && lp['fontSize'] is num) {
+        await prefs.setDouble('cinematic_lyrics_font_size', (lp['fontSize'] as num).toDouble());
+      }
+      if (lp.containsKey('autoScroll') && lp['autoScroll'] is bool) {
+        await prefs.setBool('cinematic_lyrics_auto_scroll', lp['autoScroll'] as bool);
+      }
+      if (lp.containsKey('activeLineBloom') && lp['activeLineBloom'] is bool) {
+        await prefs.setBool('cinematic_lyrics_bloom', lp['activeLineBloom'] as bool);
+      }
+      if (lp.containsKey('tapToSeek') && lp['tapToSeek'] is bool) {
+        await prefs.setBool('cinematic_lyrics_tap_seek', lp['tapToSeek'] as bool);
+      }
+    } catch (e, stack) {
+      debugPrint("Warning: _applyPayloadLocally encountered error (continuing safely): $e\n$stack");
     }
-    await db.applyCloudPlaylists(playlistsToApply);
-
-    // 2. Apply Favorites
-    final Set<String> favSignatures = {};
-    for (final f in payload.favorites) {
-      final sig = f['signature'] as String? ?? '';
-      if (sig.isNotEmpty) favSignatures.add(sig);
-      final id = f['id'] as String? ?? '';
-      if (id.isNotEmpty) favSignatures.add(id);
-    }
-    await db.applyCloudFavorites(favSignatures);
-
-    // 3. Apply History & Recents
-    final Map<String, int> playCounts = {};
-    payload.listeningHistory.forEach((k, v) {
-      if (v is int) playCounts[k] = v;
-    });
-
-    final List<String> recentSignatures = payload.recentlyPlayed
-        .map((r) => r['signature'] as String? ?? r['id'] as String? ?? '')
-        .where((s) => s.isNotEmpty)
-        .toList();
-
-    await db.applyCloudHistory(playCounts, recentSignatures);
-
-    // 4. Apply Preferences & Settings to SharedPreferences
-    final up = payload.userPreferences;
-    if (up.containsKey('shuffleMode')) await prefs.setBool('cinematic_shuffle_mode', up['shuffleMode'] as bool);
-    if (up.containsKey('repeatMode')) await prefs.setString('cinematic_repeat_mode', up['repeatMode'] as String);
-    if (up.containsKey('volume')) await prefs.setDouble('cinematic_volume', (up['volume'] as num).toDouble());
-
-    final vs = payload.visualizerSettings;
-    if (vs.containsKey('preset')) await prefs.setString('cinematic_visualizer_preset', vs['preset'] as String);
-    if (vs.containsKey('atmosphere')) await prefs.setString('cinematic_atmosphere_type', vs['atmosphere'] as String);
-    if (vs.containsKey('sensitivity')) await prefs.setDouble('cinematic_visualizer_sensitivity', (vs['sensitivity'] as num).toDouble());
-
-    final ts = payload.themeSettings;
-    if (ts.containsKey('accentColor')) await prefs.setInt('cinematic_accent_color', ts['accentColor'] as int);
-    if (ts.containsKey('glassBlur')) await prefs.setDouble('cinematic_glass_blur', (ts['glassBlur'] as num).toDouble());
-    if (ts.containsKey('glassOpacity')) await prefs.setDouble('cinematic_glass_opacity', (ts['glassOpacity'] as num).toDouble());
-
-    final lp = payload.lyricsPreferences;
-    if (lp.containsKey('fontSize')) await prefs.setDouble('cinematic_lyrics_font_size', (lp['fontSize'] as num).toDouble());
-    if (lp.containsKey('autoScroll')) await prefs.setBool('cinematic_lyrics_auto_scroll', lp['autoScroll'] as bool);
-    if (lp.containsKey('activeLineBloom')) await prefs.setBool('cinematic_lyrics_bloom', lp['activeLineBloom'] as bool);
-    if (lp.containsKey('tapToSeek')) await prefs.setBool('cinematic_lyrics_tap_seek', lp['tapToSeek'] as bool);
   }
 }

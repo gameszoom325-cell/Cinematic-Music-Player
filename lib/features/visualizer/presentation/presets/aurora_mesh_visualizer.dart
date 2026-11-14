@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../../../../core/audio_engine/fft_engine.dart';
 import '../../../../core/theme/cinematic_colors.dart';
+import '../../../../core/services/shader_capability_service.dart';
 
 class AuroraMeshVisualizer extends StatefulWidget {
   final AudioSpectrumFrame spectrum;
@@ -37,6 +38,11 @@ class _AuroraMeshVisualizerState extends State<AuroraMeshVisualizer>
   }
 
   Future<void> _loadShader() async {
+    if (!ShaderCapabilityService.instance.areShadersSupported) {
+      if (mounted) setState(() => _shaderLoadFailed = true);
+      return;
+    }
+
     try {
       final program = await ui.FragmentProgram.fromAsset('shaders/aurora_mesh.frag');
       if (mounted) {
@@ -46,6 +52,7 @@ class _AuroraMeshVisualizerState extends State<AuroraMeshVisualizer>
       }
     } catch (e) {
       debugPrint("Aurora FragmentShader load fallback: $e");
+      ShaderCapabilityService.instance.forceCanvasFallback();
       if (mounted) {
         setState(() {
           _shaderLoadFailed = true;
@@ -114,34 +121,39 @@ class _AuroraShaderPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    shader.setFloat(0, size.width);
-    shader.setFloat(1, size.height);
-    shader.setFloat(2, time);
-    shader.setFloat(3, energy);
-    shader.setFloat(4, bass);
+    try {
+      shader.setFloat(0, size.width);
+      shader.setFloat(1, size.height);
+      shader.setFloat(2, time);
+      shader.setFloat(3, energy);
+      shader.setFloat(4, bass);
 
-    // Color 1: Vibrant
-    shader.setFloat(5, palette.vibrant.red / 255.0);
-    shader.setFloat(6, palette.vibrant.green / 255.0);
-    shader.setFloat(7, palette.vibrant.blue / 255.0);
+      // Color 1: Vibrant
+      shader.setFloat(5, palette.vibrant.red / 255.0);
+      shader.setFloat(6, palette.vibrant.green / 255.0);
+      shader.setFloat(7, palette.vibrant.blue / 255.0);
 
-    // Color 2: Muted
-    shader.setFloat(8, palette.muted.red / 255.0);
-    shader.setFloat(9, palette.muted.green / 255.0);
-    shader.setFloat(10, palette.muted.blue / 255.0);
+      // Color 2: Muted
+      shader.setFloat(8, palette.muted.red / 255.0);
+      shader.setFloat(9, palette.muted.green / 255.0);
+      shader.setFloat(10, palette.muted.blue / 255.0);
 
-    // Color 3: Light Vibrant
-    shader.setFloat(11, palette.lightVibrant.red / 255.0);
-    shader.setFloat(12, palette.lightVibrant.green / 255.0);
-    shader.setFloat(13, palette.lightVibrant.blue / 255.0);
+      // Color 3: Light Vibrant
+      shader.setFloat(11, palette.lightVibrant.red / 255.0);
+      shader.setFloat(12, palette.lightVibrant.green / 255.0);
+      shader.setFloat(13, palette.lightVibrant.blue / 255.0);
 
-    // Color BG: Dark Muted
-    shader.setFloat(14, palette.darkMuted.red / 255.0);
-    shader.setFloat(15, palette.darkMuted.green / 255.0);
-    shader.setFloat(16, palette.darkMuted.blue / 255.0);
+      // Color BG: Dark Muted
+      shader.setFloat(14, palette.darkMuted.red / 255.0);
+      shader.setFloat(15, palette.darkMuted.green / 255.0);
+      shader.setFloat(16, palette.darkMuted.blue / 255.0);
 
-    final paint = Paint()..shader = shader;
-    canvas.drawRect(Offset.zero & size, paint);
+      final paint = Paint()..shader = shader;
+      canvas.drawRect(Offset.zero & size, paint);
+    } catch (e) {
+      debugPrint("Aurora GPU shader execution error: $e");
+      ShaderCapabilityService.instance.forceCanvasFallback();
+    }
   }
 
   @override

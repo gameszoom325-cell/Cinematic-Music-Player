@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme/cinematic_colors.dart';
 import '../core/theme/glassmorphism.dart';
 import '../core/theme/typography.dart';
-import 'auth_service.dart';
+import '../features/auth/providers/auth_provider.dart';
 import 'login_screen.dart';
 import '../sync/sync_manager.dart';
 import '../app_shell.dart';
 
-class RegisterScreen extends StatefulWidget {
+class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -58,15 +59,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      await AuthService.instance.register(
+      await ref.read(authProvider.notifier).register(
         username: _usernameController.text,
         email: _emailController.text,
         password: _passwordController.text,
         profileImage: 'avatar_preset_$_selectedAvatarIndex',
       );
 
-      // Trigger initial cloud sync
-      SyncManager.instance.syncAll();
+      // Trigger initial cloud sync in background without blocking screen transition
+      try {
+        SyncManager.instance.syncAll();
+      } catch (_) {}
 
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(

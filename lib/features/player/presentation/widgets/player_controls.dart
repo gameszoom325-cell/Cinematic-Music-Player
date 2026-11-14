@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/cinematic_colors.dart';
 import '../../../../core/theme/glassmorphism.dart';
 
 class PlayerControls extends StatelessWidget {

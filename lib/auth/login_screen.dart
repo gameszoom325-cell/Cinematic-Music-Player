@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme/cinematic_colors.dart';
 import '../core/theme/glassmorphism.dart';
 import '../core/theme/typography.dart';
-import 'auth_service.dart';
+import '../features/auth/providers/auth_provider.dart';
 import 'register_screen.dart';
 import '../sync/sync_manager.dart';
 import '../app_shell.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -40,14 +41,16 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      await AuthService.instance.login(
-        email: _emailController.text,
-        password: _passwordController.text,
+      await ref.read(authProvider.notifier).login(
+        _emailController.text,
+        _passwordController.text,
         rememberMe: _rememberMe,
       );
 
-      // Trigger cloud sync to pull down all playlists, favorites, and history
-      SyncManager.instance.syncAll();
+      // Trigger cloud sync in background without blocking screen transition
+      try {
+        SyncManager.instance.syncAll();
+      } catch (_) {}
 
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(

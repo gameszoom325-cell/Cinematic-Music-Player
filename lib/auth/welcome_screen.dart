@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme/cinematic_colors.dart';
 import '../core/theme/glassmorphism.dart';
-import '../core/theme/typography.dart';
+import '../features/auth/providers/auth_provider.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
-import 'auth_service.dart';
 import '../app_shell.dart';
 
-class WelcomeScreen extends StatefulWidget {
+class WelcomeScreen extends ConsumerStatefulWidget {
   const WelcomeScreen({super.key});
 
   @override
-  State<WelcomeScreen> createState() => _WelcomeScreenState();
+  ConsumerState<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProviderStateMixin {
+class _WelcomeScreenState extends ConsumerState<WelcomeScreen> with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;
   bool _isLoadingGuest = false;
@@ -42,7 +42,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
   Future<void> _handleContinueWithoutAccount() async {
     setState(() => _isLoadingGuest = true);
     try {
-      await AuthService.instance.continueWithoutAccount();
+      await ref.read(authProvider.notifier).continueWithoutAccount();
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const AppShell()),

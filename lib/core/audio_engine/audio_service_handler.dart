@@ -49,7 +49,7 @@ class CinematicAudioHandler extends BaseAudioHandler with QueueHandler, SeekHand
             ProcessingState.buffering: AudioProcessingState.buffering,
             ProcessingState.ready: AudioProcessingState.ready,
             ProcessingState.completed: AudioProcessingState.completed,
-          }[processingState]!,
+          }[processingState] ?? AudioProcessingState.idle,
           playing: playing,
           updatePosition: _player.position,
           bufferedPosition: _player.bufferedPosition,

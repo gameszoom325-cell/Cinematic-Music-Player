@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.1] - 2026-11-14
 
+### Added
+- **Self-Contained Windows Distribution**:
+  - Compiled production Windows installer `CinematicMusicPlayerSetup.exe` via Inno Setup 6.
+  - Bundled standalone portable package `CinematicMusicPlayer-Windows.zip` containing all runtime DLLs, Flutter Impeller shaders, and assets.
+  - Zero developer dependencies required for end users (no Flutter SDK, VS, C++, or Android Studio required).
+- **GitHub Release Update Checker**:
+  - Live version inspection via GitHub Releases API.
+  - In-app notification prompt: `"New version available"` with `"Download Update"` and `"Later"` buttons.
+
 ### Fixed
 - **Android Music Playback Engine**:
   - Resolved issue where tapping songs in the library or home screen failed to start audio playback.

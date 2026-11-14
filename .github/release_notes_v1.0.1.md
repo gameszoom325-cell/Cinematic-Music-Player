@@ -1,6 +1,23 @@
 # 🎬 Cinematic Music Player v1.0.1 Release
 
-Welcome to **Cinematic Music Player v1.0.1**! This is a stability and bug-fix release addressing Android music library scanning, file attachment, audio playback initialization, and robust player error handling.
+Welcome to **Cinematic Music Player v1.0.1**! This release brings full standalone Windows distribution (self-contained installer and portable package with zero developer dependencies), resolved Android music playback, library integrity guards, and in-app GitHub update checker integration.
+
+---
+
+## 💻 Windows Desktop Installation (Standalone Production Build)
+
+End users do **NOT** need Flutter SDK, Visual Studio, C++ tools, or any developer dependencies. Simply download and install!
+
+### 📥 Direct Downloads
+* **[Download CinematicMusicPlayerSetup.exe](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.0.1/CinematicMusicPlayerSetup.exe)** (35.5 MB)
+  * **SHA-256 Checksum:** `5A25561C756B1C754023936498430971AC0DED821A4D216B6965F2AE658F3DBF`
+* **[Download CinematicMusicPlayer-Windows.zip](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.0.1/CinematicMusicPlayer-Windows.zip)** (46.5 MB, Portable Standalone)
+  * **SHA-256 Checksum:** `24C440142F2D88B2A31DAA8DC63FCA0611C228EC87A220BF2BAB09903EC9329D`
+
+### 🖥️ Windows Quick Install:
+1. Download **`CinematicMusicPlayerSetup.exe`** from GitHub Releases.
+2. Run installer.
+3. Open app.
 
 ---
 
@@ -11,42 +28,47 @@ Welcome to **Cinematic Music Player v1.0.1**! This is a stability and bug-fix re
 * **SHA-256 Checksum:** `4394A786CE4766279F2D71CFC70E1C3DC085035E7E3255362DD73AC6056DAA18`
 * **Package Version:** `1.0.1` (Build `2`)
 
-### 📲 Quick Install Guide for Android:
-1. Tap the download link above to download **`CinematicMusicPlayer.apk`** to your phone.
+### 📲 Android Quick Install:
+1. Download **`CinematicMusicPlayer.apk`** to your phone.
 2. Tap the downloaded file in your browser or Files app.
 3. If Android prompts **"For your security, your phone is not allowed to install unknown apps from this source"**:
    - Tap **Settings**
    - Toggle **Allow from this source** to **ON**
    - Tap **Back** and select **Install**
-4. Open **Cinematic Music Player**.
-5. Grant audio and storage permissions to scan your music folders or import your personal MP3 collection!
+4. Open app.
 
 ---
 
-## 🛠️ What's Fixed & Improved in v1.0.1
+## 🛠️ What's New & Fixed in v1.0.1
 
-### 🎵 1. Fixed Android Music Playback Engine
+### 🚀 1. Windows Standalone Distribution & In-App Update Checker
+* **Self-Contained Installer (`CinematicMusicPlayerSetup.exe`)**: Built with Inno Setup 6. Includes all compiled native AOT libraries (`app.so`), Flutter Windows engine DLLs, shaders, ICU locale definitions, and assets. End users double-click and play.
+* **In-App GitHub Update Checker**: Connects to the GitHub Releases API. When a newer version is detected, users are prompted with:
+  * Title: `"New version available"`
+  * Actions: `[Download Update]` (launches direct download) and `[Later]` (dismisses dialog).
+
+### 🎵 2. Fixed Android Music Playback Engine
 * **Tapping Songs Starts Playback Immediately**: Fixed playlist queue setup and URI resolution in `CinematicAudioHandler` so tapping any song in Library, Home, Hindi Collection, or Playlists instantly begins audio playback.
 * **Content and File URI Support (`parseAudioUri`)**: Handles both native `file://` filesystem paths and Android SAF `content://` URIs seamlessly, preventing ExoPlayer source failures.
 * **Active Controls & Progress**: Play, pause, seek, next track, previous track, shuffle, and repeat modes are wired and synchronized with the background audio service.
 
-### 📁 2. Fixed Songs Appearing Without Audio Files (Ghost Track Purge)
+### 📁 3. Removed Fake Songs & Ghost Track Purge
 * **Playable Library Verification**: Only songs with a verified, accessible local audio file (`song.isLocalFileAvailable`) are added to the playable library.
 * **Friendly Unavailable Song Guard**: If an audio file was moved or deleted from the device, the app alerts the user:
   > *"Audio file unavailable. Please import this song again."*
   instead of freezing or crashing.
 * **Zero Fake Songs**: Removed mock entries from database initialization; pre-seeded catalogue entries serve strictly as lyrics templates ready to link with real local MP3 files.
 
-### 📥 3. Improved Music Import Reliability
+### 📥 4. Improved Music Import Reliability
 * **Modern & Legacy Android Permissions**: Robust handling for both Android 13+ (`Permission.audio`) and Android 10-12 (`Permission.storage` + `requestLegacyExternalStorage="true"`).
 * **Native Audio File Picker**: Configured `FileType.audio` in `FilePicker` so the Android document picker displays all audio files (`audio/*`) without graying them out.
 * **Persistent Import Storage**: When importing via file picker, temporary cache paths are permanently copied into the app's private documents directory so tracks remain available across device restarts and cache clearing.
 * **Expanded Scan Directories**: Auto-detects tracks across `/storage/emulated/0/Music`, `/storage/emulated/0/Download`, `/storage/emulated/0/Downloads`, and external SD cards.
 
-### 🛡️ 4. Improved Player Error Handling & Android Stability
+### 🛡️ 5. Bundled High-Fidelity Demo Audio & Player Error Handling
+* **Bundled High-Fidelity Demo Track**: Bundles a real, authentic studio track (`Bairan (Demo)`) and three synthesized 44.1 kHz 16-bit PCM WAV tracks with valid waveforms and synchronized LRC lyrics.
 * **No More Silent Failures**: Added `errorMessage` tracking in Riverpod `playerProvider` and automatic floating error SnackBars in `AppShell` with full stack logging for troubleshooting.
 * **ExoPlayer Error Listeners**: Intercepts playback errors in `playbackEventStream` and safely recovers playback state.
-* **Bundled High-Fidelity Demo Track**: Bundles a real, authentic studio track (`Bairan (Demo)`) and three synthesized 44.1 kHz 16-bit PCM WAV tracks with valid waveforms and synchronized LRC lyrics.
 
 ---
 

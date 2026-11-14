@@ -89,6 +89,14 @@ RECT Win32Window::GetClientArea() const {
   return frame;
 }
 
+void Win32Window::SetChildContent(HWND content) {
+  child_content_ = content;
+  SetParent(content, window_handle_);
+  RECT frame = GetClientArea();
+  MoveWindow(content, 0, 0, frame.right - frame.left, frame.bottom - frame.top, TRUE);
+  SetFocus(content);
+}
+
 LRESULT CALLBACK Win32Window::WndProc(HWND const window,
                                       UINT const message,
                                       WPARAM const wparam,
@@ -111,6 +119,13 @@ LRESULT Win32Window::MessageHandler(HWND hwnd,
                                     WPARAM const wparam,
                                     LPARAM const lparam) noexcept {
   switch (message) {
+    case WM_SIZE: {
+      RECT rect = GetClientArea();
+      if (child_content_ != nullptr) {
+        MoveWindow(child_content_, 0, 0, rect.right - rect.left, rect.bottom - rect.top, TRUE);
+      }
+      return 0;
+    }
     case WM_DESTROY:
       window_handle_ = nullptr;
       Destroy();

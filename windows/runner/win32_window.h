@@ -29,6 +29,7 @@ class Win32Window {
   HWND GetHandle() const;
   void SetQuitOnClose(bool quit_on_close);
   RECT GetClientArea() const;
+  void SetChildContent(HWND content);
 
  protected:
   virtual LRESULT MessageHandler(HWND window,
@@ -48,5 +49,6 @@ class Win32Window {
                                   LPARAM lparam) noexcept;
 
   bool quit_on_close_ = false;
+  HWND child_content_ = nullptr;
   HWND window_handle_ = nullptr;
 };

@@ -9,8 +9,8 @@ import '../theme/glassmorphism.dart';
 
 /// Semantic version specification and comparison utilities
 class AppVersion {
-  static const String current = "1.0.0";
-  static const int buildNumber = 1;
+  static const String current = "1.0.1";
+  static const int buildNumber = 2;
   static const String releaseStage = "Release";
 
   /// Compares two semver strings (e.g. "1.0.0" and "1.1.0")
@@ -229,7 +229,7 @@ class _UpdateDialog extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Update Available",
+                          "New version available",
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 18,
@@ -339,7 +339,7 @@ class _UpdateDialog extends StatelessWidget {
                         Navigator.pop(context);
                         UpdateService.openDownload(targetUrl);
                       },
-                      child: const Text("Update Now", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      child: const Text("Download Update", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                     ),
                   ),
                 ],

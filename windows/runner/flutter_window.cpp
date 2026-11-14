@@ -38,7 +38,7 @@ LRESULT FlutterWindow::MessageHandler(HWND hwnd,
                                       LPARAM const lparam) noexcept {
   if (flutter_controller_) {
     std::optional<LRESULT> result =
-        flutter_controller_->HandleTopLevelWindowMessage(hwnd, message, wparam, lparam);
+        flutter_controller_->HandleTopLevelWindowProc(hwnd, message, wparam, lparam);
     if (result) {
       return *result;
     }

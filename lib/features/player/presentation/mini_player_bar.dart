@@ -185,7 +185,19 @@ class MiniPlayerBar extends ConsumerWidget {
   }
 
   Widget _buildThumb(SongModel song, Color fallbackColor) {
-    if (song.artworkPath != null) {
+    if (song.artworkPath != null && song.artworkPath!.isNotEmpty) {
+      if (song.artworkPath!.startsWith('http://') || song.artworkPath!.startsWith('https://')) {
+        return Image.network(
+          song.artworkPath!,
+          fit: BoxFit.cover,
+          cacheWidth: 120,
+          cacheHeight: 120,
+          errorBuilder: (context, error, stackTrace) => Container(
+            color: fallbackColor.withOpacity(0.3),
+            child: const Icon(Icons.music_note_rounded, size: 22, color: Colors.white70),
+          ),
+        );
+      }
       final file = File(song.artworkPath!);
       if (file.existsSync() && file.lengthSync() > 0) {
         return Image.file(

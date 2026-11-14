@@ -15,6 +15,7 @@ import '../../../core/theme/typography.dart';
 import '../../../core/services/update_service.dart';
 import '../../../core/config/supabase_config.dart';
 import '../../../core/services/supabase_backend_client.dart';
+import '../../cloud/presentation/admin_upload_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -484,6 +485,36 @@ class SettingsScreen extends ConsumerWidget {
                 icon: const Icon(Icons.settings_ethernet_rounded, size: 14),
                 label: const Text("Configure", style: TextStyle(fontSize: 12)),
                 onPressed: () => _showConfigureBackendDialog(context),
+              ),
+            ],
+          ),
+          const Divider(color: Colors.white12, height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: CinematicColors.primary.withOpacity(0.18),
+                    foregroundColor: CinematicColors.primary,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: CinematicColors.primary.withOpacity(0.5)),
+                    ),
+                  ),
+                  icon: const Icon(Icons.cloud_upload_rounded, size: 18),
+                  label: const Text(
+                    "Admin Music Library (Upload Portal)",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AdminUploadScreen()),
+                    );
+                  },
+                ),
               ),
             ],
           ),

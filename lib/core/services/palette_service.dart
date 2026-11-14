@@ -9,12 +9,21 @@ class PaletteService {
   static Future<DynamicAlbumPalette> extractPalette(SongModel? song) async {
     if (song == null) return DynamicAlbumPalette.fallback;
 
-    if (song.artworkPath != null) {
-      final file = File(song.artworkPath!);
-      if (await file.exists()) {
+    if (song.artworkPath != null && song.artworkPath!.isNotEmpty) {
+      ImageProvider? imgProvider;
+      if (song.artworkPath!.startsWith('http://') || song.artworkPath!.startsWith('https://')) {
+        imgProvider = NetworkImage(song.artworkPath!);
+      } else {
+        final file = File(song.artworkPath!);
+        if (file.existsSync()) {
+          imgProvider = FileImage(file);
+        }
+      }
+
+      if (imgProvider != null) {
         try {
           final paletteGenerator = await PaletteGenerator.fromImageProvider(
-            FileImage(file),
+            imgProvider,
             maximumColorCount: 16,
           );
 

@@ -5,9 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/cinematic_colors.dart';
 import 'core/services/update_service.dart';
 import 'core/services/scanner_service.dart';
-import 'features/home/presentation/home_screen.dart';
 import 'features/library/presentation/library_screen.dart';
 import 'features/library/providers/library_provider.dart';
+import 'features/cloud/presentation/cloud_library_screen.dart';
+import 'features/favorites/presentation/favorites_screen.dart';
 import 'features/playlists/presentation/playlist_screen.dart';
 import 'features/settings/presentation/settings_screen.dart';
 import 'features/player/presentation/mini_player_bar.dart';
@@ -23,13 +24,14 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 1; // Default to Cloud Library
 
   final List<Widget> _screens = const [
-    HomeScreen(),
-    LibraryScreen(),
-    PlaylistScreen(),
-    SettingsScreen(),
+    LibraryScreen(),        // 0: Local Music
+    CloudLibraryScreen(),   // 1: Cloud Library
+    PlaylistScreen(),       // 2: Playlists
+    FavoritesScreen(),      // 3: Favorites
+    SettingsScreen(),       // 4: Settings
   ];
 
   @override
@@ -229,10 +231,11 @@ class _AppShellState extends ConsumerState<AppShell> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildHeaderPill("Now Playing", 0),
-                _buildHeaderPill("Library", 1),
+                _buildHeaderPill("Local Music", 0),
+                _buildHeaderPill("Cloud Library", 1),
                 _buildHeaderPill("Playlists", 2),
-                _buildHeaderPill("Settings", 3),
+                _buildHeaderPill("Favorites", 3),
+                _buildHeaderPill("Settings", 4),
               ],
             ),
           ),
@@ -322,10 +325,11 @@ class _AppShellState extends ConsumerState<AppShell> {
               ),
             ),
           ),
-          _buildSidebarNavItem(Icons.graphic_eq_rounded, "Daily Flow", 0),
-          _buildSidebarNavItem(Icons.library_music_rounded, "Acoustic Vault", 1),
+          _buildSidebarNavItem(Icons.folder_special_rounded, "Local Music", 0),
+          _buildSidebarNavItem(Icons.cloud_done_rounded, "Cloud Library", 1),
           _buildSidebarNavItem(Icons.queue_music_rounded, "Playlists", 2),
-          _buildSidebarNavItem(Icons.tune_rounded, "Studio Settings", 3),
+          _buildSidebarNavItem(Icons.favorite_rounded, "Favorites", 3),
+          _buildSidebarNavItem(Icons.tune_rounded, "Studio Settings", 4),
 
           const Spacer(),
 
@@ -426,10 +430,11 @@ class _AppShellState extends ConsumerState<AppShell> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildMobileNavIcon(Icons.graphic_eq_rounded, "Flow", 0),
-          _buildMobileNavIcon(Icons.library_music_rounded, "Library", 1),
+          _buildMobileNavIcon(Icons.folder_special_rounded, "Local", 0),
+          _buildMobileNavIcon(Icons.cloud_done_rounded, "Cloud", 1),
           _buildMobileNavIcon(Icons.queue_music_rounded, "Playlists", 2),
-          _buildMobileNavIcon(Icons.tune_rounded, "Settings", 3),
+          _buildMobileNavIcon(Icons.favorite_rounded, "Favorites", 3),
+          _buildMobileNavIcon(Icons.tune_rounded, "Settings", 4),
         ],
       ),
     );

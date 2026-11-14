@@ -375,7 +375,16 @@ class _SongListTile extends StatelessWidget {
   }
 
   Widget _buildArtworkThumb(SongModel song) {
-    if (song.artworkPath != null) {
+    if (song.artworkPath != null && song.artworkPath!.isNotEmpty) {
+      if (song.artworkPath!.startsWith('http://') || song.artworkPath!.startsWith('https://')) {
+        return Image.network(
+          song.artworkPath!,
+          fit: BoxFit.cover,
+          cacheWidth: 120,
+          cacheHeight: 120,
+          errorBuilder: (context, error, stackTrace) => _fallbackThumb(),
+        );
+      }
       final file = File(song.artworkPath!);
       if (file.existsSync() && file.lengthSync() > 0) {
         return Image.file(

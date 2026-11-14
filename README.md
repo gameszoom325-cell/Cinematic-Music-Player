@@ -19,10 +19,22 @@
 
 ## Key Features
 
-- **100% Private Offline Audio Vault**:
+- **Private Cloud Music Streaming Platform (Spotify-Style)**:
+  - Stream master tracks on-demand with HTTP byte-range requests directly from Supabase Storage.
+  - Dedicated **Cloud Library** with real-time Search, **Trending Now** rankings, **Recently Added** showcase, and **Browse by Artists & Albums**.
+  - **Admin Music Library**: Built-in admin panel to upload audio files (`MP3`, `FLAC`, `WAV`, `M4A`) and album artwork, automatically extract ID3 tags, and publish tracks to your private cloud catalog.
+
+- **100% Private Offline Audio Vault (Local Music)**:
   - Recursively scans local folders for `MP3`, `FLAC`, `WAV`, `M4A`, and `OGG` files.
-  - Zero scraping, zero third-party telemetry, zero external dependencies to play your collection.
+  - Native Windows Win32 drag-and-drop import and synchronous File Explorer dialogs.
   - High-performance binary metadata reader extracts ID3v2 APIC and FLAC PICTURE embedded covers.
+
+- **Dedicated Navigation Tabs**:
+  - **Local Music**: Offline local music vault and drag-and-drop importer.
+  - **Cloud Library**: Private streaming catalog with Trending, Artists, and Albums.
+  - **Playlists**: User-created and cloud-synchronized playlists.
+  - **Favorites**: Starred local and cloud songs with one-tap instant playback and shuffle.
+  - **Studio Settings**: Account sync, multi-device management, and private Supabase credentials.
 
 - **GPU Audio-Reactive Visualizers (GLSL 460)**:
   - **Preset 1 (3D Liquid Raymarched Orb)**: Real-time SDF sphere with 3D simplex noise surface displacement reactive to bass, mid-range waves, and treble highlights.

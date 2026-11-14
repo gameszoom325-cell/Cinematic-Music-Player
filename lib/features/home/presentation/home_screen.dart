@@ -428,7 +428,16 @@ class HomeScreen extends ConsumerWidget {
   }
 
   Widget _buildThumb(String? path, String fallbackSeed) {
-    if (path != null) {
+    if (path != null && path.isNotEmpty) {
+      if (path.startsWith('http://') || path.startsWith('https://')) {
+        return Image.network(
+          path,
+          fit: BoxFit.cover,
+          cacheWidth: 160,
+          cacheHeight: 160,
+          errorBuilder: (context, error, stackTrace) => _fallbackThumb(),
+        );
+      }
       final file = File(path);
       if (file.existsSync() && file.lengthSync() > 0) {
         return Image.file(

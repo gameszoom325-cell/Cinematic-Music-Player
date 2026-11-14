@@ -131,8 +131,16 @@ class _TiltAlbumArtworkState extends State<TiltAlbumArtwork> {
   }
 
   Widget _buildArtworkContent() {
-    if (widget.song?.artworkPath != null) {
-      final file = File(widget.song!.artworkPath!);
+    if (widget.song?.artworkPath != null && widget.song!.artworkPath!.isNotEmpty) {
+      final artPath = widget.song!.artworkPath!;
+      if (artPath.startsWith('http://') || artPath.startsWith('https://')) {
+        return Image.network(
+          artPath,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
+        );
+      }
+      final file = File(artPath);
       if (file.existsSync() && file.lengthSync() > 0) {
         return Image.file(
           file,

@@ -71,7 +71,10 @@ class SongModel {
 
   Duration get duration => Duration(milliseconds: durationMs);
 
+  bool get isCloudSong => path.startsWith('http://') || path.startsWith('https://');
+
   bool get isLocalFileAvailable {
+    if (isCloudSong) return true;
     if (path.isEmpty) return false;
     try {
       return File(path).existsSync();

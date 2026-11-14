@@ -914,18 +914,28 @@ class _CinematicPlayerScreenState extends ConsumerState<CinematicPlayerScreen> {
 
   Widget _buildQueueThumb(SongModel song, Color accentColor, bool isPlaying) {
     Widget base;
-    if (song.artworkPath != null) {
-      final file = File(song.artworkPath!);
-      if (file.existsSync() && file.lengthSync() > 0) {
-        base = Image.file(
-          file,
+    if (song.artworkPath != null && song.artworkPath!.isNotEmpty) {
+      if (song.artworkPath!.startsWith('http://') || song.artworkPath!.startsWith('https://')) {
+        base = Image.network(
+          song.artworkPath!,
           fit: BoxFit.cover,
           cacheWidth: 100,
           cacheHeight: 100,
           errorBuilder: (_, __, ___) => _fallbackThumb(accentColor),
         );
       } else {
-        base = _fallbackThumb(accentColor);
+        final file = File(song.artworkPath!);
+        if (file.existsSync() && file.lengthSync() > 0) {
+          base = Image.file(
+            file,
+            fit: BoxFit.cover,
+            cacheWidth: 100,
+            cacheHeight: 100,
+            errorBuilder: (_, __, ___) => _fallbackThumb(accentColor),
+          );
+        } else {
+          base = _fallbackThumb(accentColor);
+        }
       }
     } else {
       base = _fallbackThumb(accentColor);

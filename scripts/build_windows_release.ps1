@@ -7,6 +7,12 @@ $ErrorActionPreference = "Stop"
 $ProjectDir = "C:\MY PROJECTS"
 Set-Location $ProjectDir
 
+if (-not (Get-Command flutter -ErrorAction SilentlyContinue)) {
+    if (Test-Path "C:\src\flutter\bin") {
+        $env:PATH = "C:\src\flutter\bin;$env:PATH"
+    }
+}
+
 Write-Host "=====================================================" -ForegroundColor Magenta
 Write-Host "   CINEMATIC MUSIC PLAYER - WINDOWS RELEASE BUILD    " -ForegroundColor Cyan
 Write-Host "=====================================================" -ForegroundColor Magenta

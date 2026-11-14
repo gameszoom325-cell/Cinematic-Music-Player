@@ -11,6 +11,11 @@ import 'package:cinematic_music_player/core/audio_engine/audio_service_handler.d
 import 'package:cinematic_music_player/core/audio_engine/audio_engine.dart';
 import 'package:cinematic_music_player/features/player/models/player_state.dart';
 import 'package:cinematic_music_player/core/services/audio_metadata_parser.dart';
+import 'package:cinematic_music_player/core/database/models/cloud_song_model.dart';
+import 'package:cinematic_music_player/core/database/models/cloud_artist_model.dart';
+import 'package:cinematic_music_player/core/database/models/cloud_album_model.dart';
+import 'package:cinematic_music_player/core/services/cloud_music_service.dart';
+import 'package:cinematic_music_player/core/database/database_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -247,6 +252,102 @@ void main() {
 
       final resetState = loadingState.copyWith(isLoading: false);
       expect(resetState.isLoading, isFalse);
+    });
+  });
+
+  group('11. Private Cloud Streaming Models & Conversion Tests', () {
+    test('CloudSongModel converts cleanly to playback-ready SongModel with streaming URL', () {
+      final cloudSong = CloudSongModel(
+        id: 'cloud_test_101',
+        title: 'Raag Yaman (Moonlight Stream)',
+        artist: 'Ustad Rashid',
+        album: 'Hindustani Classical Vol 1',
+        coverImage: 'https://cdn.cinematic.cloud/covers/raag_yaman.jpg',
+        genre: 'Classical',
+        duration: 320,
+        audioUrl: 'https://cdn.cinematic.cloud/audio/raag_yaman.mp3',
+        playCount: 1540,
+        createdAt: DateTime.now(),
+      );
+
+      final songModel = cloudSong.toSongModel();
+      expect(songModel.id, 'cloud_test_101');
+      expect(songModel.title, 'Raag Yaman (Moonlight Stream)');
+      expect(songModel.path, 'https://cdn.cinematic.cloud/audio/raag_yaman.mp3');
+      expect(songModel.isCloudSong, isTrue);
+      expect(songModel.isLocalFileAvailable, isTrue);
+      expect(songModel.durationMs, 320000);
+      expect(songModel.hasArtwork, isTrue);
+      expect(songModel.artworkPath, 'https://cdn.cinematic.cloud/covers/raag_yaman.jpg');
+    });
+
+    test('CloudArtistModel & CloudAlbumModel serialize correctly', () {
+      final artist = CloudArtistModel(
+        id: 'artist_arijit',
+        name: 'Arijit Singh',
+        image: 'https://images.example.com/arijit.jpg',
+        biography: 'Soulful Bollywood playback legend.',
+        songCount: 12,
+        albumCount: 4,
+      );
+
+      final map = artist.toMap();
+      expect(map['name'], 'Arijit Singh');
+      expect(map['song_count'], 12);
+      expect(map['album_count'], 4);
+
+      final revived = CloudArtistModel.fromMap(map);
+      expect(revived.id, 'artist_arijit');
+      expect(revived.name, 'Arijit Singh');
+
+      final album = CloudAlbumModel(
+        id: 'album_monsoon',
+        title: 'Monsoon Diaries',
+        artist: 'Kabir Das',
+        artwork: 'https://images.example.com/monsoon.jpg',
+        releaseInfo: 'Studio Master 2024',
+        songCount: 8,
+      );
+
+      final albumMap = album.toMap();
+      expect(albumMap['title'], 'Monsoon Diaries');
+      final revivedAlbum = CloudAlbumModel.fromMap(albumMap);
+      expect(revivedAlbum.artist, 'Kabir Das');
+      expect(revivedAlbum.songCount, 8);
+    });
+  });
+
+  group('12. CloudMusicService Discovery & Streaming Catalogue Tests', () {
+    test('CloudMusicService returns default curated streaming songs', () async {
+      final songs = await CloudMusicService.instance.fetchSongs();
+      expect(songs, isNotEmpty);
+      expect(songs.length, greaterThanOrEqualTo(5));
+
+      final first = songs.first;
+      expect(first.audioUrl.startsWith('http'), isTrue);
+      expect(first.toSongModel().isLocalFileAvailable, isTrue);
+    });
+
+    test('fetchTrendingSongs returns songs ordered by play count', () async {
+      final trending = await CloudMusicService.instance.fetchTrendingSongs(limit: 3);
+      expect(trending, hasLength(3));
+      expect(trending[0].playCount, greaterThanOrEqualTo(trending[1].playCount));
+      expect(trending[1].playCount, greaterThanOrEqualTo(trending[2].playCount));
+    });
+
+    test('fetchArtists & fetchAlbums extract catalog groupings', () async {
+      final artists = await CloudMusicService.instance.fetchArtists();
+      expect(artists, isNotEmpty);
+      expect(artists.any((a) => a.name.isNotEmpty), isTrue);
+
+      final albums = await CloudMusicService.instance.fetchAlbums();
+      expect(albums, isNotEmpty);
+      expect(albums.any((a) => a.title.isNotEmpty), isTrue);
+    });
+
+    test('DatabaseService checks favorites for cloud songs accurately', () {
+      final db = DatabaseService.instance;
+      expect(db.isFavorite('non_existent_cloud_song'), isFalse);
     });
   });
 }

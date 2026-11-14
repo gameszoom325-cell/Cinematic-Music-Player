@@ -209,17 +209,19 @@ void main() {
     });
 
     test('SongModel.isLocalFileAvailable returns true for existing local files', () {
-      final existingFile = File('assets/audio/bairan_demo.mp3');
+      final tempFile = File('${Directory.systemTemp.path}/cinematic_test_audio.mp3');
+      tempFile.writeAsBytesSync([0x49, 0x44, 0x33, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
       final validSong = SongModel(
         id: 'real_1',
-        title: 'Bairan Demo',
-        artist: 'Amit Trivedi',
-        album: 'Cinematic Demos',
-        path: existingFile.absolute.path,
+        title: 'Local Test Track',
+        artist: 'Artist',
+        album: 'Album',
+        path: tempFile.path,
         durationMs: 151000,
         dateAdded: DateTime.now(),
       );
       expect(validSong.isLocalFileAvailable, isTrue);
+      if (tempFile.existsSync()) tempFile.deleteSync();
     });
   });
 

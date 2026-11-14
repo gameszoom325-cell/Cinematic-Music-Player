@@ -10,21 +10,9 @@ import '../../../core/database/models/playlist_model.dart';
 import '../../player/providers/player_provider.dart';
 import '../../library/providers/library_provider.dart';
 import '../../import/presentation/add_music_screen.dart';
-import '../../hindi_collection/presentation/hindi_collection_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
-
-  static const List<String> categories = [
-    "Hindi",
-    "English",
-    "Tamil",
-    "Japanese",
-    "Korean",
-    "Instrumental",
-    "Anime OST",
-    "Lo-Fi",
-  ];
 
   void _openAddMusic(BuildContext context) {
     Navigator.of(context).push(
@@ -53,7 +41,7 @@ class HomeScreen extends ConsumerWidget {
             // Top App Bar
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -61,16 +49,16 @@ class HomeScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "PRIVATE COLLECTION",
+                          allSongs.isEmpty ? "OFFLINE MUSIC VAULT" : "${allSongs.length} TRACKS LOADED",
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
+                            color: CinematicColors.electricViolet.withOpacity(0.8),
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 2.0,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text("Personal Vault", style: CinematicTypography.displayTitle),
+                        const Text("Music Library", style: CinematicTypography.displayTitle),
                       ],
                     ),
                     ElevatedButton.icon(
@@ -78,7 +66,7 @@ class HomeScreen extends ConsumerWidget {
                         backgroundColor: CinematicColors.electricViolet,
                         foregroundColor: Colors.white,
                         elevation: 0,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -92,176 +80,52 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
 
-            // Category Badges Bar
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 48,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-                  itemCount: categories.length,
-                  itemBuilder: (context, index) {
-                    final cat = categories[index];
-                    final isHindi = cat == "Hindi";
-                    return GestureDetector(
-                      onTap: () {
-                        if (isHindi) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const HindiCollectionScreen()),
-                          );
-                        }
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 10),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: isHindi ? CinematicColors.electricViolet.withOpacity(0.2) : Colors.white.withOpacity(0.06),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isHindi ? CinematicColors.electricViolet.withOpacity(0.6) : Colors.white.withOpacity(0.12),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (isHindi) ...[
-                              const Icon(Icons.stars_rounded, color: CinematicColors.electricViolet, size: 14),
-                              const SizedBox(width: 6),
-                            ],
-                            Text(
-                              cat,
-                              style: TextStyle(
-                                color: isHindi ? Colors.white : Colors.white70,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 12)),
-
-            // Curated Hindi Vault Feature Banner
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 6.0),
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HindiCollectionScreen()),
-                    );
-                  },
-                  child: CinematicGlassCard(
-                    padding: const EdgeInsets.all(18),
-                    borderRadius: 20,
-                    borderColor: CinematicColors.electricViolet.withOpacity(0.35),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 52,
-                          height: 52,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [CinematicColors.electricViolet, CinematicColors.deepPlum],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: const Icon(Icons.stars_rounded, color: Colors.white, size: 28),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    "CURATED COLLECTION",
-                                    style: TextStyle(
-                                      color: CinematicColors.electricViolet,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 1.5,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: CinematicColors.cyberCyan.withOpacity(0.15),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: CinematicColors.cyberCyan.withOpacity(0.4)),
-                                    ),
-                                    child: const Text(
-                                      "19 TRACKS",
-                                      style: TextStyle(color: CinematicColors.cyberCyan, fontSize: 9, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              const Text(
-                                "Trending Hits & Bollywood Classics",
-                                style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 2),
-                              const Text(
-                                "Arijit Singh, A.R. Rahman, Jasmine Sandlas & more",
-                                style: TextStyle(color: Colors.white54, fontSize: 11),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white38, size: 16),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
             // Empty state notice
             if (allSongs.isEmpty)
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: CinematicGlassCard(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(28),
                     borderRadius: 24,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.audio_file_rounded, color: CinematicColors.electricViolet, size: 42),
-                        const SizedBox(height: 14),
-                        const Text("Your Vault is Empty", style: CinematicTypography.songTitleLarge),
-                        const SizedBox(height: 6),
-                        const Text(
-                          "Import your local MP3, FLAC, WAV, M4A, or OGG tracks to experience real-time GPU audio visualizers and synchronized lyrics.",
-                          style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [CinematicColors.electricViolet, CinematicColors.deepPlum],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(Icons.library_music_rounded, color: Colors.white, size: 30),
                         ),
                         const SizedBox(height: 18),
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: CinematicColors.electricViolet,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          ),
-                          onPressed: () => _openAddMusic(context),
-                          icon: const Icon(Icons.folder_open_rounded, size: 18),
-                          label: const Text("Import Music Collection", style: TextStyle(fontWeight: FontWeight.bold)),
+                        const Text("Your Library is Empty", style: CinematicTypography.songTitleLarge),
+                        const SizedBox(height: 8),
+                        const Text(
+                          "Import your local MP3, FLAC, WAV, M4A, or OGG tracks from your device to listen offline with full GPU audio visualizers and synchronized lyrics.",
+                          style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
+                        ),
+                        const SizedBox(height: 22),
+                        Row(
+                          children: [
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: CinematicColors.electricViolet,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              ),
+                              onPressed: () => _openAddMusic(context),
+                              icon: const Icon(Icons.folder_open_rounded, size: 18),
+                              label: const Text("Import Music Files", style: TextStyle(fontWeight: FontWeight.bold)),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -454,7 +318,7 @@ class HomeScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(16),
               child: AspectRatio(
                 aspectRatio: 1.0,
                 child: _buildThumb(album.artworkPath, album.name),
@@ -465,12 +329,10 @@ class HomeScreen extends ConsumerWidget {
               album.name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
             ),
             Text(
-              "${album.artist} • ${album.songCount} tracks",
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              "${album.songIds.length} tracks",
               style: const TextStyle(color: Colors.white54, fontSize: 11),
             ),
           ],
@@ -561,17 +423,27 @@ class HomeScreen extends ConsumerWidget {
   Widget _buildThumb(String? path, String fallbackSeed) {
     if (path != null) {
       final file = File(path);
-      if (file.existsSync()) {
-        return Image.file(file, fit: BoxFit.cover);
+      if (file.existsSync() && file.lengthSync() > 0) {
+        return Image.file(
+          file,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => _fallbackThumb(),
+        );
       }
     }
+    return _fallbackThumb();
+  }
+
+  Widget _fallbackThumb() {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            CinematicColors.electricViolet.withOpacity(0.6),
+            CinematicColors.electricViolet.withOpacity(0.4),
             CinematicColors.obsidianCard,
           ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
       child: const Center(

@@ -7,32 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.1] - 2026-11-14
 
+### Fixed
+- **Windows Runner & Window Visibility**:
+  - Fixed application running invisibly in Task Manager by adding native Win32 `window.Show()` and centered coordinates (`1280x800`) directly to the C++ runner `wWinMain`.
+  - Fixed Inno Setup shortcuts by specifying `WorkingDir: "{app}"`, preventing Windows from launching with working directory `C:\Windows\System32` (which caused Dart to fail to find `data\app.so` and `data\icudtl.dat`).
+  - Added `runner.exe.manifest` for modern Windows 10 & 11 PerMonitorV2 DPI awareness.
+- **Android Audio Service Initialization (Audited against Metrolist)**:
+  - Fixed "Playback failed: Bad state: Audio service handler is not initialized".
+  - Extended `AudioServiceActivity` instead of `FlutterActivity` in `MainActivity.kt`, granting the Android foreground media service immediate access to the Flutter engine isolate.
+  - Eagerly initialized `CinematicAudioHandler` in `AudioEngine` before any player operations.
+  - Configured permanent broadcast streams for audio position, duration, and playback state so UI listeners never encounter dead streams.
+  - Added `READ_MEDIA_AUDIO`, `READ_MEDIA_IMAGES`, and `POST_NOTIFICATIONS` permissions.
+- **Album Artwork & Metadata Extraction**:
+  - Re-engineered embedded cover art parser using magic-byte scanning (JPEG `FF D8 FF`, PNG `89 50 4E 47`, WebP, and FLAC PICTURE) to eliminate string-encoding corruptions.
+  - Added folder art lookup for `cover.jpg`, `folder.jpg`, and `album.png`.
+  - Added clean dark-purple cinematic gradient placeholder fallback for tracks without embedded artwork.
+- **Purged All Fake Songs & Demo Content**:
+  - Removed all generated placeholder tracks, sample catalogues, and the bundled `bairan_demo.mp3`.
+  - App starts with a clean, empty library on first launch; only user-imported audio files appear.
+  - Filtered out unplayable or metadata-only tracks without real audio files (`song.isLocalFileAvailable`).
+  - Added user alert: *"Audio file unavailable. Please import this song again."* for missing files.
+- **Streamlined UI & Removed Clutter**:
+  - Simplified navigation to 4 core tabs: `Home`, `Library`, `Playlists`, `Settings`.
+  - Replaced curated banners and category badges with a clean "Import Music Files" onboarding experience.
+
 ### Added
 - **Self-Contained Windows Distribution**:
-  - Compiled production Windows installer `CinematicMusicPlayerSetup.exe` via Inno Setup 6.
-  - Bundled standalone portable package `CinematicMusicPlayer-Windows.zip` containing all runtime DLLs, Flutter Impeller shaders, and assets.
-  - Zero developer dependencies required for end users (no Flutter SDK, VS, C++, or Android Studio required).
-- **GitHub Release Update Checker**:
-  - Live version inspection via GitHub Releases API.
-  - In-app notification prompt: `"New version available"` with `"Download Update"` and `"Later"` buttons.
-
-### Fixed
-- **Android Music Playback Engine**:
-  - Resolved issue where tapping songs in the library or home screen failed to start audio playback.
-  - Fixed playlist queue initialization and added content/file URI parsing (`parseAudioUri`) for Android ExoPlayer compatibility.
-  - Eliminated silent playback failures with defensive error trapping and real-time floating error notifications.
-- **Music Library & Ghost Track Purge**:
-  - Filtered out unplayable and metadata-only tracks without real audio files (`song.isLocalFileAvailable`).
-  - Added user-facing fallback alert: `"Audio file unavailable. Please import this song again."` when a target file cannot be located on disk.
-  - Prevented non-existent tracks from being added to the playable library.
-- **Android Storage & Import System**:
-  - Fixed permission negotiation across Android 10-14 (handling both `Permission.audio` for API 33+ and legacy `Permission.storage`).
-  - Added persistent copying of temporary FilePicker cache files into the app's permanent storage directory so imported tracks never disappear.
-  - Updated standard Android search directories to scan `/storage/emulated/0/Music`, `/storage/emulated/0/Download`, and external SD cards.
-- **Demo Track Realism**:
-  - Bundled authentic high-fidelity Hindi audio track (`Bairan (Demo)`) directly into the app package.
-  - Labeled all pre-seeded demo tracks explicitly with `(Demo)` in title and album tags.
-  - Verified that all synthesized WAV tracks and bundled MP3s generate valid PCM/MP3 bytes and local file paths.
+  - Windows installer `CinematicMusicPlayerSetup.exe` built with Inno Setup 6 (28.1 MB).
+  - Standalone portable package `CinematicMusicPlayer-Windows.zip` (38.6 MB).
+  - Zero developer dependencies required for end users (no Flutter SDK, VS, C++, or build tools required).
+- **In-App GitHub Update Checker**:
+  - Automatic version check against the GitHub Releases API.
+  - In-app prompt: *"New version available"* with *"Download Update"* and *"Later"* actions.
 
 ## [1.0.0] - 2026-11-14
 
@@ -48,11 +54,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Pure Dart binary metadata parser for embedded cover art, titles, and tags.
 - **Synchronized Lyrics**:
   - Precision LRC parser with active line highlight, smooth scrolling, and tap-to-seek.
-- **Cloud Account & Synchronization**:
-  - Account registration and login with SHA-256 password hashing.
-  - Two-way synchronization of playlists, favorites, history, and preferences across devices.
-  - Connected devices overview and remote session de-authorization.
-- **Automated Update Checker**:
-  - Checks for latest releases via repository release API.
-- **Branded Design**:
-  - Glassmorphic UI with dynamic ambient palettes and customized platform icons.
+- **Cloud Synchronization**:
+  - Supabase authentication and cloud database sync for playlists, favorites, and settings.

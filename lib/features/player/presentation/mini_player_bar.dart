@@ -163,8 +163,15 @@ class MiniPlayerBar extends ConsumerWidget {
   Widget _buildThumb(SongModel song, Color fallbackColor) {
     if (song.artworkPath != null) {
       final file = File(song.artworkPath!);
-      if (file.existsSync()) {
-        return Image.file(file, fit: BoxFit.cover);
+      if (file.existsSync() && file.lengthSync() > 0) {
+        return Image.file(
+          file,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => Container(
+            color: fallbackColor.withOpacity(0.4),
+            child: const Icon(Icons.music_note_rounded, size: 24, color: Colors.white),
+          ),
+        );
       }
     }
     return Container(

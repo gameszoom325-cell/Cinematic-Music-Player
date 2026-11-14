@@ -5,7 +5,6 @@ import 'core/theme/cinematic_colors.dart';
 import 'core/theme/glassmorphism.dart';
 import 'core/services/update_service.dart';
 import 'features/home/presentation/home_screen.dart';
-import 'features/hindi_collection/presentation/hindi_collection_screen.dart';
 import 'features/library/presentation/library_screen.dart';
 import 'features/playlists/presentation/playlist_screen.dart';
 import 'features/settings/presentation/settings_screen.dart';
@@ -26,7 +25,6 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   final List<Widget> _screens = const [
     HomeScreen(),
-    HindiCollectionScreen(),
     LibraryScreen(),
     PlaylistScreen(),
     SettingsScreen(),
@@ -144,10 +142,9 @@ class _AppShellState extends ConsumerState<AppShell> {
                       ),
                     ),
                     _buildNavItem(Icons.home_filled, "Home", 0),
-                    _buildNavItem(Icons.stars_rounded, "Hindi Vault", 1),
-                    _buildNavItem(Icons.library_music_rounded, "Library", 2),
-                    _buildNavItem(Icons.queue_music_rounded, "Playlists", 3),
-                    _buildNavItem(Icons.tune_rounded, "Settings", 4),
+                    _buildNavItem(Icons.library_music_rounded, "Library", 1),
+                    _buildNavItem(Icons.queue_music_rounded, "Playlists", 2),
+                    _buildNavItem(Icons.tune_rounded, "Settings", 3),
                     const Spacer(),
                     // Cinema Fullscreen Button
                     Padding(
@@ -276,10 +273,9 @@ class _AppShellState extends ConsumerState<AppShell> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildMobileNavIcon(Icons.home_filled, "Home", 0),
-          _buildMobileNavIcon(Icons.stars_rounded, "Hindi Vault", 1),
-          _buildMobileNavIcon(Icons.library_music_rounded, "Library", 2),
-          _buildMobileNavIcon(Icons.queue_music_rounded, "Playlists", 3),
-          _buildMobileNavIcon(Icons.tune_rounded, "Settings", 4),
+          _buildMobileNavIcon(Icons.library_music_rounded, "Library", 1),
+          _buildMobileNavIcon(Icons.queue_music_rounded, "Playlists", 2),
+          _buildMobileNavIcon(Icons.tune_rounded, "Settings", 3),
         ],
       ),
     );

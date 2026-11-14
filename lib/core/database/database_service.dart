@@ -71,10 +71,10 @@ class DatabaseService {
             final songList = data['songs'] as List;
             for (final item in songList) {
               final song = SongModel.fromMap(item as Map<String, dynamic>);
-              if (song.isLocalFileAvailable) {
+              if (song.isLocalFileAvailable && !song.id.startsWith('demo_track') && !song.title.contains('(Demo)')) {
                 _songs[song.id] = song;
               } else {
-                debugPrint("Filtered out unplayable track from library: '${song.title}' (Path not found: ${song.path})");
+                debugPrint("Filtered out placeholder or unplayable track from library: '${song.title}'");
               }
             }
           }

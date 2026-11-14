@@ -282,6 +282,31 @@ class AudioMetadataParser {
 
   // --- M4A / AAC Parser ---
   static Future<ParsedMetadata> _parseM4a(File file, String defaultTitle) async {
+    Uint8List? pictureBytes;
+    try {
+      final raf = await file.open(mode: FileMode.read);
+      final length = await raf.length();
+      final readSize = length > 2097152 ? 2097152 : length;
+      final buffer = Uint8List(readSize);
+      await raf.readInto(buffer, 0, readSize);
+      await raf.close();
+
+      for (int i = 0; i < buffer.length - 3; i++) {
+        if (buffer[i] == 0xFF && buffer[i + 1] == 0xD8 && buffer[i + 2] == 0xFF) {
+          pictureBytes = buffer.sublist(i);
+          break;
+        }
+      }
+      if (pictureBytes == null) {
+        for (int i = 0; i < buffer.length - 8; i++) {
+          if (buffer[i] == 0x89 && buffer[i + 1] == 0x50 && buffer[i + 2] == 0x4E && buffer[i + 3] == 0x47) {
+            pictureBytes = buffer.sublist(i);
+            break;
+          }
+        }
+      }
+    } catch (_) {}
+
     return ParsedMetadata(
       title: defaultTitle,
       artist: "Unknown Artist",
@@ -290,6 +315,7 @@ class AudioMetadataParser {
       bitrate: 256,
       sampleRate: 44100,
       format: "M4A",
+      pictureBytes: pictureBytes,
     );
   }
 
@@ -346,6 +372,19 @@ class AudioMetadataParser {
   static Uint8List? _extractApicPicture(Uint8List data) {
     try {
       if (data.length < 10) return null;
+      // 1. Scan for JPEG signature (FF D8 FF)
+      for (int i = 1; i < data.length - 3; i++) {
+        if (data[i] == 0xFF && data[i + 1] == 0xD8 && data[i + 2] == 0xFF) {
+          return data.sublist(i);
+        }
+      }
+      // 2. Scan for PNG signature (89 50 4E 47 0D 0A 1A 0A)
+      for (int i = 1; i < data.length - 8; i++) {
+        if (data[i] == 0x89 && data[i + 1] == 0x50 && data[i + 2] == 0x4E && data[i + 3] == 0x47) {
+          return data.sublist(i);
+        }
+      }
+      // 3. Fallback offset scanner
       int offset = 1;
       while (offset < data.length && data[offset] != 0) {
         offset++;
@@ -396,6 +435,16 @@ class AudioMetadataParser {
   static Uint8List? _extractFlacPicture(Uint8List data) {
     try {
       if (data.length < 32) return null;
+      for (int i = 4; i < data.length - 3; i++) {
+        if (data[i] == 0xFF && data[i + 1] == 0xD8 && data[i + 2] == 0xFF) {
+          return data.sublist(i);
+        }
+      }
+      for (int i = 4; i < data.length - 8; i++) {
+        if (data[i] == 0x89 && data[i + 1] == 0x50 && data[i + 2] == 0x4E && data[i + 3] == 0x47) {
+          return data.sublist(i);
+        }
+      }
       final bd = ByteData.sublistView(data);
       int offset = 4;
       final mimeLen = bd.getUint32(offset, Endian.big);

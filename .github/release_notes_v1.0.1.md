@@ -1,6 +1,6 @@
-# 🎬 Cinematic Music Player v1.0.1 Release
+# 🎬 Cinematic Music Player v1.0.1 Production Release
 
-Welcome to **Cinematic Music Player v1.0.1**! This release brings full standalone Windows distribution (self-contained installer and portable package with zero developer dependencies), resolved Android music playback, library integrity guards, and in-app GitHub update checker integration.
+Welcome to **Cinematic Music Player v1.0.1**! This is a complete production rebuild featuring standalone Windows distribution (self-contained installer and portable package), resolved Android audio service initialization, complete removal of all demo/placeholder tracks, enhanced album cover art extraction, and a streamlined cinematic interface.
 
 ---
 
@@ -9,24 +9,24 @@ Welcome to **Cinematic Music Player v1.0.1**! This release brings full standalon
 End users do **NOT** need Flutter SDK, Visual Studio, C++ tools, or any developer dependencies. Simply download and install!
 
 ### 📥 Direct Downloads
-* **[Download CinematicMusicPlayerSetup.exe](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.0.1/CinematicMusicPlayerSetup.exe)** (35.5 MB)
-  * **SHA-256 Checksum:** `5A25561C756B1C754023936498430971AC0DED821A4D216B6965F2AE658F3DBF`
-* **[Download CinematicMusicPlayer-Windows.zip](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.0.1/CinematicMusicPlayer-Windows.zip)** (46.5 MB, Portable Standalone)
-  * **SHA-256 Checksum:** `523E4C448456DCC74C9A9F079E3963702F696D7ABEF789211055339DEFB330A5`
+* **[Download CinematicMusicPlayerSetup.exe](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.0.1/CinematicMusicPlayerSetup.exe)** (28.1 MB)
+  * **SHA-256 Checksum:** `E9775F6AD914020C0486616BB4DE7BEAF310D74950DCCCA56282B5994D777FA0`
+* **[Download CinematicMusicPlayer-Windows.zip](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.0.1/CinematicMusicPlayer-Windows.zip)** (38.6 MB, Portable Standalone)
+  * **SHA-256 Checksum:** `FB0E79703FA93DB67DC3542FE5D22E9238779A2F4AD48209375D29379B69970D`
 
 ### 🖥️ Windows Quick Install:
 1. Download **`CinematicMusicPlayerSetup.exe`** from GitHub Releases.
-2. Run installer.
-3. Open app.
+2. Run installer (double click).
+3. Open **Cinematic Music Player** from Desktop or Start Menu.
 
 ---
 
 ## 📱 Android Installation (Production Build)
 
 ### 📥 Direct Download
-* **[Download CinematicMusicPlayer.apk](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.0.1/CinematicMusicPlayer.apk)** (66.9 MB)
-* **SHA-256 Checksum:** `D14B04BD8D1F691E890EEC64D9600B34730DD1694869EB19A1FBBD34FA2DE052`
-* **Package Version:** `1.0.1` (Build `2`)
+* **[Download CinematicMusicPlayer.apk](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.0.1/CinematicMusicPlayer.apk)** (61.0 MB)
+* **SHA-256 Checksum:** `2919405EA89A780CA7129BDDE7B2534AA3DE31F96D3F64822F46564B4F927571`
+* **Package Version:** `1.0.1` (Version Code `3`)
 
 ### 📲 Android Quick Install:
 1. Download **`CinematicMusicPlayer.apk`** to your phone.
@@ -39,42 +39,40 @@ End users do **NOT** need Flutter SDK, Visual Studio, C++ tools, or any develope
 
 ---
 
-## 🛠️ What's New & Fixed in v1.0.1
+## 🛠️ Complete Fixes & Highlights in v1.0.1
 
-### 🚀 1. Windows Standalone Distribution & In-App Update Checker
-* **Self-Contained Installer (`CinematicMusicPlayerSetup.exe`)**: Built with Inno Setup 6. Includes all compiled native AOT libraries (`app.so`), Flutter Windows engine DLLs, shaders, ICU locale definitions, and assets. End users double-click and play.
-* **In-App GitHub Update Checker**: Connects to the GitHub Releases API. When a newer version is detected, users are prompted with:
-  * Title: `"New version available"`
-  * Actions: `[Download Update]` (launches direct download) and `[Later]` (dismisses dialog).
+### 🖥️ 1. Windows Runner & Invisible Window Fix
+* **Resolved Invisible Window in Task Manager**:
+  * **Inno Setup Working Directory**: Fixed Start Menu and Desktop shortcuts in `cinematic_music_player.iss` by enforcing `WorkingDir: "{app}"`. Previously, launching from shortcuts set the working directory to `C:\Windows\System32`, causing Flutter's `DartProject(L"data")` to fail to locate `app.so` and `icudtl.dat`.
+  * **Native Window Visibility Guarantee**: Added explicit native Win32 `window.Show()` and centered window coordinates (`1280x800`) directly in the C++ runner `wWinMain`, guaranteeing the window appears immediately upon process launch.
+  * **Modern DPI Awareness**: Added `runner.exe.manifest` supporting PerMonitorV2 DPI awareness for modern Windows 10 & 11 displays.
 
-### 🎵 2. Fixed Android Music Playback Engine & Background Service
+### 🎵 2. Fixed Android Audio Service Initialization (Audited against Metrolist)
 * **Resolved "Audio service handler is not initialized"**:
-  * **MainActivity `AudioServiceActivity` Integration**: Changed `MainActivity.kt` to extend `AudioServiceActivity` instead of `FlutterActivity`, granting the Android foreground service access to the cached FlutterEngine isolate.
-  * **Android 13+ Notification Permissions**: Added `<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />` to `AndroidManifest.xml` to prevent foreground media notification crashes.
-  * **Resilient AudioEngine Initialization**: Rearchitected `AudioEngine` to instantiate `CinematicAudioHandler` eagerly and provide a non-null handler, eliminating race conditions between UI state bindings and background service registration.
-  * **Persistent Broadcast Reactive Streams**: Bound audio position, duration, playing, buffered position, and processing state streams as permanent broadcast streams so Riverpod UI listeners never receive dead empty streams.
-  * **Visual Loading State**: Introduced `isLoading` in `CinematicPlayerState` with spinner feedback in both the full player and mini-player bar while ExoPlayer buffers track streams.
-* **Tapping Songs Starts Playback Immediately**: Fixed playlist queue setup and URI resolution in `CinematicAudioHandler` so tapping any song in Library, Home, Hindi Collection, or Playlists instantly begins audio playback.
-* **Content and File URI Support (`parseAudioUri`)**: Handles both native `file://` filesystem paths and Android SAF `content://` URIs seamlessly, preventing ExoPlayer source failures.
-* **Active Controls & Progress**: Play, pause, seek, next track, previous track, shuffle, and repeat modes are wired and synchronized with the background audio service.
+  * **MainActivity `AudioServiceActivity` Integration**: Extended `AudioServiceActivity` instead of `FlutterActivity` in `MainActivity.kt`, granting the background audio service access to Flutter's engine isolate.
+  * **Eager Initialization**: Restructured `AudioEngine` and `AudioService.init()` to ensure `CinematicAudioHandler` is non-null and ready before any playback requests occur.
+  * **Persistent Broadcast Streams**: Bound position, duration, and playback state streams permanently so Riverpod listeners never receive null or dead streams.
+  * **Storage & Notification Permissions**: Added `READ_MEDIA_AUDIO`, `READ_MEDIA_IMAGES`, and `POST_NOTIFICATIONS` permissions.
 
-### 📁 3. Removed Fake Songs & Ghost Track Purge
-* **Playable Library Verification**: Only songs with a verified, accessible local audio file (`song.isLocalFileAvailable`) are added to the playable library.
-* **Friendly Unavailable Song Guard**: If an audio file was moved or deleted from the device, the app alerts the user:
+### 🧹 3. Purged All Fake Songs & Demo Content
+* **Clean Empty Library**: Removed generated placeholder track names, mock catalogues, and the 6 MB bundled `bairan_demo.mp3`.
+* **Zero Ghost Songs**: Only songs with a verified local audio file (`song.isLocalFileAvailable`) appear in the playable library.
+* **Unavailable Track Guard**: If an audio file is deleted from storage, the app shows:
   > *"Audio file unavailable. Please import this song again."*
-  instead of freezing or crashing.
-* **Zero Fake Songs**: Removed mock entries from database initialization; pre-seeded catalogue entries serve strictly as lyrics templates ready to link with real local MP3 files.
 
-### 📥 4. Improved Music Import Reliability
-* **Modern & Legacy Android Permissions**: Robust handling for both Android 13+ (`Permission.audio`) and Android 10-12 (`Permission.storage` + `requestLegacyExternalStorage="true"`).
-* **Native Audio File Picker**: Configured `FileType.audio` in `FilePicker` so the Android document picker displays all audio files (`audio/*`) without graying them out.
-* **Persistent Import Storage**: When importing via file picker, temporary cache paths are permanently copied into the app's private documents directory so tracks remain available across device restarts and cache clearing.
-* **Expanded Scan Directories**: Auto-detects tracks across `/storage/emulated/0/Music`, `/storage/emulated/0/Download`, `/storage/emulated/0/Downloads`, and external SD cards.
+### 🖼️ 4. Enhanced Album Artwork Extraction
+* **Embedded ID3/APIC Magic-Byte Extraction**: Rearchitected `AudioMetadataParser` to identify embedded JPEG (`FF D8 FF`) and PNG (`89 50 4E 47`) headers directly from byte streams, avoiding encoding corruptions.
+* **Folder Art Support**: Scans local directory for `cover.jpg`, `folder.jpg`, and `album.png`.
+* **Graceful Fallback**: Replaced broken image icons with a clean, dark-purple cinematic gradient placeholder with a subtle music note.
 
-### 🛡️ 5. Bundled High-Fidelity Demo Audio & Player Error Handling
-* **Bundled High-Fidelity Demo Track**: Bundles a real, authentic studio track (`Bairan (Demo)`) and three synthesized 44.1 kHz 16-bit PCM WAV tracks with valid waveforms and synchronized LRC lyrics.
-* **No More Silent Failures**: Added `errorMessage` tracking in Riverpod `playerProvider` and automatic floating error SnackBars in `AppShell` with full stack logging for troubleshooting.
-* **ExoPlayer Error Listeners**: Intercepts playback errors in `playbackEventStream` and safely recovers playback state.
+### ✨ 5. Clean Interface & Removed AI-Slop
+* **Focused 4-Tab Navigation**: Clean core tabs (`Home`, `Library`, `Playlists`, `Settings`) across Desktop sidebar and Mobile navigation bar.
+* **Streamlined Home Screen**: Removed cluttered curated banners and category badges; restored clean onboarding with a prominent "Import Music Files" action.
+* **Retained Core Features**:
+  * Synced LRC lyrics with Apple Music-style auto-scrolling and tap-to-seek.
+  * Real-time 60 FPS audio visualizers (Raymarched Orb, Polar Circular Spectrum Ring, Aurora Mesh).
+  * Equalizer, playback speed, and pitch controls.
+  * Offline-first library management.
 
 ---
 

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
@@ -29,25 +30,32 @@ class AudioEngine {
     final completer = Completer<void>();
     _serviceInitCompleter = completer;
 
-    try {
-      await AudioService.init(
-        builder: () => _handler,
-        config: const AudioServiceConfig(
-          androidNotificationChannelId: 'com.cinematic.music.player.channel.audio',
-          androidNotificationChannelName: 'Cinematic Music Playback',
-          androidNotificationOngoing: true,
-          androidStopForegroundOnPause: true,
-          androidNotificationIcon: 'mipmap/ic_launcher',
-        ),
-      );
-      _audioServiceRegistered = true;
-      debugPrint("AudioEngine: AudioService platform session registered successfully.");
-    } catch (e, stack) {
-      debugPrint("AudioEngine: AudioService platform registration notice (standalone handler active): $e\n$stack");
-    } finally {
-      if (!completer.isCompleted) {
-        completer.complete();
+    // AudioService provides the background media session on Android/iOS.
+    // On Windows desktop, just_audio directly handles audio output through WASAPI.
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      try {
+        await AudioService.init(
+          builder: () => _handler,
+          config: const AudioServiceConfig(
+            androidNotificationChannelId: 'com.cinematic.music.player.channel.audio',
+            androidNotificationChannelName: 'Cinematic Music Playback',
+            androidNotificationOngoing: true,
+            androidStopForegroundOnPause: true,
+            androidNotificationIcon: 'mipmap/ic_launcher',
+          ),
+        );
+        _audioServiceRegistered = true;
+        debugPrint("AudioEngine: AudioService platform session registered successfully.");
+      } catch (e, stack) {
+        debugPrint("AudioEngine: AudioService platform registration notice (standalone handler active): $e\n$stack");
       }
+    } else {
+      _audioServiceRegistered = false;
+      debugPrint("AudioEngine: Desktop mode active; using direct hardware audio pipeline.");
+    }
+
+    if (!completer.isCompleted) {
+      completer.complete();
     }
 
     return _serviceInitCompleter!.future;

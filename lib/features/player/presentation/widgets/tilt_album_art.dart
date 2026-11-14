@@ -133,14 +133,19 @@ class _TiltAlbumArtworkState extends State<TiltAlbumArtwork> {
   Widget _buildArtworkContent() {
     if (widget.song?.artworkPath != null) {
       final file = File(widget.song!.artworkPath!);
-      if (file.existsSync()) {
+      if (file.existsSync() && file.lengthSync() > 0) {
         return Image.file(
           file,
           fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
         );
       }
     }
 
+    return _buildPlaceholder();
+  }
+
+  Widget _buildPlaceholder() {
     // Procedural glowing album art tile
     return Container(
       decoration: BoxDecoration(

@@ -8,7 +8,6 @@ import 'core/config/supabase_config.dart';
 import 'core/services/shader_capability_service.dart';
 import 'core/audio_engine/audio_engine.dart';
 import 'core/database/database_service.dart';
-import 'core/services/sample_music_service.dart';
 import 'core/theme/cinematic_colors.dart';
 import 'auth/session_manager.dart';
 import 'auth/auth_service.dart';
@@ -100,7 +99,7 @@ void main() async {
         size: Size(1180, 780),
         minimumSize: Size(840, 600),
         center: true,
-        backgroundColor: Colors.transparent,
+        backgroundColor: Color(0xFF0A0A0C),
         skipTaskbar: false,
         title: "Cinematic Music Player",
       );
@@ -108,6 +107,9 @@ void main() async {
         await windowManager.show();
         await windowManager.focus();
       });
+      // Safety guarantee: explicitly show window
+      await windowManager.show();
+      await windowManager.focus();
     } catch (e) {
       debugPrint("Window manager init fallback: $e");
     }
@@ -136,12 +138,6 @@ void main() async {
     await AudioEngine.instance.init();
   } catch (e) {
     debugPrint("AudioEngine init note: $e");
-  }
-
-  try {
-    await SampleMusicService.ensureSampleTracks();
-  } catch (e) {
-    debugPrint("SampleMusicService note: $e");
   }
 
   try {

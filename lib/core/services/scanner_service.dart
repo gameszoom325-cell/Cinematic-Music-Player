@@ -9,7 +9,6 @@ import '../database/models/song_model.dart';
 import '../database/database_service.dart';
 import '../audio_engine/waveform_analyzer.dart';
 import 'audio_metadata_parser.dart';
-import 'smart_matching_service.dart';
 
 class ScannerService {
   static const Set<String> supportedExtensions = {
@@ -24,10 +23,18 @@ class ScannerService {
       }
 
       final audioStatus = await Permission.audio.request();
-      if (audioStatus.isGranted) return true;
+      if (audioStatus.isGranted) {
+        // Request photos/images for local folder album art (cover.jpg/folder.jpg)
+        await Permission.photos.request();
+        return true;
+      }
 
       final storageStatus = await Permission.storage.request();
-      return storageStatus.isGranted;
+      if (storageStatus.isGranted) return true;
+
+      if (await Permission.manageExternalStorage.isGranted) return true;
+
+      return false;
     }
     return true;
   }
@@ -229,7 +236,7 @@ class ScannerService {
         lrcPath = potentialLrc.path;
       }
 
-      SongModel song = SongModel(
+      final song = SongModel(
         id: id,
         path: file.path,
         title: parsed.title,
@@ -248,20 +255,6 @@ class ScannerService {
         lrcPath: lrcPath,
         dateAdded: stat.modified,
       );
-
-      // 4. Smart Matching against curated Hindi catalogue
-      final catalogueMatch = SmartMatchingService.findCatalogueMatch(
-        filePath: file.path,
-        tagTitle: parsed.title,
-        tagArtist: parsed.artist,
-      );
-
-      if (catalogueMatch != null) {
-        song = await SmartMatchingService.enrichSongWithCatalogue(
-          song: song,
-          match: catalogueMatch,
-        );
-      }
 
       return song;
     } catch (e) {

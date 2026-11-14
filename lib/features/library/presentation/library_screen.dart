@@ -352,13 +352,32 @@ class _SongListTile extends StatelessWidget {
   Widget _buildArtworkThumb(SongModel song) {
     if (song.artworkPath != null) {
       final file = File(song.artworkPath!);
-      if (file.existsSync()) {
-        return Image.file(file, fit: BoxFit.cover);
+      if (file.existsSync() && file.lengthSync() > 0) {
+        return Image.file(
+          file,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => _fallbackThumb(),
+        );
       }
     }
+    return _fallbackThumb();
+  }
+
+  Widget _fallbackThumb() {
     return Container(
-      color: Colors.white.withOpacity(0.06),
-      child: const Icon(Icons.music_note_rounded, color: Colors.white54, size: 22),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            CinematicColors.electricViolet.withOpacity(0.35),
+            CinematicColors.obsidianDark,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: const Center(
+        child: Icon(Icons.music_note_rounded, color: Colors.white70, size: 22),
+      ),
     );
   }
 }

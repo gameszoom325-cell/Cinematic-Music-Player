@@ -44,16 +44,14 @@ jobs:
       - name: Prepare Artifact
         id: prep
         run: |
-          VERSION="${GITHUB_REF_NAME:-${{ inputs.version_tag }}}"
           mkdir -p dist/android
-          cp build/app/outputs/flutter-apk/app-release.apk dist/android/CinematicMusicPlayer-${VERSION}.apk
-          echo "tag=${VERSION}" >> $GITHUB_OUTPUT
+          cp build/app/outputs/flutter-apk/app-release.apk dist/android/CinematicMusicPlayer.apk
 
       - name: Upload Android Artifact
         uses: actions/upload-artifact@v4
         with:
           name: android-release-apk
-          path: dist/android/*.apk
+          path: dist/android/CinematicMusicPlayer.apk
 
   build_windows:
     name: Build Windows Desktop Release
@@ -88,9 +86,8 @@ jobs:
       - name: Package Portable Zip
         shell: pwsh
         run: |
-          $VERSION = if ($env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME } else { "${{ inputs.version_tag }}" }
           $ReleaseDir = "build/windows/x64/runner/Release"
-          $ZipPath = "dist/windows/CinematicMusicPlayer-${VERSION}-Windows-x64.zip"
+          $ZipPath = "dist/windows/CinematicMusicPlayer-Windows.zip"
           if (-not (Test-Path "dist/windows")) { New-Item -ItemType Directory -Path "dist/windows" -Force }
           Compress-Archive -Path "$ReleaseDir/*" -DestinationPath $ZipPath -Force
 

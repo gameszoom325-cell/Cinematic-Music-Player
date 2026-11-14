@@ -24,7 +24,7 @@ if (-not (Test-Path $BuiltApk)) {
 $DistDir = "$ProjectDir\dist\android"
 if (-not (Test-Path $DistDir)) { New-Item -ItemType Directory -Path $DistDir -Force | Out-Null }
 
-$TargetApk = "$DistDir\CinematicMusicPlayer-v1.0.0.apk"
+$TargetApk = "$DistDir\CinematicMusicPlayer.apk"
 Copy-Item -Path $BuiltApk -Destination $TargetApk -Force
 
 # Calculate SHA-256 hash

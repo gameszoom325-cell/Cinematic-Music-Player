@@ -26,7 +26,7 @@ if (-not (Test-Path "$ReleaseDir\cinematic_music_player.exe")) {
 
 # 3. Create Distribution Folder
 $DistDir = "$ProjectDir\dist\windows"
-$PortableDir = "$DistDir\CinematicMusicPlayer-v1.0.0-Windows-x64"
+$PortableDir = "$DistDir\CinematicMusicPlayer-Windows"
 if (Test-Path $PortableDir) { Remove-Item -Recurse -Force $PortableDir }
 New-Item -ItemType Directory -Path $PortableDir -Force | Out-Null
 
@@ -34,7 +34,7 @@ Write-Host "`n[3/4] Packaging portable distribution to $PortableDir..." -Foregro
 Copy-Item -Path "$ReleaseDir\*" -Destination $PortableDir -Recurse -Force
 
 # Create ZIP archive
-$ZipFile = "$DistDir\CinematicMusicPlayer-v1.0.0-Windows-x64.zip"
+$ZipFile = "$DistDir\CinematicMusicPlayer-Windows.zip"
 if (Test-Path $ZipFile) { Remove-Item -Force $ZipFile }
 Compress-Archive -Path "$PortableDir\*" -DestinationPath $ZipFile -Force
 Write-Host "Created portable archive: $ZipFile" -ForegroundColor Green
@@ -45,7 +45,7 @@ if ($CreateInstaller) {
     $InnoPath = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
     if (Test-Path $InnoPath) {
         & $InnoPath "$ProjectDir\windows\installer\cinematic_music_player.iss"
-        Write-Host "Installer created in $DistDir\CinematicMusicPlayer-Setup-v1.0.0.exe" -ForegroundColor Green
+        Write-Host "Installer created at: $DistDir\CinematicMusicPlayerSetup.exe" -ForegroundColor Green
     } else {
         Write-Host "Inno Setup compiler (ISCC.exe) not found at standard path. Use the generated portable zip or install Inno Setup 6 to compile the setup wizard." -ForegroundColor Yellow
     }

@@ -47,15 +47,44 @@
 
 ---
 
-## Downloads
+# Download & Install
 
-Download the latest verified release from [GitHub Releases](https://github.com/CinematicAudioWorks/cinematic_music_player/releases/latest):
+Download the verified production release from [GitHub Releases](https://github.com/CinematicAudioWorks/cinematic_music_player/releases/latest).
 
-| Target Platform | Package Type | Download Link | Description |
+### Windows Desktop
+
+**Downloads Available**:
+- Installer Setup: `CinematicMusicPlayerSetup.exe`
+- Portable Archive: `CinematicMusicPlayer-Windows.zip`
+
+**Steps**:
+1. Open [GitHub Releases](https://github.com/CinematicAudioWorks/cinematic_music_player/releases/latest).
+2. Download `CinematicMusicPlayerSetup.exe` (or the portable `.zip` version).
+3. Run the installer (or extract the `.zip` folder).
+4. Open **Cinematic Music Player** from your Start Menu or Desktop shortcut!
+
+---
+
+### Android Mobile
+
+**Download Available**:
+- Production APK: `CinematicMusicPlayer.apk`
+
+**Steps**:
+1. Open [GitHub Releases](https://github.com/CinematicAudioWorks/cinematic_music_player/releases/latest) on your phone and download `CinematicMusicPlayer.apk`.
+2. Allow installation permission in Android settings when prompted (*"Allow from this source"*).
+3. Install `CinematicMusicPlayer.apk`.
+4. Open **Cinematic Music Player** and enjoy your private audio vault!
+
+---
+
+## Release Assets Matrix
+
+| Target Platform | Asset Filename | Package Type | Description |
 | :--- | :--- | :--- | :--- |
-| **Windows Desktop** | Setup Wizard | `CinematicMusicPlayer-Setup-v1.0.0.exe` | Standard Windows installation wizard with Start Menu & Desktop shortcuts. |
-| **Windows Desktop** | Portable Archive | `CinematicMusicPlayer-v1.0.0-Windows-x64.zip` | Extract and run without installation. |
-| **Android Mobile** | Release APK | `CinematicMusicPlayer-v1.0.0.apk` | Sideloadable APK for Android 6.0 (API 23) and above. |
+| **Windows Desktop** | `CinematicMusicPlayerSetup.exe` | Setup Wizard | Inno Setup installation wizard with Start Menu, Desktop shortcuts, and uninstaller. |
+| **Windows Desktop** | `CinematicMusicPlayer-Windows.zip` | Portable Archive | Standalone portable folder with executable, DLLs, and shaders. |
+| **Android Mobile** | `CinematicMusicPlayer.apk` | Signed Release APK | Direct sideloadable APK targeting Android 6.0 (API 23) through Android 14 (API 34). |
 
 ---
 

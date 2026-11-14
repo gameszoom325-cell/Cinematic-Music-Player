@@ -37,12 +37,34 @@ class CloudMusicSource implements BaseMusicSource {
   }
 
   @override
-  Future<List<SongModel>> search(String query) async {
+  Future<List<SongModel>> search(String query) async => searchSongs(query);
+
+  @override
+  Future<List<SongModel>> searchSongs(String query) async {
     final cloudSongs = await CloudMusicService.instance.fetchSongs(query: query);
     return cloudSongs.map((c) => c.toSongModel().copyWith(
       sourceType: 'cloud',
       sourceId: id,
     )).toList();
+  }
+
+  @override
+  Future<List<AlbumSummary>> searchAlbums(String query) async {
+    final q = query.trim().toLowerCase();
+    final albums = await getAlbums();
+    if (q.isEmpty) return albums;
+    return albums.where((a) =>
+      a.name.toLowerCase().contains(q) ||
+      a.artist.toLowerCase().contains(q)
+    ).toList();
+  }
+
+  @override
+  Future<List<ArtistSummary>> searchArtists(String query) async {
+    final q = query.trim().toLowerCase();
+    final artists = await getArtists();
+    if (q.isEmpty) return artists;
+    return artists.where((a) => a.name.toLowerCase().contains(q)).toList();
   }
 
   @override

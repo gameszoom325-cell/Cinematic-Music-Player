@@ -7,6 +7,7 @@ import '../../../core/theme/cinematic_colors.dart';
 import '../../../core/theme/typography.dart';
 import '../../../core/database/models/song_model.dart';
 import '../../import/presentation/add_music_screen.dart';
+import 'music_search_screen.dart';
 
 class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key});
@@ -106,23 +107,39 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       ),
                     ],
                   ),
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: CinematicColors.primary.withOpacity(0.18),
-                      foregroundColor: CinematicColors.primary,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: CinematicColors.primary.withOpacity(0.5)),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.search_rounded, color: CinematicColors.primary),
+                        tooltip: "Search & Discover",
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const MusicSearchScreen()),
+                          );
+                        },
                       ),
-                    ),
-                    onPressed: _openAddMusic,
-                    icon: const Icon(Icons.add_rounded, size: 18),
-                    label: const Text(
-                      "Add Music",
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
+                      const SizedBox(width: 4),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: CinematicColors.primary.withOpacity(0.18),
+                          foregroundColor: CinematicColors.primary,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: CinematicColors.primary.withOpacity(0.5)),
+                          ),
+                        ),
+                        onPressed: _openAddMusic,
+                        icon: const Icon(Icons.add_rounded, size: 18),
+                        label: const Text(
+                          "Add Music",
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

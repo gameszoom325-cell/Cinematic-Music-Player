@@ -4,13 +4,35 @@ import 'base_music_source.dart';
 import 'music_source_type.dart';
 import 'local_music_source.dart';
 import 'cloud_music_source.dart';
+import 'online_music_source.dart';
 import 'external_provider_source.dart';
 import '../database/models/song_model.dart';
 import '../database/database_service.dart';
 
+/// Unified result container for multi-category federated search (Songs, Artists, Albums)
+class FederatedSearchResult {
+  final String query;
+  final List<SongModel> songs;
+  final List<ArtistSummary> artists;
+  final List<AlbumSummary> albums;
+
+  const FederatedSearchResult({
+    required this.query,
+    this.songs = const [],
+    this.artists = const [],
+    this.albums = const [],
+  });
+
+  factory FederatedSearchResult.empty(String query) => FederatedSearchResult(query: query);
+
+  bool get isEmpty => songs.isEmpty && artists.isEmpty && albums.isEmpty;
+}
+
 /// Central repository orchestrating all music sources in Cinematic Music Player.
-/// Implements a unified abstraction layer over local disk storage, private Supabase cloud,
-/// and external streaming providers.
+/// Implements a unified abstraction layer over:
+/// - Local offline acoustic vault (LocalMusicSource)
+/// - Private Supabase cloud catalog (CloudMusicSource)
+/// - Modern online streaming client (OnlineMusicSource - InnerTubeX pattern)
 class MusicSourceRepository {
   MusicSourceRepository._internal() {
     _registerDefaultSources();
@@ -18,7 +40,7 @@ class MusicSourceRepository {
 
   static final MusicSourceRepository instance = MusicSourceRepository._internal();
 
-  final Map<MusicSourceType, BaseMusicSource> _sources = {};
+  final Map<MusicSourceType, MusicSource> _sources = {};
   MusicSourceType? _activeFilter;
 
   // Search results cache to eliminate redundant network requests
@@ -28,16 +50,17 @@ class MusicSourceRepository {
   void _registerDefaultSources() {
     registerSource(LocalMusicSource());
     registerSource(CloudMusicSource());
+    registerSource(OnlineMusicSource());
     registerSource(ExternalProviderSource());
   }
 
-  void registerSource(BaseMusicSource source) {
+  void registerSource(MusicSource source) {
     _sources[source.type] = source;
   }
 
-  BaseMusicSource? getSource(MusicSourceType type) => _sources[type];
+  MusicSource? getSource(MusicSourceType type) => _sources[type];
 
-  List<BaseMusicSource> get allSources => _sources.values.toList();
+  List<MusicSource> get allSources => _sources.values.toList();
 
   MusicSourceType? get activeFilter => _activeFilter;
 
@@ -56,27 +79,47 @@ class MusicSourceRepository {
     }
   }
 
-  /// Unified federated search:
-  /// Queries all active sources concurrently and merges results with source tagging.
-  Future<List<SongModel>> searchAll(String query) async {
+  /// Multi-category federated search across songs, artists, and albums
+  Future<FederatedSearchResult> searchFederated(String query, {MusicSourceType? filter}) async {
     final cleanQuery = query.trim().toLowerCase();
-    if (cleanQuery.isEmpty) return getAllSongs();
+    if (cleanQuery.isEmpty) return FederatedSearchResult.empty(query);
 
-    // Check search cache
+    final songs = await searchSongs(cleanQuery, filter: filter);
+    final artists = await searchArtists(cleanQuery, filter: filter);
+    final albums = await searchAlbums(cleanQuery, filter: filter);
+
+    return FederatedSearchResult(
+      query: query,
+      songs: songs,
+      artists: artists,
+      albums: albums,
+    );
+  }
+
+  /// Search songs across registered sources
+  Future<List<SongModel>> searchSongs(String query, {MusicSourceType? filter}) async {
+    final cleanQuery = query.trim().toLowerCase();
+    if (cleanQuery.isEmpty) return getAllSongs(filter: filter);
+
+    final targetFilter = filter ?? _activeFilter;
+    if (targetFilter != null) {
+      final src = _sources[targetFilter];
+      if (src != null) {
+        return src.searchSongs(cleanQuery);
+      }
+    }
+
     final cached = _searchCache[cleanQuery];
     if (cached != null && !cached.isExpired) {
       return cached.results;
     }
 
-    final activeSources = _activeFilter != null
-        ? [_sources[_activeFilter]!].whereType<BaseMusicSource>().toList()
-        : _sources.values.where((s) => s.isAvailable).toList();
-
+    final activeSources = _sources.values.where((s) => s.isAvailable).toList();
     final searchFutures = activeSources.map((src) async {
       try {
-        return await src.search(cleanQuery);
+        return await src.searchSongs(cleanQuery);
       } catch (e) {
-        debugPrint("Search error in ${src.displayName}: $e");
+        debugPrint("searchSongs error in ${src.displayName}: $e");
         return <SongModel>[];
       }
     });
@@ -102,7 +145,79 @@ class MusicSourceRepository {
     return merged;
   }
 
-  /// Fetches songs across registered sources based on the active filter
+  /// Search artists across registered sources
+  Future<List<ArtistSummary>> searchArtists(String query, {MusicSourceType? filter}) async {
+    final cleanQuery = query.trim().toLowerCase();
+    final targetFilter = filter ?? _activeFilter;
+    if (targetFilter != null) {
+      final src = _sources[targetFilter];
+      if (src != null) return src.searchArtists(cleanQuery);
+    }
+
+    final activeSources = _sources.values.where((s) => s.isAvailable).toList();
+    final futures = activeSources.map((src) async {
+      try {
+        return await src.searchArtists(cleanQuery);
+      } catch (e) {
+        debugPrint("searchArtists error in ${src.displayName}: $e");
+        return <ArtistSummary>[];
+      }
+    });
+
+    final nested = await Future.wait(futures);
+    final Set<String> seenNames = {};
+    final List<ArtistSummary> merged = [];
+
+    for (final list in nested) {
+      for (final a in list) {
+        if (!seenNames.contains(a.name.toLowerCase())) {
+          seenNames.add(a.name.toLowerCase());
+          merged.add(a);
+        }
+      }
+    }
+    return merged;
+  }
+
+  /// Search albums across registered sources
+  Future<List<AlbumSummary>> searchAlbums(String query, {MusicSourceType? filter}) async {
+    final cleanQuery = query.trim().toLowerCase();
+    final targetFilter = filter ?? _activeFilter;
+    if (targetFilter != null) {
+      final src = _sources[targetFilter];
+      if (src != null) return src.searchAlbums(cleanQuery);
+    }
+
+    final activeSources = _sources.values.where((s) => s.isAvailable).toList();
+    final futures = activeSources.map((src) async {
+      try {
+        return await src.searchAlbums(cleanQuery);
+      } catch (e) {
+        debugPrint("searchAlbums error in ${src.displayName}: $e");
+        return <AlbumSummary>[];
+      }
+    });
+
+    final nested = await Future.wait(futures);
+    final Set<String> seenAlbums = {};
+    final List<AlbumSummary> merged = [];
+
+    for (final list in nested) {
+      for (final a in list) {
+        final key = "${a.name.toLowerCase()}:::${a.artist.toLowerCase()}";
+        if (!seenAlbums.contains(key)) {
+          seenAlbums.add(key);
+          merged.add(a);
+        }
+      }
+    }
+    return merged;
+  }
+
+  /// Convenience wrapper for backward compatibility
+  Future<List<SongModel>> searchAll(String query) => searchSongs(query);
+
+  /// Fetches songs across registered sources based on active filter
   Future<List<SongModel>> getAllSongs({MusicSourceType? filter}) async {
     final targetFilter = filter ?? _activeFilter;
     if (targetFilter != null) {
@@ -112,7 +227,6 @@ class MusicSourceRepository {
       }
     }
 
-    // Combine from all sources
     final List<SongModel> combined = [];
     final Set<String> seenIds = {};
 
@@ -173,7 +287,7 @@ class MusicSourceRepository {
   }
 
   /// Resolves the final playable audio URI for any song by delegating
-  /// to its originating MusicSource.
+  /// to its originating MusicSource (lazy stream resolution).
   Future<SongModel> resolvePlayableSong(SongModel song) async {
     final sourceType = MusicSourceType.fromString(song.sourceType);
     final source = _sources[sourceType] ?? _sources[MusicSourceType.local];

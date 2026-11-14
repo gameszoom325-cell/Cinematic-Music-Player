@@ -48,6 +48,8 @@ class CloudSongModel {
       sampleRate: 44100,
       dateAdded: createdAt,
       playCount: playCount,
+      sourceType: 'cloud',
+      sourceId: 'cloud',
     );
   }
 

@@ -6,6 +6,7 @@ import 'core/theme/cinematic_colors.dart';
 import 'core/services/update_service.dart';
 import 'core/services/scanner_service.dart';
 import 'features/library/presentation/library_screen.dart';
+import 'features/library/presentation/music_search_screen.dart';
 import 'features/library/providers/library_provider.dart';
 import 'features/cloud/presentation/cloud_library_screen.dart';
 import 'features/favorites/presentation/favorites_screen.dart';
@@ -80,6 +81,14 @@ class _AppShellState extends ConsumerState<AppShell> {
   // Windows Desktop Keyboard Shortcuts & Media Key Handler
   bool _handleKeyEvent(KeyEvent event) {
     if (event is KeyDownEvent) {
+      if (event.logicalKey == LogicalKeyboardKey.keyF && HardwareKeyboard.instance.isControlPressed) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MusicSearchScreen()),
+        );
+        return true;
+      }
+
       final playerNotifier = ref.read(playerProvider.notifier);
       final playerState = ref.read(playerProvider);
 
@@ -260,7 +269,19 @@ class _AppShellState extends ConsumerState<AppShell> {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
+              // Search Across All Sources (InnerTubeX Pattern)
+              IconButton(
+                icon: const Icon(Icons.search_rounded, color: CinematicColors.primary, size: 22),
+                tooltip: "Search Music & Discover (Ctrl+F)",
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const MusicSearchScreen()),
+                  );
+                },
+              ),
+              const SizedBox(width: 8),
               // Cinema View Pill
               IconButton(
                 icon: const Icon(Icons.fullscreen_rounded, color: Colors.white70, size: 22),
@@ -325,6 +346,37 @@ class _AppShellState extends ConsumerState<AppShell> {
               ),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MusicSearchScreen()),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: CinematicColors.surfaceContainerHigh.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white.withOpacity(0.06)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.search_rounded, size: 16, color: CinematicColors.primary),
+                    SizedBox(width: 8),
+                    Text(
+                      "Search & Discover",
+                      style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
           _buildSidebarNavItem(Icons.folder_special_rounded, "Local Music", 0),
           _buildSidebarNavItem(Icons.cloud_done_rounded, "Cloud Library", 1),
           _buildSidebarNavItem(Icons.queue_music_rounded, "Playlists", 2),

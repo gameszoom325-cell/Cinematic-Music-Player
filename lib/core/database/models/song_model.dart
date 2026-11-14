@@ -75,11 +75,26 @@ class SongModel {
 
   Duration get duration => Duration(milliseconds: durationMs);
 
-  bool get isCloudSong => sourceType == 'cloud' || path.startsWith('http://') || path.startsWith('https://');
+  /// Unified accessors requested for multi-source system
+  String? get artwork => artworkPath;
+  String? get thumbnail => artworkPath;
+  String get source => sourceType;
+
+  bool get isCloudSong =>
+      sourceType == 'cloud' ||
+      path.startsWith('http://') ||
+      path.startsWith('https://');
+  bool get isOnline => sourceType == 'online';
   bool get isExternal => sourceType == 'external';
+  bool get isRemoteStream =>
+      isCloudSong ||
+      isOnline ||
+      isExternal ||
+      path.startsWith('http://') ||
+      path.startsWith('https://');
 
   bool get isLocalFileAvailable {
-    if (isCloudSong || isExternal) return true;
+    if (isRemoteStream) return true;
     if (path.isEmpty) return false;
     try {
       return File(path).existsSync();

@@ -4,7 +4,7 @@ import 'music_source_type.dart';
 
 /// Abstract contract for all pluggable music sources in Cinematic Music Player.
 /// Inspired by the decoupled provider pattern in Metrolist and InnerTubeX.
-abstract class BaseMusicSource {
+abstract class MusicSource {
   String get id;
   String get displayName;
   MusicSourceType get type;
@@ -16,8 +16,17 @@ abstract class BaseMusicSource {
   /// Fetch or browse paginated catalog of songs from this source
   Future<List<SongModel>> getSongs({int offset = 0, int limit = 50});
 
-  /// Perform catalog search across this source
+  /// Perform track search across this source
   Future<List<SongModel>> search(String query);
+
+  /// Search songs specifically
+  Future<List<SongModel>> searchSongs(String query) => search(query);
+
+  /// Search artists specifically
+  Future<List<ArtistSummary>> searchArtists(String query);
+
+  /// Search albums specifically
+  Future<List<AlbumSummary>> searchAlbums(String query);
 
   /// Fetch aggregated album summaries from this source
   Future<List<AlbumSummary>> getAlbums();
@@ -29,3 +38,6 @@ abstract class BaseMusicSource {
   /// for a song. This enables lazy-resolving stream tokens just-in-time prior to playback.
   Future<String> resolvePlaybackUri(SongModel song);
 }
+
+/// Backward compatibility alias
+typedef BaseMusicSource = MusicSource;

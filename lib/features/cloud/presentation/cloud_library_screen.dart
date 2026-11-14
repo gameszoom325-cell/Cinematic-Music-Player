@@ -7,6 +7,7 @@ import '../../../core/database/models/cloud_artist_model.dart';
 import '../../../core/database/models/cloud_album_model.dart';
 import '../../../core/database/database_service.dart';
 import '../../player/providers/player_provider.dart';
+import '../../library/presentation/music_search_screen.dart';
 import 'admin_upload_screen.dart';
 
 class CloudLibraryScreen extends ConsumerStatefulWidget {
@@ -217,23 +218,39 @@ class _CloudLibraryScreenState extends ConsumerState<CloudLibraryScreen> {
                           ),
                         ],
                       ),
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: CinematicColors.primary.withOpacity(0.18),
-                          foregroundColor: CinematicColors.primary,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(color: CinematicColors.primary.withOpacity(0.5)),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.search_rounded, color: CinematicColors.primary),
+                            tooltip: "Discover Music",
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const MusicSearchScreen()),
+                              );
+                            },
                           ),
-                        ),
-                        onPressed: _openAdminUpload,
-                        icon: const Icon(Icons.cloud_upload_rounded, size: 18),
-                        label: const Text(
-                          "Admin Upload",
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                        ),
+                          const SizedBox(width: 4),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: CinematicColors.primary.withOpacity(0.18),
+                              foregroundColor: CinematicColors.primary,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: BorderSide(color: CinematicColors.primary.withOpacity(0.5)),
+                              ),
+                            ),
+                            onPressed: _openAdminUpload,
+                            icon: const Icon(Icons.cloud_upload_rounded, size: 18),
+                            label: const Text(
+                              "Admin Upload",
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

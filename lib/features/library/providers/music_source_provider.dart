@@ -22,7 +22,15 @@ final unifiedSongsProvider = FutureProvider<List<SongModel>>((ref) async {
 final unifiedSearchProvider = FutureProvider.family<List<SongModel>, String>((ref, query) async {
   if (query.trim().isEmpty) return [];
   final repo = ref.watch(musicSourceRepositoryProvider);
-  return repo.searchAll(query);
+  final activeFilter = ref.watch(activeSourceFilterProvider);
+  return repo.searchSongs(query, filter: activeFilter);
+});
+
+final federatedSearchProvider = FutureProvider.family<FederatedSearchResult, String>((ref, query) async {
+  if (query.trim().isEmpty) return FederatedSearchResult.empty(query);
+  final repo = ref.watch(musicSourceRepositoryProvider);
+  final activeFilter = ref.watch(activeSourceFilterProvider);
+  return repo.searchFederated(query, filter: activeFilter);
 });
 
 final unifiedAlbumsProvider = FutureProvider<List<AlbumSummary>>((ref) async {

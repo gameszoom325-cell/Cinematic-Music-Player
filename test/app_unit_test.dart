@@ -19,8 +19,10 @@ import 'package:cinematic_music_player/core/database/database_service.dart';
 import 'package:cinematic_music_player/core/sources/music_source_type.dart';
 import 'package:cinematic_music_player/core/sources/local_music_source.dart';
 import 'package:cinematic_music_player/core/sources/cloud_music_source.dart';
+import 'package:cinematic_music_player/core/sources/online_music_source.dart';
 import 'package:cinematic_music_player/core/sources/external_provider_source.dart';
 import 'package:cinematic_music_player/core/sources/music_source_repository.dart';
+import 'package:cinematic_music_player/core/sources/base_music_source.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -386,10 +388,11 @@ void main() {
 
     test('MusicSourceRepository initializes default sources and executes federated search', () async {
       final repo = MusicSourceRepository.instance;
-      expect(repo.allSources, hasLength(3));
+      expect(repo.allSources, hasLength(4));
 
       expect(repo.getSource(MusicSourceType.local), isNotNull);
       expect(repo.getSource(MusicSourceType.cloud), isNotNull);
+      expect(repo.getSource(MusicSourceType.online), isNotNull);
       expect(repo.getSource(MusicSourceType.externalProvider), isNotNull);
 
       // Search all sources
@@ -430,6 +433,95 @@ void main() {
       expect(resolved.id, 'ext_test_99');
       expect(resolved.isLocalFileAvailable, isTrue);
       expect(resolved.path, 'https://cdn.example.com/stream.mp3');
+    });
+  });
+
+  group('14. Modern MusicSource (InnerTubeX Inspired) & Unified Search Tests', () {
+    test('OnlineMusicSource initializes with correct InnerTubeX specifications', () {
+      final onlineSource = OnlineMusicSource();
+      expect(onlineSource.type, MusicSourceType.online);
+      expect(onlineSource.id, 'online');
+      expect(onlineSource.displayName, contains('InnerTubeX'));
+      expect(onlineSource.isAvailable, isTrue);
+    });
+
+    test('OnlineMusicSource searchSongs returns unified SongModel with title, artist, album, thumbnail, duration', () async {
+      final onlineSource = OnlineMusicSource();
+      final songs = await onlineSource.searchSongs('Acoustic');
+
+      expect(songs, isNotEmpty);
+      final song = songs.first;
+      expect(song.title, isNotEmpty);
+      expect(song.artist, isNotEmpty);
+      expect(song.album, isNotEmpty);
+      expect(song.thumbnail, isNotNull);
+      expect(song.artwork, isNotNull);
+      expect(song.durationMs, greaterThan(0));
+      expect(song.duration.inSeconds, greaterThan(0));
+      expect(song.sourceType, 'online');
+      expect(song.sourceId, 'online');
+      expect(song.isOnline, isTrue);
+      expect(song.isRemoteStream, isTrue);
+      expect(song.isLocalFileAvailable, isTrue);
+    });
+
+    test('OnlineMusicSource searchArtists and searchAlbums return categorized summaries', () async {
+      final onlineSource = OnlineMusicSource();
+      final artists = await onlineSource.searchArtists('Acoustic');
+      expect(artists, isNotEmpty);
+      expect(artists.first.name, isNotEmpty);
+      expect(artists.first.sampleArtworkPath, isNotNull);
+
+      final albums = await onlineSource.searchAlbums('Golden');
+      expect(albums, isNotEmpty);
+      expect(albums.first.name, isNotEmpty);
+      expect(albums.first.artist, isNotEmpty);
+      expect(albums.first.artworkPath, isNotNull);
+    });
+
+    test('OnlineMusicSource resolves playback URI on-demand and caches with TTL', () async {
+      final onlineSource = OnlineMusicSource();
+      final songs = await onlineSource.getSongs();
+      expect(songs, isNotEmpty);
+
+      final targetSong = songs.first;
+      final uri1 = await onlineSource.resolvePlaybackUri(targetSong);
+      expect(uri1, isNotEmpty);
+      expect(uri1.startsWith('http'), isTrue);
+
+      final uri2 = await onlineSource.resolvePlaybackUri(targetSong);
+      expect(uri2, equals(uri1));
+    });
+
+    test('MusicSourceRepository searchFederated returns multi-category results', () async {
+      final repo = MusicSourceRepository.instance;
+      final result = await repo.searchFederated('Acoustic');
+
+      expect(result.isEmpty, isFalse);
+      expect(result.songs, isNotEmpty);
+      expect(result.artists, isNotEmpty);
+      expect(result.albums, isNotEmpty);
+    });
+
+    test('Player connection flow resolves Online song before AudioEngine dispatch', () async {
+      final repo = MusicSourceRepository.instance;
+      final onlineSong = SongModel(
+        id: 'online_yt_01',
+        path: 'https://ia800504.us.archive.org/33/items/Bensound_AcousticBreeze/bensound-acousticbreeze.mp3',
+        title: 'Acoustic Breeze',
+        artist: 'Acoustic Horizon',
+        album: 'Golden Hour Sessions',
+        durationMs: 168000,
+        dateAdded: DateTime(2026, 11, 1),
+        sourceType: 'online',
+        sourceId: 'online',
+      );
+
+      final resolvedSong = await repo.resolvePlayableSong(onlineSong);
+      expect(resolvedSong.isOnline, isTrue);
+      expect(resolvedSong.isLocalFileAvailable, isTrue);
+      expect(resolvedSong.path.startsWith('http'), isTrue);
+      expect(resolvedSong.title, 'Acoustic Breeze');
     });
   });
 }

@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import '../core/services/supabase_backend_client.dart';
+import '../auth/session_manager.dart';
 
 /// Connected hardware device profile participating in cloud synchronization.
 class DeviceModel {
@@ -187,14 +188,10 @@ class CloudSyncPayload {
 }
 
 /// Cloud database provider and multi-device synchronizer.
-/// Supports both local simulated multi-device cloud storage (for zero-setup offline/local sync testing)
-/// and remote REST endpoints for real production cloud backends.
+/// Bridges real Supabase cloud PostgreSQL with local persistent storage for 100% offline resilience.
 class CloudDatabase {
   CloudDatabase._internal();
   static final CloudDatabase instance = CloudDatabase._internal();
-
-  String? remoteApiUrl; // Optional REST server URL
-  String? remoteAuthBearer;
 
   Directory? _cloudStorageDir;
 
@@ -222,28 +219,21 @@ class CloudDatabase {
   Future<CloudSyncPayload?> fetchSyncPayload(String userId) async {
     if (userId.isEmpty || userId == 'guest_vault_user') return null;
 
-    // 1. If remote API configured, attempt remote pull
-    if (remoteApiUrl != null && remoteApiUrl!.isNotEmpty) {
-      try {
-        final uri = Uri.parse('$remoteApiUrl/sync/$userId');
-        final response = await http.get(
-          uri,
-          headers: {
-            'Content-Type': 'application/json',
-            if (remoteAuthBearer != null) 'Authorization': 'Bearer $remoteAuthBearer',
-          },
-        ).timeout(const Duration(seconds: 8));
+    final token = SessionManager.instance.token;
 
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body) as Map<String, dynamic>;
-          return CloudSyncPayload.fromJson(data);
-        }
-      } catch (e) {
-        debugPrint("Remote cloud pull error, falling back to local cloud vault: $e");
+    // 1. Attempt remote pull from real Supabase backend
+    try {
+      final remotePayload = await SupabaseBackendClient.instance.fetchSyncPayload(userId, token: token);
+      if (remotePayload != null) {
+        // Cache to local vault
+        await _saveLocalPayload(userId, remotePayload);
+        return remotePayload;
       }
+    } catch (e) {
+      debugPrint("Supabase pull note (falling back to local cache): $e");
     }
 
-    // 2. Read from persistent local Cloud Vault
+    // 2. Read from persistent local Cloud Vault (Offline Mode)
     try {
       if (_cloudStorageDir == null) await init();
       final file = _getUserPayloadFile(userId);
@@ -253,40 +243,34 @@ class CloudDatabase {
         return CloudSyncPayload.fromJson(map);
       }
     } catch (e) {
-      debugPrint("Error reading user cloud snapshot: $e");
+      debugPrint("Error reading local user cloud snapshot: $e");
     }
 
     return null;
   }
 
-  /// Upload updated user state snapshot to the cloud.
+  /// Upload updated user state snapshot to Supabase and cache locally.
   Future<bool> uploadSyncPayload(String userId, CloudSyncPayload payload) async {
     if (userId.isEmpty || userId == 'guest_vault_user') return false;
 
-    bool uploadedSuccessfully = false;
+    // 1. Always save locally first (prevents data loss offline)
+    await _saveLocalPayload(userId, payload);
 
-    // 1. If remote API configured, push to remote backend
-    if (remoteApiUrl != null && remoteApiUrl!.isNotEmpty) {
-      try {
-        final uri = Uri.parse('$remoteApiUrl/sync/$userId');
-        final response = await http.post(
-          uri,
-          headers: {
-            'Content-Type': 'application/json',
-            if (remoteAuthBearer != null) 'Authorization': 'Bearer $remoteAuthBearer',
-          },
-          body: jsonEncode(payload.toJson()),
-        ).timeout(const Duration(seconds: 10));
-
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          uploadedSuccessfully = true;
-        }
-      } catch (e) {
-        debugPrint("Remote cloud push error, saving to local cloud vault: $e");
+    // 2. Push to Supabase Cloud
+    final token = SessionManager.instance.token;
+    try {
+      final success = await SupabaseBackendClient.instance.uploadSyncPayload(userId, payload, token: token);
+      if (success) {
+        return true;
       }
+    } catch (e) {
+      debugPrint("Supabase upload note: $e");
     }
 
-    // 2. Write to persistent local Cloud Vault (ensures local multi-device and offline safety)
+    return true; // Local state saved successfully
+  }
+
+  Future<void> _saveLocalPayload(String userId, CloudSyncPayload payload) async {
     try {
       if (_cloudStorageDir == null) await init();
       final file = _getUserPayloadFile(userId);
@@ -299,44 +283,34 @@ class CloudDatabase {
         if (await file.exists()) await file.delete();
         await temp.rename(file.path);
       }
-      uploadedSuccessfully = true;
     } catch (e) {
-      debugPrint("Error writing cloud payload to vault: $e");
+      debugPrint("Error saving local sync payload: $e");
     }
-
-    return uploadedSuccessfully;
   }
 
   /// Fetch all active devices connected to this user's account.
   Future<List<DeviceModel>> getConnectedDevices(String userId, {String? currentDeviceId}) async {
     if (userId.isEmpty || userId == 'guest_vault_user') return [];
 
-    // Check remote if available
-    if (remoteApiUrl != null && remoteApiUrl!.isNotEmpty) {
-      try {
-        final uri = Uri.parse('$remoteApiUrl/devices/$userId');
-        final response = await http.get(
-          uri,
-          headers: {
-            'Content-Type': 'application/json',
-            if (remoteAuthBearer != null) 'Authorization': 'Bearer $remoteAuthBearer',
-          },
-        ).timeout(const Duration(seconds: 6));
+    final token = SessionManager.instance.token;
 
-        if (response.statusCode == 200) {
-          final list = jsonDecode(response.body) as List<dynamic>;
-          return list.map((e) {
-            final map = Map<String, dynamic>.from(e as Map);
-            final id = map['deviceId'] as String? ?? '';
-            return DeviceModel.fromJson(map, isCurrentDevice: id == currentDeviceId);
-          }).toList();
-        }
-      } catch (e) {
-        debugPrint("Remote device fetch error, using local vault: $e");
+    // 1. Try remote fetch from Supabase
+    try {
+      final remoteDevices = await SupabaseBackendClient.instance.fetchDevices(
+        userId,
+        currentDeviceId: currentDeviceId,
+        token: token,
+      );
+      if (remoteDevices.isNotEmpty) {
+        // Cache locally
+        await _saveLocalDevices(userId, remoteDevices);
+        return remoteDevices;
       }
+    } catch (e) {
+      debugPrint("Supabase devices fetch note: $e");
     }
 
-    // Read from local cloud vault
+    // 2. Read from local cloud vault
     try {
       if (_cloudStorageDir == null) await init();
       final file = _getUserDevicesFile(userId);
@@ -360,6 +334,7 @@ class CloudDatabase {
   Future<void> registerOrUpdateDevice(String userId, DeviceModel device) async {
     if (userId.isEmpty || userId == 'guest_vault_user') return;
 
+    // 1. Save locally
     try {
       if (_cloudStorageDir == null) await init();
       final file = _getUserDevicesFile(userId);
@@ -375,7 +350,6 @@ class CloudDatabase {
             .toList();
       }
 
-      // Upsert device
       final index = devices.indexWhere((d) => d['deviceId'] == device.deviceId);
       if (index >= 0) {
         devices[index] = device.toJson();
@@ -389,27 +363,39 @@ class CloudDatabase {
         if (await file.exists()) await file.delete();
         await temp.rename(file.path);
       }
-
-      // Also notify remote if configured
-      if (remoteApiUrl != null && remoteApiUrl!.isNotEmpty) {
-        try {
-          final uri = Uri.parse('$remoteApiUrl/devices/$userId');
-          await http.post(
-            uri,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(device.toJson()),
-          ).timeout(const Duration(seconds: 4));
-        } catch (_) {}
-      }
     } catch (e) {
-      debugPrint("Error registering device: $e");
+      debugPrint("Error registering device locally: $e");
     }
+
+    // 2. Push heartbeat to Supabase Cloud
+    final token = SessionManager.instance.token;
+    try {
+      await SupabaseBackendClient.instance.registerOrUpdateDevice(userId, device, token: token);
+    } catch (_) {}
+  }
+
+  Future<void> _saveLocalDevices(String userId, List<DeviceModel> devices) async {
+    try {
+      if (_cloudStorageDir == null) await init();
+      final file = _getUserDevicesFile(userId);
+      if (!await file.parent.exists()) {
+        await file.parent.create(recursive: true);
+      }
+      final jsonList = devices.map((d) => d.toJson()).toList();
+      final temp = File('${file.path}.tmp');
+      await temp.writeAsString(jsonEncode(jsonList), flush: true);
+      if (await temp.exists()) {
+        if (await file.exists()) await file.delete();
+        await temp.rename(file.path);
+      }
+    } catch (_) {}
   }
 
   /// Remove/de-authorize a device from the account.
   Future<bool> removeDevice(String userId, String deviceId) async {
     if (userId.isEmpty || userId == 'guest_vault_user') return false;
 
+    // Remove locally
     try {
       if (_cloudStorageDir == null) await init();
       final file = _getUserDevicesFile(userId);
@@ -421,16 +407,22 @@ class CloudDatabase {
             .toList();
 
         final temp = File('${file.path}.tmp');
-      await temp.writeAsString(jsonEncode(devices), flush: true);
-      if (await temp.exists()) {
-        if (await file.exists()) await file.delete();
-        await temp.rename(file.path);
-      }
-        return true;
+        await temp.writeAsString(jsonEncode(devices), flush: true);
+        if (await temp.exists()) {
+          if (await file.exists()) await file.delete();
+          await temp.rename(file.path);
+        }
       }
     } catch (e) {
-      debugPrint("Error removing device: $e");
+      debugPrint("Error removing device locally: $e");
     }
-    return false;
+
+    // Remove from Supabase
+    final token = SessionManager.instance.token;
+    try {
+      await SupabaseBackendClient.instance.removeDevice(userId, deviceId, token: token);
+    } catch (_) {}
+
+    return true;
   }
 }

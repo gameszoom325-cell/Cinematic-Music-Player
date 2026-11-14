@@ -10,6 +10,7 @@ class UserModel {
   final DateTime createdDate;
   final String? token;
   final bool isGuest;
+  final List<dynamic>? devices;
 
   const UserModel({
     required this.userId,
@@ -19,6 +20,7 @@ class UserModel {
     required this.createdDate,
     this.token,
     this.isGuest = false,
+    this.devices,
   });
 
   /// Factory for an anonymous local guest profile
@@ -31,6 +33,7 @@ class UserModel {
       createdDate: DateTime.now(),
       token: null,
       isGuest: true,
+      devices: const [],
     );
   }
 
@@ -42,6 +45,7 @@ class UserModel {
     DateTime? createdDate,
     String? token,
     bool? isGuest,
+    List<dynamic>? devices,
   }) {
     return UserModel(
       userId: userId ?? this.userId,
@@ -51,6 +55,7 @@ class UserModel {
       createdDate: createdDate ?? this.createdDate,
       token: token ?? this.token,
       isGuest: isGuest ?? this.isGuest,
+      devices: devices ?? this.devices,
     );
   }
 
@@ -63,6 +68,7 @@ class UserModel {
       'createdDate': createdDate.toIso8601String(),
       'token': token,
       'isGuest': isGuest,
+      'devices': devices,
     };
   }
 
@@ -77,6 +83,7 @@ class UserModel {
           : DateTime.now(),
       token: json['token'] as String?,
       isGuest: json['isGuest'] as bool? ?? false,
+      devices: json['devices'] as List<dynamic>?,
     );
   }
 

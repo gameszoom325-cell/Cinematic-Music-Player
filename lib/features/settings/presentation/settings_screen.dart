@@ -6,15 +6,15 @@ import '../../auth/providers/auth_provider.dart';
 import '../../sync/providers/sync_provider.dart';
 import '../../../auth/user_model.dart';
 import '../../../auth/session_manager.dart';
-import '../../../auth/auth_service.dart';
 import '../../../auth/welcome_screen.dart';
-import '../../../auth/login_screen.dart';
 import '../../../sync/cloud_database.dart';
 import '../../../sync/sync_manager.dart';
 import '../../../core/theme/cinematic_colors.dart';
 import '../../../core/theme/glassmorphism.dart';
 import '../../../core/theme/typography.dart';
 import '../../../core/services/update_service.dart';
+import '../../../core/config/supabase_config.dart';
+import '../../../core/services/supabase_backend_client.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -455,7 +455,176 @@ class SettingsScreen extends ConsumerWidget {
             "Unified across devices: Playlists • Favorites • Recently Played • Audio Settings • Visualizer Presets",
             style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 11, height: 1.4),
           ),
+          const Divider(color: Colors.white12, height: 24),
+          Row(
+            children: [
+              const Icon(Icons.dns_rounded, size: 16, color: CinematicColors.cyberCyan),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Supabase Cloud Backend",
+                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      SupabaseConfig.instance.url,
+                      style: const TextStyle(color: Colors.white54, fontSize: 11),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              TextButton.icon(
+                style: TextButton.styleFrom(
+                  foregroundColor: CinematicColors.neonCyan,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                ),
+                icon: const Icon(Icons.settings_ethernet_rounded, size: 14),
+                label: const Text("Configure", style: TextStyle(fontSize: 12)),
+                onPressed: () => _showConfigureBackendDialog(context),
+              ),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+
+  void _showConfigureBackendDialog(BuildContext context) {
+    final urlController = TextEditingController(text: SupabaseConfig.instance.url);
+    final keyController = TextEditingController(text: SupabaseConfig.instance.anonKey);
+    bool testing = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogCtx, setDialogState) => AlertDialog(
+          backgroundColor: CinematicColors.obsidianCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.cloud_sync_rounded, color: CinematicColors.neonCyan, size: 22),
+              SizedBox(width: 10),
+              Text(
+                "Supabase Backend",
+                style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Configure your Supabase PostgreSQL cloud backend for cross-device synchronization between Windows and Android.",
+                  style: TextStyle(color: Colors.white60, fontSize: 12, height: 1.4),
+                ),
+                const SizedBox(height: 16),
+                const Text("PROJECT URL", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: urlController,
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  decoration: InputDecoration(
+                    hintText: "https://<project-ref>.supabase.co",
+                    hintStyle: const TextStyle(color: Colors.white30, fontSize: 12),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.06),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text("ANON PUBLIC API KEY", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: keyController,
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  decoration: InputDecoration(
+                    hintText: "eyJhbGciOi...",
+                    hintStyle: const TextStyle(color: Colors.white30, fontSize: 12),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.06),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: CinematicColors.neonCyan,
+                        side: const BorderSide(color: CinematicColors.neonCyan, width: 1),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      onPressed: testing
+                          ? null
+                          : () async {
+                              setDialogState(() => testing = true);
+                              final healthy = await SupabaseBackendClient.instance.checkHealth();
+                              setDialogState(() => testing = false);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      healthy
+                                          ? "✓ Supabase backend is reachable and responsive!"
+                                          : "⚠ Could not connect to Supabase backend. Check URL and network.",
+                                    ),
+                                    backgroundColor: healthy ? Colors.green.shade800 : Colors.red.shade800,
+                                  ),
+                                );
+                              }
+                            },
+                      icon: testing
+                          ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.speed_rounded, size: 14),
+                      label: const Text("Test Health", style: TextStyle(fontSize: 12)),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      style: TextButton.styleFrom(foregroundColor: Colors.white54),
+                      onPressed: () async {
+                        await SupabaseConfig.instance.resetToDefaults();
+                        urlController.text = SupabaseConfig.instance.url;
+                        keyController.text = SupabaseConfig.instance.anonKey;
+                        setDialogState(() {});
+                      },
+                      child: const Text("Reset", style: TextStyle(fontSize: 12)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("Cancel", style: TextStyle(color: Colors.white54)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: CinematicColors.electricViolet,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () async {
+                await SupabaseConfig.instance.setCredentials(
+                  url: urlController.text,
+                  anonKey: keyController.text,
+                );
+                if (ctx.mounted) Navigator.pop(ctx);
+                SyncManager.instance.syncAll(force: true);
+              },
+              child: const Text("Save & Sync"),
+            ),
+          ],
+        ),
       ),
     );
   }

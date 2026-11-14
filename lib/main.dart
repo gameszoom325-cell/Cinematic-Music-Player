@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
+import 'core/config/supabase_config.dart';
 import 'core/audio_engine/audio_engine.dart';
 import 'core/database/database_service.dart';
 import 'core/services/sample_music_service.dart';
@@ -52,6 +53,7 @@ void main() async {
   // Initialize Core Services
   try {
     await DatabaseService.instance.init();
+    await SupabaseConfig.instance.init();
     await AudioEngine.instance.init();
     await SampleMusicService.ensureSampleTracks();
     await SessionManager.instance.init();

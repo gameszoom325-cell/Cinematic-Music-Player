@@ -7,8 +7,10 @@ import 'package:path_provider/path_provider.dart';
 import 'user_model.dart';
 import 'session_manager.dart';
 import '../sync/cloud_database.dart';
+import '../core/services/supabase_backend_client.dart';
 
-/// Authentication service for creating, logging in, and managing cross-device user accounts.
+/// Authentication service supporting real cloud backend authentication (Supabase GoTrue)
+/// with seamless local offline vault caching and offline login fallback.
 class AuthService {
   AuthService._internal();
   static final AuthService instance = AuthService._internal();
@@ -31,14 +33,14 @@ class AuthService {
     }
   }
 
-  /// Secure SHA-256 password hash with static system salt
+  /// Secure SHA-256 password hash with static system salt for offline storage
   String _hashPassword(String password, String salt) {
     const systemPepper = 'CINEMATIC_STUDIO_V1_PEPPER';
     final bytes = utf8.encode('$password::$salt::$systemPepper');
     return sha256.convert(bytes).toString();
   }
 
-  /// Register a new cross-platform music account
+  /// Register a new cross-platform music account with real cloud backend
   Future<UserModel> register({
     required String username,
     required String email,
@@ -60,53 +62,78 @@ class AuthService {
       throw Exception("Password must be at least 6 characters long");
     }
 
-    final accounts = await _loadAccounts();
+    UserModel? cloudUser;
+    String? cloudError;
 
-    // Check email uniqueness
-    if (accounts.any((a) => (a['email'] as String).toLowerCase() == cleanEmail)) {
-      throw Exception("An account with this email already exists");
+    // 1. Attempt real cloud registration via Supabase
+    try {
+      cloudUser = await SupabaseBackendClient.instance.signUp(
+        email: cleanEmail,
+        password: password,
+        username: cleanUsername,
+        profileImage: profileImage,
+      );
+    } catch (e) {
+      cloudError = e.toString().replaceAll("Exception: ", "");
+      debugPrint("Supabase online registration notice: $cloudError");
+      // If error is duplicate user from Supabase, propagate error
+      if (cloudError.toLowerCase().contains("already registered") ||
+          cloudError.toLowerCase().contains("already exists")) {
+        throw Exception("An account with this email already exists");
+      }
     }
 
-    final userId = 'usr_${DateTime.now().millisecondsSinceEpoch.toRadixString(16)}';
-    final salt = DateTime.now().microsecondsSinceEpoch.toString();
-    final passwordHash = _hashPassword(password, salt);
-    final token = 'tok_${sha256.convert(utf8.encode('$userId:$salt:${DateTime.now()}')).toString().substring(0, 32)}';
     final now = DateTime.now();
+    final salt = now.microsecondsSinceEpoch.toString();
+    final passwordHash = _hashPassword(password, salt);
 
-    final user = UserModel(
-      userId: userId,
-      username: cleanUsername,
-      email: cleanEmail,
-      profileImage: profileImage ?? _getDefaultAvatar(cleanUsername),
-      createdDate: now,
-      token: token,
-      isGuest: false,
-    );
+    // If cloud succeeded, use cloud user; otherwise fallback to local offline vault creation
+    final user = cloudUser ??
+        UserModel(
+          userId: 'usr_${now.millisecondsSinceEpoch.toRadixString(16)}',
+          username: cleanUsername,
+          email: cleanEmail,
+          profileImage: profileImage ?? _getDefaultAvatar(cleanUsername),
+          createdDate: now,
+          token: 'tok_${sha256.convert(utf8.encode('$cleanEmail:$salt:$now')).toString().substring(0, 32)}',
+          isGuest: false,
+          devices: const [],
+        );
 
-    accounts.add({
-      'userId': userId,
-      'username': cleanUsername,
+    // Cache credentials in local vault for offline access
+    final accounts = await _loadAccounts();
+    final existingIdx = accounts.indexWhere((a) => (a['email'] as String).toLowerCase() == cleanEmail);
+    final accountMap = {
+      'userId': user.userId,
+      'username': user.username,
       'email': cleanEmail,
       'passwordHash': passwordHash,
       'salt': salt,
       'profileImage': user.profileImage,
-      'createdDate': now.toIso8601String(),
-      'token': token,
-    });
+      'createdDate': user.createdDate.toIso8601String(),
+      'token': user.token,
+    };
 
+    if (existingIdx >= 0) {
+      accounts[existingIdx] = accountMap;
+    } else {
+      accounts.add(accountMap);
+    }
     await _saveAccounts(accounts);
-    await SessionManager.instance.saveSession(user, token: token, rememberMe: true);
 
-    // Register hardware device with cloud vault
+    // Persist session
+    await SessionManager.instance.saveSession(user, token: user.token, rememberMe: true);
+
+    // Register hardware device with cloud database & local vault
     final device = DeviceModel(
       deviceId: SessionManager.instance.deviceId,
       deviceName: SessionManager.instance.deviceName,
       platform: SessionManager.instance.getPlatform(),
-      lastSyncTime: DateTime.now(),
+      lastSyncTime: now,
       appVersion: '1.0.0',
       isCurrentDevice: true,
     );
-    await CloudDatabase.instance.registerOrUpdateDevice(userId, device);
+    await CloudDatabase.instance.registerOrUpdateDevice(user.userId, device);
 
     return user;
   }
@@ -120,52 +147,98 @@ class AuthService {
     if (_accountsFile == null) await init();
 
     final cleanEmail = email.trim().toLowerCase();
-    final accounts = await _loadAccounts();
+    UserModel? cloudUser;
+    String? cloudError;
 
-    final account = accounts.firstWhere(
-      (a) => (a['email'] as String).toLowerCase() == cleanEmail,
-      orElse: () => throw Exception("Invalid email or password"),
-    );
-
-    final salt = account['salt'] as String;
-    final expectedHash = account['passwordHash'] as String;
-    final providedHash = _hashPassword(password, salt);
-
-    if (providedHash != expectedHash) {
-      throw Exception("Invalid email or password");
+    // 1. Attempt real cloud login via Supabase
+    try {
+      cloudUser = await SupabaseBackendClient.instance.signIn(
+        email: cleanEmail,
+        password: password,
+      );
+    } catch (e) {
+      cloudError = e.toString().replaceAll("Exception: ", "");
+      debugPrint("Supabase cloud login notice: $cloudError");
+      if (cloudError.toLowerCase().contains("invalid login") ||
+          cloudError.toLowerCase().contains("invalid credentials")) {
+        throw Exception("Invalid email or password");
+      }
     }
 
-    final userId = account['userId'] as String;
-    final token = 'tok_${sha256.convert(utf8.encode('$userId:$salt:${DateTime.now()}')).toString().substring(0, 32)}';
+    final accounts = await _loadAccounts();
+    final localAccount = accounts.cast<Map<String, dynamic>?>().firstWhere(
+          (a) => a != null && (a['email'] as String).toLowerCase() == cleanEmail,
+          orElse: () => null,
+        );
 
-    // Update account with new session token
-    account['token'] = token;
-    await _saveAccounts(accounts);
+    // 2. If cloud login succeeded, update local offline cache
+    if (cloudUser != null) {
+      final now = DateTime.now();
+      final salt = localAccount?['salt'] as String? ?? now.microsecondsSinceEpoch.toString();
+      final passwordHash = _hashPassword(password, salt);
 
-    final user = UserModel(
-      userId: userId,
-      username: account['username'] as String,
-      email: cleanEmail,
-      profileImage: account['profileImage'] as String?,
-      createdDate: DateTime.tryParse(account['createdDate'] as String? ?? '') ?? DateTime.now(),
-      token: token,
-      isGuest: false,
-    );
+      final accountData = {
+        'userId': cloudUser.userId,
+        'username': cloudUser.username,
+        'email': cleanEmail,
+        'passwordHash': passwordHash,
+        'salt': salt,
+        'profileImage': cloudUser.profileImage,
+        'createdDate': cloudUser.createdDate.toIso8601String(),
+        'token': cloudUser.token,
+      };
 
-    await SessionManager.instance.saveSession(user, token: token, rememberMe: rememberMe);
+      if (localAccount != null) {
+        final idx = accounts.indexOf(localAccount);
+        accounts[idx] = accountData;
+      } else {
+        accounts.add(accountData);
+      }
+      await _saveAccounts(accounts);
 
-    // Register this device with user's account
-    final device = DeviceModel(
-      deviceId: SessionManager.instance.deviceId,
-      deviceName: SessionManager.instance.deviceName,
-      platform: SessionManager.instance.getPlatform(),
-      lastSyncTime: DateTime.now(),
-      appVersion: '1.0.0',
-      isCurrentDevice: true,
-    );
-    await CloudDatabase.instance.registerOrUpdateDevice(userId, device);
+      await SessionManager.instance.saveSession(cloudUser, token: cloudUser.token, rememberMe: rememberMe);
 
-    return user;
+      final device = DeviceModel(
+        deviceId: SessionManager.instance.deviceId,
+        deviceName: SessionManager.instance.deviceName,
+        platform: SessionManager.instance.getPlatform(),
+        lastSyncTime: now,
+        appVersion: '1.0.0',
+        isCurrentDevice: true,
+      );
+      await CloudDatabase.instance.registerOrUpdateDevice(cloudUser.userId, device);
+
+      return cloudUser;
+    }
+
+    // 3. Offline Mode: If cloud is unreachable, check local cached vault
+    if (localAccount != null) {
+      final salt = localAccount['salt'] as String;
+      final expectedHash = localAccount['passwordHash'] as String;
+      final providedHash = _hashPassword(password, salt);
+
+      if (providedHash == expectedHash) {
+        final userId = localAccount['userId'] as String;
+        final token = localAccount['token'] as String? ??
+            'tok_${sha256.convert(utf8.encode('$userId:$salt:${DateTime.now()}')).toString().substring(0, 32)}';
+
+        final user = UserModel(
+          userId: userId,
+          username: localAccount['username'] as String,
+          email: cleanEmail,
+          profileImage: localAccount['profileImage'] as String?,
+          createdDate: DateTime.tryParse(localAccount['createdDate'] as String? ?? '') ?? DateTime.now(),
+          token: token,
+          isGuest: false,
+          devices: const [],
+        );
+
+        await SessionManager.instance.saveSession(user, token: token, rememberMe: rememberMe);
+        return user;
+      }
+    }
+
+    throw Exception(cloudError ?? "Invalid email or password");
   }
 
   /// Continue without account (Offline Guest Vault)
@@ -176,6 +249,10 @@ class AuthService {
 
   /// Sign out the current user session
   Future<void> logout() async {
+    final token = SessionManager.instance.token;
+    try {
+      await SupabaseBackendClient.instance.signOut(token);
+    } catch (_) {}
     await SessionManager.instance.clearSession();
   }
 
@@ -239,7 +316,6 @@ class AuthService {
   }
 
   String _getDefaultAvatar(String username) {
-    // Holographic gradient avatar preset
     final hash = username.hashCode.abs() % 5;
     return 'avatar_preset_$hash';
   }

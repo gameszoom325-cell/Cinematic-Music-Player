@@ -25,8 +25,9 @@ class SongModel {
   final String year;
   final String? lyrics;
   final String? lrcPath;        // lyricsPath
-  final String sourceType;      // 'local', 'cloud', 'external'
-  final String? sourceId;       // identifier of the originating source
+  final String sourceType;      // 'local', 'cloud', 'external', 'catalog', 'youtube'
+  final String? sourceId;       // identifier of the originating source (e.g. YouTube video ID)
+  final String? externalUrl;    // external canonical stream or web URL (e.g. https://www.youtube.com/watch?v=...)
 
   const SongModel({
     required this.id,
@@ -54,6 +55,7 @@ class SongModel {
     this.lrcPath,
     this.sourceType = "local",
     this.sourceId,
+    this.externalUrl,
   });
 
   factory SongModel.empty() {
@@ -70,6 +72,9 @@ class SongModel {
       fileSize: 0,
       hasArtwork: false,
       dateAdded: DateTime.fromMillisecondsSinceEpoch(0),
+      sourceType: 'local',
+      sourceId: null,
+      externalUrl: null,
     );
   }
 
@@ -87,11 +92,14 @@ class SongModel {
   bool get isOnline => sourceType == 'online';
   bool get isCatalog => sourceType == 'catalog';
   bool get isExternal => sourceType == 'external';
+  bool get isYouTube => sourceType == 'youtube';
   bool get isRemoteStream =>
       isCloudSong ||
       isOnline ||
       isCatalog ||
       isExternal ||
+      isYouTube ||
+      (externalUrl != null && externalUrl!.isNotEmpty) ||
       path.startsWith('http://') ||
       path.startsWith('https://');
 
@@ -134,6 +142,7 @@ class SongModel {
     String? lrcPath,
     String? sourceType,
     String? sourceId,
+    String? externalUrl,
   }) {
     return SongModel(
       id: id ?? this.id,
@@ -161,6 +170,7 @@ class SongModel {
       lrcPath: lrcPath ?? this.lrcPath,
       sourceType: sourceType ?? this.sourceType,
       sourceId: sourceId ?? this.sourceId,
+      externalUrl: externalUrl ?? this.externalUrl,
     );
   }
 
@@ -191,6 +201,7 @@ class SongModel {
       'lrcPath': lrcPath,
       'sourceType': sourceType,
       'sourceId': sourceId,
+      'externalUrl': externalUrl,
     };
   }
 
@@ -212,7 +223,7 @@ class SongModel {
       format: (map['format'] as String?) ?? "MP3",
       fileSize: map['fileSize'] as int? ?? 0,
       hasArtwork: map['hasArtwork'] as bool? ?? false,
-      artworkPath: map['artworkPath'] as String?,
+      artworkPath: (map['artworkPath'] as String?) ?? (map['thumbnail'] as String?) ?? (map['artwork'] as String?),
       isFavorite: map['isFavorite'] as bool? ?? false,
       playCount: map['playCount'] as int? ?? 0,
       lastPlayedAt: map['lastPlayedAt'] != null
@@ -224,8 +235,9 @@ class SongModel {
       year: (map['year'] as String?) ?? "",
       lyrics: map['lyrics'] as String?,
       lrcPath: map['lrcPath'] as String?,
-      sourceType: (map['sourceType'] as String?) ?? defaultSourceType,
+      sourceType: (map['sourceType'] as String?) ?? (map['source'] as String?) ?? defaultSourceType,
       sourceId: map['sourceId'] as String?,
+      externalUrl: map['externalUrl'] as String?,
     );
   }
 

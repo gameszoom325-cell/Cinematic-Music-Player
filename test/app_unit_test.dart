@@ -22,13 +22,12 @@ import 'package:cinematic_music_player/core/sources/cloud_music_source.dart';
 import 'package:cinematic_music_player/core/sources/online_music_source.dart';
 import 'package:cinematic_music_player/core/sources/external_provider_source.dart';
 import 'package:cinematic_music_player/core/sources/music_source_repository.dart';
-import 'package:cinematic_music_player/core/sources/base_music_source.dart';
 import 'package:cinematic_music_player/core/catalog/models/catalog_song.dart';
 import 'package:cinematic_music_player/core/catalog/models/catalog_artist.dart';
 import 'package:cinematic_music_player/core/catalog/models/catalog_album.dart';
 import 'package:cinematic_music_player/core/catalog/catalog_database_service.dart';
-import 'package:cinematic_music_player/core/catalog/catalog_recommendation_engine.dart';
-import 'package:cinematic_music_player/core/catalog/catalog_music_source.dart';
+import 'package:cinematic_music_player/core/config/youtube_config.dart';
+import 'package:cinematic_music_player/core/services/youtube_api_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -394,12 +393,13 @@ void main() {
 
     test('MusicSourceRepository initializes default sources and executes federated search', () async {
       final repo = MusicSourceRepository.instance;
-      expect(repo.allSources, hasLength(5));
+      expect(repo.allSources, hasLength(6));
 
       expect(repo.getSource(MusicSourceType.local), isNotNull);
       expect(repo.getSource(MusicSourceType.cloud), isNotNull);
       expect(repo.getSource(MusicSourceType.online), isNotNull);
       expect(repo.getSource(MusicSourceType.catalog), isNotNull);
+      expect(repo.getSource(MusicSourceType.youtube), isNotNull);
       expect(repo.getSource(MusicSourceType.externalProvider), isNotNull);
 
       // Search all sources
@@ -704,6 +704,110 @@ void main() {
       expect(resolved.id, target.id);
       expect(resolved.path.startsWith('http'), isTrue);
       expect(resolved.isLocalFileAvailable, isTrue);
+    });
+  });
+
+  group('16. YouTube Data API v3 & YouTubeMusicSource Tests (v1.1.2)', () {
+    test('YouTubeConfig manages API credentials and masks key safely', () {
+      final config = YouTubeConfig.instance;
+      expect(config.hasApiKey, isTrue);
+      expect(config.apiKey, 'AIzaSyAoqbmfwc618y2JLqwuJ1XNESNXzseVV4k');
+
+      final masked = config.maskedApiKey;
+      expect(masked.startsWith('AIza'), isTrue);
+      expect(masked.endsWith('VV4k'), isTrue);
+      expect(masked.contains('...'), isTrue);
+    });
+
+    test('SongModel supports externalUrl, thumbnail, and isYouTube fields', () {
+      final song = SongModel(
+        id: 'yt_O5gwxm3NxFU',
+        path: 'https://ia800504.us.archive.org/33/items/Bensound_AcousticBreeze/bensound-acousticbreeze.mp3',
+        title: 'Tujhko',
+        artist: 'Arijit Singh',
+        album: 'YouTube Music',
+        durationMs: 337000,
+        hasArtwork: true,
+        artworkPath: 'https://i.ytimg.com/vi/O5gwxm3NxFU/hqdefault.jpg',
+        dateAdded: DateTime(2026, 11, 15),
+        sourceType: 'youtube',
+        sourceId: 'O5gwxm3NxFU',
+        externalUrl: 'https://www.youtube.com/watch?v=O5gwxm3NxFU',
+      );
+
+      expect(song.id, 'yt_O5gwxm3NxFU');
+      expect(song.sourceType, 'youtube');
+      expect(song.source, 'youtube');
+      expect(song.sourceId, 'O5gwxm3NxFU');
+      expect(song.isYouTube, isTrue);
+      expect(song.isRemoteStream, isTrue);
+      expect(song.isLocalFileAvailable, isTrue);
+      expect(song.externalUrl, 'https://www.youtube.com/watch?v=O5gwxm3NxFU');
+      expect(song.thumbnail, 'https://i.ytimg.com/vi/O5gwxm3NxFU/hqdefault.jpg');
+
+      // Serialization test
+      final map = song.toMap();
+      expect(map['externalUrl'], 'https://www.youtube.com/watch?v=O5gwxm3NxFU');
+      expect(map['sourceType'], 'youtube');
+
+      final revived = SongModel.fromMap(map);
+      expect(revived.externalUrl, song.externalUrl);
+      expect(revived.isYouTube, isTrue);
+      expect(revived.sourceId, 'O5gwxm3NxFU');
+    });
+
+    test('YouTubeApiService ISO 8601 duration parser and HTML entity decoder work accurately', () {
+      // ISO 8601 parsing tests
+      expect(YouTubeApiService.parseIso8601Duration('PT5M37S'), 337000);
+      expect(YouTubeApiService.parseIso8601Duration('PT1H2M10S'), 3730000);
+      expect(YouTubeApiService.parseIso8601Duration('PT45S'), 45000);
+      expect(YouTubeApiService.parseIso8601Duration('PT3M'), 180000);
+      expect(YouTubeApiService.parseIso8601Duration(''), 0);
+      expect(YouTubeApiService.parseIso8601Duration(null), 0);
+
+      // HTML entity decoding tests
+      expect(
+        YouTubeApiService.decodeHtmlEntities('Best Of Arijit Singh &amp; Sunidhi &#39;Romantic Hits&#39;'),
+        "Best Of Arijit Singh & Sunidhi 'Romantic Hits'",
+      );
+      expect(
+        YouTubeApiService.decodeHtmlEntities('&quot;Cocktail 2&quot; &lt;Audio&gt; &gt; Official'),
+        '"Cocktail 2" <Audio> > Official',
+      );
+    });
+
+    test('YouTubeMusicSource connects to MusicSourceRepository and satisfies contracts', () async {
+      final repo = MusicSourceRepository.instance;
+      final ytSource = repo.getSource(MusicSourceType.youtube);
+      expect(ytSource, isNotNull);
+      expect(ytSource!.type, MusicSourceType.youtube);
+      expect(ytSource.displayName, 'YouTube Music');
+      expect(ytSource.isAvailable, isTrue);
+
+      final song = SongModel(
+        id: 'yt_test_resolve',
+        path: 'https://ia800504.us.archive.org/33/items/Bensound_Sunny/bensound-sunny.mp3',
+        title: 'Sunny Stream',
+        artist: 'YouTube Artist',
+        album: 'YouTube Music',
+        durationMs: 140000,
+        dateAdded: DateTime(2026, 11, 15),
+        sourceType: 'youtube',
+        sourceId: 'test_resolve',
+        externalUrl: 'https://www.youtube.com/watch?v=test_resolve',
+      );
+
+      final resolved = await repo.resolvePlayableSong(song);
+      expect(resolved.id, song.id);
+      expect(resolved.isYouTube, isTrue);
+      expect(resolved.path.startsWith('http'), isTrue);
+      expect(resolved.isLocalFileAvailable, isTrue);
+    });
+
+    test('Project version reflects v1.1.2 Build 8', () {
+      expect(AppVersion.current, '1.1.2');
+      expect(AppVersion.buildNumber, 8);
+      expect(AppVersion.compare('1.1.2', '1.1.1'), greaterThan(0));
     });
   });
 }

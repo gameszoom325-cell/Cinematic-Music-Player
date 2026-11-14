@@ -147,6 +147,8 @@ class _MusicSearchScreenState extends ConsumerState<MusicSearchScreen> with Sing
         children: [
           _buildFilterChip("All Sources", null),
           const SizedBox(width: 8),
+          _buildFilterChip("YouTube Music", MusicSourceType.youtube),
+          const SizedBox(width: 8),
           _buildFilterChip("Bollywood Catalog", MusicSourceType.catalog),
           const SizedBox(width: 8),
           _buildFilterChip("Online Music (InnerTubeX)", MusicSourceType.online),
@@ -495,7 +497,7 @@ class _MusicSearchScreenState extends ConsumerState<MusicSearchScreen> with Sing
                 size: 18,
               ),
               onPressed: () {
-                DatabaseService.instance.toggleFavorite(song.id);
+                DatabaseService.instance.toggleFavorite(song.id, song);
                 setState(() {});
               },
             ),
@@ -534,6 +536,10 @@ class _MusicSearchScreenState extends ConsumerState<MusicSearchScreen> with Sing
     String label;
 
     switch (sourceType.toLowerCase()) {
+      case 'youtube':
+        badgeColor = const Color(0xFFEF4444); // YouTube Red
+        label = "YOUTUBE";
+        break;
       case 'online':
         badgeColor = const Color(0xFF38BDF8); // Cyan
         label = "ONLINE";

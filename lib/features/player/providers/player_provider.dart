@@ -80,7 +80,7 @@ class PlayerNotifier extends StateNotifier<CinematicPlayerState> {
               state = state.copyWith(currentWaveform: waveform);
 
               // Record play count & history in local database
-              DatabaseService.instance.recordPlay(song.id);
+              DatabaseService.instance.recordPlay(song.id, song);
             }
           } catch (e) {
             debugPrint("Index stream handling error: $e");

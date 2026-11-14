@@ -258,8 +258,20 @@ class DatabaseService {
     await _persistDb();
   }
 
-  Future<void> toggleFavorite(String songId) async {
-    final song = _songs[songId];
+  Future<void> upsertSong(SongModel song) async {
+    if (song.isLocalFileAvailable) {
+      _songs[song.id] = song;
+      await _persistDb();
+    }
+  }
+
+  Future<void> toggleFavorite(String songId, [SongModel? fallbackSong]) async {
+    SongModel? song = _songs[songId];
+    if (song == null && fallbackSong != null) {
+      _songs[songId] = fallbackSong.copyWith(isFavorite: false);
+      song = _songs[songId];
+    }
+
     if (song != null) {
       final updated = song.copyWith(isFavorite: !song.isFavorite);
       _songs[songId] = updated;
@@ -281,8 +293,13 @@ class DatabaseService {
     }
   }
 
-  Future<void> recordPlay(String songId) async {
-    final song = _songs[songId];
+  Future<void> recordPlay(String songId, [SongModel? fallbackSong]) async {
+    SongModel? song = _songs[songId];
+    if (song == null && fallbackSong != null) {
+      _songs[songId] = fallbackSong;
+      song = _songs[songId];
+    }
+
     if (song != null) {
       _songs[songId] = song.copyWith(
         playCount: song.playCount + 1,

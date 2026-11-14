@@ -3,6 +3,7 @@ enum MusicSourceType {
   cloud,
   online,
   catalog,
+  youtube,
   externalProvider;
 
   String get id {
@@ -15,6 +16,8 @@ enum MusicSourceType {
         return 'online';
       case MusicSourceType.catalog:
         return 'catalog';
+      case MusicSourceType.youtube:
+        return 'youtube';
       case MusicSourceType.externalProvider:
         return 'external';
     }
@@ -30,6 +33,8 @@ enum MusicSourceType {
         return 'Online Music (InnerTubeX)';
       case MusicSourceType.catalog:
         return 'Bollywood & Global Catalog';
+      case MusicSourceType.youtube:
+        return 'YouTube Music';
       case MusicSourceType.externalProvider:
         return 'External Stream Provider';
     }
@@ -47,6 +52,9 @@ enum MusicSourceType {
       case 'bollywood':
       case 'datasets':
         return MusicSourceType.catalog;
+      case 'youtube':
+      case 'yt':
+        return MusicSourceType.youtube;
       case 'external':
       case 'externalprovider':
         return MusicSourceType.externalProvider;

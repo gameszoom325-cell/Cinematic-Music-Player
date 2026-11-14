@@ -6,6 +6,7 @@ import 'local_music_source.dart';
 import 'cloud_music_source.dart';
 import 'online_music_source.dart';
 import 'external_provider_source.dart';
+import 'youtube_music_source.dart';
 import '../catalog/catalog_music_source.dart';
 import '../database/models/song_model.dart';
 import '../database/database_service.dart';
@@ -53,6 +54,7 @@ class MusicSourceRepository {
     registerSource(CloudMusicSource());
     registerSource(OnlineMusicSource());
     registerSource(CatalogMusicSource());
+    registerSource(YouTubeMusicSource());
     registerSource(ExternalProviderSource());
   }
 

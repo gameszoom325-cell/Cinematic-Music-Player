@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.1.1-blueviolet.svg?style=flat-square" alt="Latest Release"></a>
+  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.1.2-blueviolet.svg?style=flat-square" alt="Latest Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Android-success.svg?style=flat-square" alt="Platforms">
 </p>
@@ -18,6 +18,12 @@
 ---
 
 ## Key Features
+
+- **YouTube Data API v3 Music Discovery & Search Integration (v1.1.2)**:
+  - Secure, decoupled API key configuration layer (`YouTubeConfig`) stored separately from UI and repository code.
+  - Live federated discovery for songs, artist channels, and playlists/albums with exact ISO 8601 duration extraction.
+  - Native playback routing via `YouTubeMusicSource`, with automatic metadata mapping (`SongModel`) and library persistence.
+  - Multi-tier resilient stream resolution with 45-minute TTL memory caching.
 
 - **Searchable Bollywood & Global Music Catalog System (Open-Source Datasets)**:
   - Integrated music catalog synthesized from open-source datasets:

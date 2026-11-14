@@ -12,7 +12,7 @@ End users do **NOT** need Flutter SDK, Visual Studio, C++ tools, or any develope
 * **[Download CinematicMusicPlayerSetup.exe](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.0.1/CinematicMusicPlayerSetup.exe)** (35.5 MB)
   * **SHA-256 Checksum:** `5A25561C756B1C754023936498430971AC0DED821A4D216B6965F2AE658F3DBF`
 * **[Download CinematicMusicPlayer-Windows.zip](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.0.1/CinematicMusicPlayer-Windows.zip)** (46.5 MB, Portable Standalone)
-  * **SHA-256 Checksum:** `24C440142F2D88B2A31DAA8DC63FCA0611C228EC87A220BF2BAB09903EC9329D`
+  * **SHA-256 Checksum:** `523E4C448456DCC74C9A9F079E3963702F696D7ABEF789211055339DEFB330A5`
 
 ### 🖥️ Windows Quick Install:
 1. Download **`CinematicMusicPlayerSetup.exe`** from GitHub Releases.
@@ -25,7 +25,7 @@ End users do **NOT** need Flutter SDK, Visual Studio, C++ tools, or any develope
 
 ### 📥 Direct Download
 * **[Download CinematicMusicPlayer.apk](https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/download/v1.0.1/CinematicMusicPlayer.apk)** (66.9 MB)
-* **SHA-256 Checksum:** `4394A786CE4766279F2D71CFC70E1C3DC085035E7E3255362DD73AC6056DAA18`
+* **SHA-256 Checksum:** `D14B04BD8D1F691E890EEC64D9600B34730DD1694869EB19A1FBBD34FA2DE052`
 * **Package Version:** `1.0.1` (Build `2`)
 
 ### 📲 Android Quick Install:
@@ -47,7 +47,13 @@ End users do **NOT** need Flutter SDK, Visual Studio, C++ tools, or any develope
   * Title: `"New version available"`
   * Actions: `[Download Update]` (launches direct download) and `[Later]` (dismisses dialog).
 
-### 🎵 2. Fixed Android Music Playback Engine
+### 🎵 2. Fixed Android Music Playback Engine & Background Service
+* **Resolved "Audio service handler is not initialized"**:
+  * **MainActivity `AudioServiceActivity` Integration**: Changed `MainActivity.kt` to extend `AudioServiceActivity` instead of `FlutterActivity`, granting the Android foreground service access to the cached FlutterEngine isolate.
+  * **Android 13+ Notification Permissions**: Added `<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />` to `AndroidManifest.xml` to prevent foreground media notification crashes.
+  * **Resilient AudioEngine Initialization**: Rearchitected `AudioEngine` to instantiate `CinematicAudioHandler` eagerly and provide a non-null handler, eliminating race conditions between UI state bindings and background service registration.
+  * **Persistent Broadcast Reactive Streams**: Bound audio position, duration, playing, buffered position, and processing state streams as permanent broadcast streams so Riverpod UI listeners never receive dead empty streams.
+  * **Visual Loading State**: Introduced `isLoading` in `CinematicPlayerState` with spinner feedback in both the full player and mini-player bar while ExoPlayer buffers track streams.
 * **Tapping Songs Starts Playback Immediately**: Fixed playlist queue setup and URI resolution in `CinematicAudioHandler` so tapping any song in Library, Home, Hindi Collection, or Playlists instantly begins audio playback.
 * **Content and File URI Support (`parseAudioUri`)**: Handles both native `file://` filesystem paths and Android SAF `content://` URIs seamlessly, preventing ExoPlayer source failures.
 * **Active Controls & Progress**: Play, pause, seek, next track, previous track, shuffle, and repeat modes are wired and synchronized with the background audio service.

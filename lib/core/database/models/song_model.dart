@@ -35,11 +35,11 @@ class SongModel {
     this.albumArtist = "",
     this.language = "Hindi",
     required this.durationMs,
-    required this.bitrate,
-    required this.sampleRate,
-    required this.format,
-    required this.fileSize,
-    required this.hasArtwork,
+    this.bitrate = 320,
+    this.sampleRate = 44100,
+    this.format = "mp3",
+    this.fileSize = 0,
+    this.hasArtwork = false,
     this.artworkPath,
     this.isFavorite = false,
     this.playCount = 0,
@@ -51,6 +51,23 @@ class SongModel {
     this.lyrics,
     this.lrcPath,
   });
+
+  factory SongModel.empty() {
+    return SongModel(
+      id: '',
+      path: '',
+      title: '',
+      artist: '',
+      album: '',
+      durationMs: 0,
+      bitrate: 0,
+      sampleRate: 44100,
+      format: '',
+      fileSize: 0,
+      hasArtwork: false,
+      dateAdded: DateTime.fromMillisecondsSinceEpoch(0),
+    );
+  }
 
   Duration get duration => Duration(milliseconds: durationMs);
 

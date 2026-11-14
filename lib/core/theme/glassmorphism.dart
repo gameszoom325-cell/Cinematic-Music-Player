@@ -9,6 +9,7 @@ class CinematicGlassCard extends StatelessWidget {
   final Color tintColor;
   final double tintOpacity;
   final double borderOpacity;
+  final Color? borderColor;
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
   final List<BoxShadow>? shadows;
@@ -21,6 +22,7 @@ class CinematicGlassCard extends StatelessWidget {
     this.tintColor = Colors.white,
     this.tintOpacity = 0.05,
     this.borderOpacity = 0.16,
+    this.borderColor,
     this.padding,
     this.margin,
     this.shadows,
@@ -52,7 +54,7 @@ class CinematicGlassCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(borderRadius),
               border: Border.all(
                 width: 1.2,
-                color: Colors.white.withOpacity(borderOpacity),
+                color: borderColor ?? Colors.white.withOpacity(borderOpacity),
               ),
               gradient: LinearGradient(
                 begin: Alignment.topLeft,

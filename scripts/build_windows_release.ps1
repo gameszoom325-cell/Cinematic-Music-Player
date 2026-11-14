@@ -42,12 +42,26 @@ Write-Host "Created portable archive: $ZipFile" -ForegroundColor Green
 # 4. Optional Inno Setup compilation
 if ($CreateInstaller) {
     Write-Host "`n[4/4] Attempting Inno Setup Installer Compilation..." -ForegroundColor Yellow
-    $InnoPath = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+    $InnoPath = if (Test-Path "C:\Users\games\AppData\Local\Programs\Inno Setup 6\ISCC.exe") {
+        "C:\Users\games\AppData\Local\Programs\Inno Setup 6\ISCC.exe"
+    } elseif (Get-Command iscc -ErrorAction SilentlyContinue) {
+        (Get-Command iscc).Source
+    } else {
+        "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+    }
+
     if (Test-Path $InnoPath) {
         & $InnoPath "$ProjectDir\windows\installer\cinematic_music_player.iss"
         Write-Host "Installer created at: $DistDir\CinematicMusicPlayerSetup.exe" -ForegroundColor Green
+        
+        # Copy to dist/release/Windows
+        $ReleaseDist = "$ProjectDir\dist\release\Windows"
+        New-Item -ItemType Directory -Path $ReleaseDist -Force | Out-Null
+        Copy-Item -Path "$DistDir\CinematicMusicPlayerSetup.exe" -Destination "$ReleaseDist\CinematicMusicPlayerSetup.exe" -Force
+        Copy-Item -Path $ZipFile -Destination "$ReleaseDist\CinematicMusicPlayer.zip" -Force
+        Write-Host "Placed release artifacts in $ReleaseDist" -ForegroundColor Green
     } else {
-        Write-Host "Inno Setup compiler (ISCC.exe) not found at standard path. Use the generated portable zip or install Inno Setup 6 to compile the setup wizard." -ForegroundColor Yellow
+        Write-Host "Inno Setup compiler (ISCC.exe) not found. Use the generated portable zip or install Inno Setup 6." -ForegroundColor Yellow
     }
 }
 

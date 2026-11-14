@@ -100,7 +100,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
-                            side: Border.all(color: CinematicColors.electricViolet.withOpacity(0.5)),
+                            side: BorderSide(color: CinematicColors.electricViolet.withOpacity(0.5)),
                           ),
                         ),
                         onPressed: _openAddMusic,

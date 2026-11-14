@@ -18,6 +18,9 @@ class CinematicColors {
   static const Color hotPink = Color(0xFFEC4899);
   static const Color radioactiveGreen = Color(0xFF10B981);
   static const Color emberAmber = Color(0xFFF59E0B);
+  static const Color deepPlum = Color(0xFF4C1D95);
+  static const Color cyberCyan = Color(0xFF06B6D4);
+  static const Color crimsonRed = Color(0xFFE11D48);
 
   // Audio Spectrum Perceptual Band Colors
   static const Color subBassColor = Color(0xFFE11D48); // Deep crimson

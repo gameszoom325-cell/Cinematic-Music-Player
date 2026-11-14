@@ -432,14 +432,7 @@ class DatabaseService {
     for (final sig in recentSignatures.reversed) {
       final song = _songs.values.firstWhere(
         (s) => "${s.title.trim().toLowerCase()}:::${s.artist.trim().toLowerCase()}" == sig || s.id == sig,
-        orElse: () => SongModel(
-          id: '',
-          path: '',
-          title: '',
-          artist: '',
-          album: '',
-          durationMs: 0,
-        ),
+        orElse: () => SongModel.empty(),
       );
       if (song.id.isNotEmpty && !_historySongIds.contains(song.id)) {
         _historySongIds.insert(0, song.id);

@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/database/database_service.dart';
 import '../core/database/models/playlist_model.dart';
-import '../core/database/models/song_model.dart';
 import '../auth/session_manager.dart';
 import 'cloud_database.dart';
 
@@ -170,11 +169,6 @@ class SyncService {
     DatabaseService db,
   ) {
     if (cloud == null) return local;
-
-    final allLocalSongs = db.getAllSongs();
-    final Map<String, String> signatureToLocalId = {
-      for (final s in allLocalSongs) "${s.title.trim().toLowerCase()}:::${s.artist.trim().toLowerCase()}": s.id
-    };
 
     // 1. Playlists union
     final Map<String, Map<String, dynamic>> mergedPlaylists = {};

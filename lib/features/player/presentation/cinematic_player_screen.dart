@@ -231,11 +231,14 @@ class CinematicPlayerScreen extends ConsumerWidget {
                   ),
                 ),
               ],
-            );
-          },
-        ),
+            ),
+          ),
+        ],
       );
-    }
+    },
+  ),
+);
+}
 
   Widget _buildPresetSelector(
     BuildContext context,
@@ -256,7 +259,7 @@ class CinematicPlayerScreen extends ConsumerWidget {
       color: CinematicColors.obsidianCard,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: Border.all(color: Colors.white.withOpacity(0.15)),
+        side: BorderSide(color: Colors.white.withOpacity(0.15)),
       ),
       onSelected: (preset) => notifier.setPreset(preset),
       itemBuilder: (context) => [

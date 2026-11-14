@@ -20,7 +20,7 @@ class PlaylistScreen extends ConsumerWidget {
           backgroundColor: CinematicColors.obsidianCard,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: Border.all(color: Colors.white.withOpacity(0.15)),
+            side: BorderSide(color: Colors.white.withOpacity(0.15)),
           ),
           title: const Text("New Playlist", style: TextStyle(color: Colors.white)),
           content: TextField(
@@ -34,7 +34,7 @@ class PlaylistScreen extends ConsumerWidget {
               fillColor: Colors.white.withOpacity(0.06),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: Border.all(color: Colors.white.withOpacity(0.2)),
+                borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
               ),
             ),
           ),

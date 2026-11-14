@@ -216,6 +216,7 @@ class CinematicPlayerScreen extends ConsumerWidget {
                       // Player Controls (Play, Pause, Skip, Shuffle, Repeat)
                       PlayerControls(
                         isPlaying: playerState.isPlaying,
+                        isLoading: playerState.isLoading,
                         isShuffle: playerState.isShuffle,
                         repeatMode: playerState.repeatMode,
                         isFavorite: currentSong?.isFavorite ?? false,

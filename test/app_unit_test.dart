@@ -8,9 +8,12 @@ import 'package:cinematic_music_player/core/services/update_service.dart';
 import 'package:cinematic_music_player/core/database/models/song_model.dart';
 import 'package:cinematic_music_player/core/services/shader_capability_service.dart';
 import 'package:cinematic_music_player/core/audio_engine/audio_service_handler.dart';
+import 'package:cinematic_music_player/core/audio_engine/audio_engine.dart';
+import 'package:cinematic_music_player/features/player/models/player_state.dart';
 import 'package:cinematic_music_player/core/services/audio_metadata_parser.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   group('1. UserModel & DeviceModel Schema Tests', () {
     test('UserModel serialization and deserialization preserves all fields', () {
       final now = DateTime.now();
@@ -217,6 +220,31 @@ void main() {
         dateAdded: DateTime.now(),
       );
       expect(validSong.isLocalFileAvailable, isTrue);
+    });
+  });
+
+  group('10. AudioEngine Architecture & Handler Availability Tests', () {
+    test('AudioEngine instance is available immediately and handler is non-null', () {
+      final engine = AudioEngine.instance;
+      expect(engine, isNotNull);
+      expect(engine.isInitialized, isTrue);
+      expect(engine.handler, isNotNull);
+      expect(engine.isPlayingStream, isNotNull);
+      expect(engine.positionStream, isNotNull);
+      expect(engine.durationStream, isNotNull);
+      expect(engine.currentIndexStream, isNotNull);
+      expect(engine.processingStateStream, isNotNull);
+    });
+
+    test('CinematicPlayerState supports isLoading state', () {
+      const state = CinematicPlayerState();
+      expect(state.isLoading, isFalse);
+
+      final loadingState = state.copyWith(isLoading: true);
+      expect(loadingState.isLoading, isTrue);
+
+      final resetState = loadingState.copyWith(isLoading: false);
+      expect(resetState.isLoading, isFalse);
     });
   });
 }

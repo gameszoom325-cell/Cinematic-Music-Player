@@ -104,16 +104,31 @@ class MiniPlayerBar extends ConsumerWidget {
                 ),
                 const SizedBox(width: 8),
 
-                GlassIconButton(
-                  icon: playerState.isPlaying
-                      ? Icons.pause_rounded
-                      : Icons.play_arrow_rounded,
-                  onPressed: () => playerNotifier.togglePlayPause(),
-                  size: 44,
-                  iconSize: 24,
-                  glowColor: palette.vibrant,
-                  isSelected: true,
-                ),
+                playerState.isLoading
+                    ? const SizedBox(
+                        width: 44,
+                        height: 44,
+                        child: Center(
+                          child: SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          ),
+                        ),
+                      )
+                    : GlassIconButton(
+                        icon: playerState.isPlaying
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
+                        onPressed: () => playerNotifier.togglePlayPause(),
+                        size: 44,
+                        iconSize: 24,
+                        glowColor: palette.vibrant,
+                        isSelected: true,
+                      ),
                 const SizedBox(width: 6),
 
                 GlassIconButton(

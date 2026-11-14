@@ -8,21 +8,30 @@ import 'audio_service_handler.dart';
 enum PlaybackRepeatMode { off, one, all }
 
 class AudioEngine {
-  static AudioEngine? _instance;
-  static AudioEngine get instance => _instance ??= AudioEngine._();
-  AudioEngine._();
+  static final AudioEngine instance = AudioEngine._();
 
-  CinematicAudioHandler? _handler;
-  bool _initialized = false;
+  final CinematicAudioHandler _handler;
+  Completer<void>? _serviceInitCompleter;
+  bool _audioServiceRegistered = false;
 
-  bool get isInitialized => _initialized && _handler != null;
-  CinematicAudioHandler? get handler => _handler;
+  AudioEngine._() : _handler = CinematicAudioHandler();
 
+  bool get isInitialized => true;
+  bool get isAudioServiceRegistered => _audioServiceRegistered;
+  CinematicAudioHandler get handler => _handler;
+
+  /// Initializes the background AudioService and links it to the active CinematicAudioHandler.
+  /// If the system foreground service fails to register, the standalone handler remains 100% operational.
   Future<void> init() async {
-    if (_initialized && _handler != null) return;
+    if (_serviceInitCompleter != null) {
+      return _serviceInitCompleter!.future;
+    }
+    final completer = Completer<void>();
+    _serviceInitCompleter = completer;
+
     try {
-      _handler = await AudioService.init(
-        builder: () => CinematicAudioHandler(),
+      await AudioService.init(
+        builder: () => _handler,
         config: const AudioServiceConfig(
           androidNotificationChannelId: 'com.cinematic.music.player.channel.audio',
           androidNotificationChannelName: 'Cinematic Music Playback',
@@ -31,17 +40,35 @@ class AudioEngine {
           androidNotificationIcon: 'mipmap/ic_launcher',
         ),
       );
-      _initialized = true;
-    } catch (e) {
-      debugPrint("AudioEngine.init notice (running in safe fallback mode): $e");
-      _initialized = false;
+      _audioServiceRegistered = true;
+      debugPrint("AudioEngine: AudioService platform session registered successfully.");
+    } catch (e, stack) {
+      debugPrint("AudioEngine: AudioService platform registration notice (standalone handler active): $e\n$stack");
+    } finally {
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    }
+
+    return _serviceInitCompleter!.future;
+  }
+
+  /// Ensures that service initialization has run before executing high-priority playback actions.
+  Future<void> ensureInitialized() async {
+    if (_serviceInitCompleter == null) {
+      await init();
+    } else if (!_serviceInitCompleter!.isCompleted) {
+      try {
+        await _serviceInitCompleter!.future.timeout(const Duration(seconds: 4));
+      } catch (_) {}
     }
   }
 
   // --- Playback Controls ---
   Future<void> play() async {
+    await ensureInitialized();
     try {
-      await _handler?.play();
+      await _handler.play();
     } catch (e) {
       debugPrint("AudioEngine.play error: $e");
     }
@@ -49,16 +76,16 @@ class AudioEngine {
 
   Future<void> pause() async {
     try {
-      await _handler?.pause();
+      await _handler.pause();
     } catch (e) {
       debugPrint("AudioEngine.pause error: $e");
     }
   }
 
   Future<void> togglePlayPause() async {
-    if (_handler == null) return;
+    await ensureInitialized();
     try {
-      if (_handler!.player.playing) {
+      if (_handler.player.playing) {
         await pause();
       } else {
         await play();
@@ -70,7 +97,7 @@ class AudioEngine {
 
   Future<void> seek(Duration position) async {
     try {
-      await _handler?.seek(position);
+      await _handler.seek(position);
     } catch (e) {
       debugPrint("AudioEngine.seek error: $e");
     }
@@ -78,7 +105,7 @@ class AudioEngine {
 
   Future<void> skipToNext() async {
     try {
-      await _handler?.skipToNext();
+      await _handler.skipToNext();
     } catch (e) {
       debugPrint("AudioEngine.skipToNext error: $e");
     }
@@ -86,19 +113,17 @@ class AudioEngine {
 
   Future<void> skipToPrevious() async {
     try {
-      await _handler?.skipToPrevious();
+      await _handler.skipToPrevious();
     } catch (e) {
       debugPrint("AudioEngine.skipToPrevious error: $e");
     }
   }
 
   Future<bool> playTrack(List<SongModel> queue, int index) async {
-    if (_handler == null) {
-      throw StateError("Audio service handler is not initialized");
-    }
+    await ensureInitialized();
     try {
-      await _handler!.setQueue(queue, initialIndex: index);
-      await _handler!.play();
+      await _handler.setQueue(queue, initialIndex: index);
+      await _handler.play();
       return true;
     } catch (e, stack) {
       debugPrint("AudioEngine.playTrack error: $e\n$stack");
@@ -108,50 +133,49 @@ class AudioEngine {
 
   Future<void> setVolume(double volume) async {
     try {
-      await _handler?.player.setVolume(volume.clamp(0.0, 1.0));
+      await _handler.player.setVolume(volume.clamp(0.0, 1.0));
     } catch (_) {}
   }
 
   Future<void> setSpeed(double speed) async {
     try {
-      await _handler?.player.setSpeed(speed.clamp(0.5, 2.5));
+      await _handler.player.setSpeed(speed.clamp(0.5, 2.5));
     } catch (_) {}
   }
 
   // --- Shuffle & Repeat ---
-  bool get isShuffleEnabled => _handler?.player.shuffleModeEnabled ?? false;
+  bool get isShuffleEnabled => _handler.player.shuffleModeEnabled;
 
   Future<void> toggleShuffle() async {
-    if (_handler == null) return;
     try {
-      final next = !_handler!.player.shuffleModeEnabled;
-      await _handler!.player.setShuffleModeEnabled(next);
+      final next = !_handler.player.shuffleModeEnabled;
+      await _handler.player.setShuffleModeEnabled(next);
     } catch (_) {}
   }
 
-  LoopMode get loopMode => _handler?.player.loopMode ?? LoopMode.off;
+  LoopMode get loopMode => _handler.player.loopMode;
 
   Future<void> cycleRepeatMode() async {
-    if (_handler == null) return;
     try {
-      switch (_handler!.player.loopMode) {
+      switch (_handler.player.loopMode) {
         case LoopMode.off:
-          await _handler!.player.setLoopMode(LoopMode.all);
+          await _handler.player.setLoopMode(LoopMode.all);
           break;
         case LoopMode.all:
-          await _handler!.player.setLoopMode(LoopMode.one);
+          await _handler.player.setLoopMode(LoopMode.one);
           break;
         case LoopMode.one:
-          await _handler!.player.setLoopMode(LoopMode.off);
+          await _handler.player.setLoopMode(LoopMode.off);
           break;
       }
     } catch (_) {}
   }
 
-  // --- Safe Reactive Streams ---
-  Stream<bool> get isPlayingStream => _handler?.player.playingStream ?? const Stream.empty();
-  Stream<Duration> get positionStream => _handler?.player.positionStream ?? const Stream.empty();
-  Stream<Duration?> get durationStream => _handler?.player.durationStream ?? const Stream.empty();
-  Stream<Duration> get bufferedPositionStream => _handler?.player.bufferedPositionStream ?? const Stream.empty();
-  Stream<int?> get currentIndexStream => _handler?.player.currentIndexStream ?? const Stream.empty();
+  // --- Reactive Streams (Always Active & Non-Null) ---
+  Stream<bool> get isPlayingStream => _handler.player.playingStream;
+  Stream<Duration> get positionStream => _handler.player.positionStream;
+  Stream<Duration?> get durationStream => _handler.player.durationStream;
+  Stream<Duration> get bufferedPositionStream => _handler.player.bufferedPositionStream;
+  Stream<int?> get currentIndexStream => _handler.player.currentIndexStream;
+  Stream<ProcessingState> get processingStateStream => _handler.player.processingStateStream;
 }

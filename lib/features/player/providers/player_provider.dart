@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:just_audio/just_audio.dart';
 import '../../../core/audio_engine/audio_engine.dart';
 import '../../../core/audio_engine/waveform_analyzer.dart';
 import '../../../core/database/database_service.dart';
@@ -15,6 +16,7 @@ class PlayerNotifier extends StateNotifier<CinematicPlayerState> {
   StreamSubscription? _durSub;
   StreamSubscription? _playingSub;
   StreamSubscription? _indexSub;
+  StreamSubscription? _processingSub;
 
   PlayerNotifier(this._ref) : super(const CinematicPlayerState()) {
     _bindEngineStreams();
@@ -32,6 +34,15 @@ class PlayerNotifier extends StateNotifier<CinematicPlayerState> {
           } catch (_) {}
         },
         onError: (e) => debugPrint("isPlayingStream error: $e"),
+      );
+
+      _processingSub = engine.processingStateStream.listen(
+        (processing) {
+          final isLoading = processing == ProcessingState.loading ||
+              processing == ProcessingState.buffering;
+          state = state.copyWith(isLoading: isLoading);
+        },
+        onError: (e) => debugPrint("processingStateStream error: $e"),
       );
 
       _posSub = engine.positionStream.listen(
@@ -83,7 +94,7 @@ class PlayerNotifier extends StateNotifier<CinematicPlayerState> {
 
   Future<bool> playTrack(List<SongModel> queue, int index) async {
     if (queue.isEmpty || index < 0 || index >= queue.length) {
-      state = state.copyWith(errorMessage: "No playable track selected.");
+      state = state.copyWith(errorMessage: "No playable track selected.", isLoading: false);
       return false;
     }
 
@@ -91,7 +102,7 @@ class PlayerNotifier extends StateNotifier<CinematicPlayerState> {
     if (!targetSong.isLocalFileAvailable) {
       const msg = "Audio file unavailable. Please import this song again.";
       debugPrint("Blocked playTrack: '${targetSong.title}' file does not exist at '${targetSong.path}'");
-      state = state.copyWith(errorMessage: msg, isPlaying: false);
+      state = state.copyWith(errorMessage: msg, isPlaying: false, isLoading: false);
       return false;
     }
 
@@ -104,6 +115,7 @@ class PlayerNotifier extends StateNotifier<CinematicPlayerState> {
         queue: validQueue,
         currentIndex: validIndex >= 0 ? validIndex : 0,
         currentSong: targetSong,
+        isLoading: true,
         clearError: true,
       );
       await AudioEngine.instance.playTrack(validQueue, validIndex >= 0 ? validIndex : 0);
@@ -111,7 +123,7 @@ class PlayerNotifier extends StateNotifier<CinematicPlayerState> {
     } catch (e, stack) {
       final msg = "Playback failed for '${targetSong.title}': $e";
       debugPrint("CRITICAL PLAYBACK ERROR: $msg\n$stack");
-      state = state.copyWith(errorMessage: msg, isPlaying: false);
+      state = state.copyWith(errorMessage: msg, isPlaying: false, isLoading: false);
       return false;
     }
   }
@@ -186,6 +198,7 @@ class PlayerNotifier extends StateNotifier<CinematicPlayerState> {
     _durSub?.cancel();
     _playingSub?.cancel();
     _indexSub?.cancel();
+    _processingSub?.cancel();
     super.dispose();
   }
 }

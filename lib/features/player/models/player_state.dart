@@ -6,6 +6,7 @@ class CinematicPlayerState {
   final List<SongModel> queue;
   final int currentIndex;
   final bool isPlaying;
+  final bool isLoading;
   final Duration position;
   final Duration duration;
   final Duration bufferedPosition;
@@ -21,6 +22,7 @@ class CinematicPlayerState {
     this.queue = const [],
     this.currentIndex = -1,
     this.isPlaying = false,
+    this.isLoading = false,
     this.position = Duration.zero,
     this.duration = Duration.zero,
     this.bufferedPosition = Duration.zero,
@@ -37,6 +39,7 @@ class CinematicPlayerState {
     List<SongModel>? queue,
     int? currentIndex,
     bool? isPlaying,
+    bool? isLoading,
     Duration? position,
     Duration? duration,
     Duration? bufferedPosition,
@@ -53,6 +56,7 @@ class CinematicPlayerState {
       queue: queue ?? this.queue,
       currentIndex: currentIndex ?? this.currentIndex,
       isPlaying: isPlaying ?? this.isPlaying,
+      isLoading: isLoading ?? this.isLoading,
       position: position ?? this.position,
       duration: duration ?? this.duration,
       bufferedPosition: bufferedPosition ?? this.bufferedPosition,

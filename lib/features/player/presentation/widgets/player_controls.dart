@@ -3,6 +3,7 @@ import '../../../../core/theme/glassmorphism.dart';
 
 class PlayerControls extends StatelessWidget {
   final bool isPlaying;
+  final bool isLoading;
   final bool isShuffle;
   final int repeatMode; // 0=off, 1=one, 2=all
   final bool isFavorite;
@@ -17,6 +18,7 @@ class PlayerControls extends StatelessWidget {
   const PlayerControls({
     super.key,
     required this.isPlaying,
+    this.isLoading = false,
     required this.isShuffle,
     required this.repeatMode,
     required this.isFavorite,
@@ -57,9 +59,10 @@ class PlayerControls extends StatelessWidget {
         ),
         const SizedBox(width: 20),
 
-        // Hero Play / Pause Button with Pulsing Glow
+        // Hero Play / Pause Button with Pulsing Glow & Loading State
         _HeroPlayPauseButton(
           isPlaying: isPlaying,
+          isLoading: isLoading,
           glowColor: activeGlow,
           onPressed: onPlayPause,
         ),
@@ -95,11 +98,13 @@ class PlayerControls extends StatelessWidget {
 
 class _HeroPlayPauseButton extends StatefulWidget {
   final bool isPlaying;
+  final bool isLoading;
   final Color glowColor;
   final VoidCallback onPressed;
 
   const _HeroPlayPauseButton({
     required this.isPlaying,
+    this.isLoading = false,
     required this.glowColor,
     required this.onPressed,
   });
@@ -124,7 +129,7 @@ class _HeroPlayPauseButtonState extends State<_HeroPlayPauseButton> {
         onTapDown: (_) => setState(() => _isPressed = true),
         onTapUp: (_) => setState(() => _isPressed = false),
         onTapCancel: () => setState(() => _isPressed = false),
-        onTap: widget.onPressed,
+        onTap: widget.isLoading ? null : widget.onPressed,
         child: AnimatedScale(
           scale: scale,
           duration: const Duration(milliseconds: 140),
@@ -161,16 +166,28 @@ class _HeroPlayPauseButtonState extends State<_HeroPlayPauseButton> {
               ),
             ),
             child: Center(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
-                child: Icon(
-                  widget.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                  key: ValueKey(widget.isPlaying),
-                  size: 38,
-                  color: Colors.white,
-                ),
-              ),
+              child: widget.isLoading
+                  ? const SizedBox(
+                      width: 32,
+                      height: 32,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3.0,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      transitionBuilder: (child, anim) =>
+                          ScaleTransition(scale: anim, child: child),
+                      child: Icon(
+                        widget.isPlaying
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
+                        key: ValueKey(widget.isPlaying),
+                        size: 38,
+                        color: Colors.white,
+                      ),
+                    ),
             ),
           ),
         ),

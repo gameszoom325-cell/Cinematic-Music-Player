@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2026-11-14
+
+### Added
+- **AudioSession & System Interruption Management**:
+  - Configured Android `AudioSession.configure(AudioSessionConfiguration.music())` for system audio focus.
+  - Headphone unplug event (`becomingNoisyEventStream`): auto-pauses music instantly when Bluetooth or wired headphones are disconnected.
+  - Call & notification focus transitions (`interruptionEventStream`): ducks music on system notifications, pauses on incoming calls, and automatically resumes on call completion.
+- **Multi-Format Album Artwork Extraction**:
+  - Re-engineered streaming buffer reader (`_readFully`) to eliminate truncated ID3 `APIC` / FLAC pictures.
+  - Native parser for ID3v2.2 (`PIC`), ID3v2.3 (`APIC`), ID3v2.4 (`APIC`, synchsafe), and ID3 extended headers.
+  - M4A / AAC ISO MP4 atom parser for embedded `covr -> data` album artwork.
+  - FLAC metadata block type 6 PICTURE parser.
+  - Expanded folder artwork fallbacks: `cover.jpg`, `cover.png`, `folder.jpg`, `folder.png`, `album.jpg`, `album.png`, `front.jpg`, `front.png`, `Artwork.jpg`.
+- **Dynamic Genre Categories**:
+  - Category filter chips in `LibraryScreen` are derived dynamically from imported music files.
+  - Filter chips bar is hidden when the library is empty, maintaining a clean cinematic look.
+
+### Fixed
+- **Player Status Header**:
+  - Replaced hardcoded `"STUDIO MASTER • 24-BIT"` fallback with actual audio file specs (`SongModel.technicalSpecs`) or `"OFFLINE AUDIO"`.
+- **Zero-State Screens**:
+  - Added dedicated empty states for both `LibraryScreen` and `PlaylistScreen` guiding users to import music files or create playlists.
+- **Playback Reliability**:
+  - Queued track requests and added automatic fallback in `AudioEngine.playTrack`, ensuring zero uninitialized handler exceptions even under rapid taps or cold start.
+
 ## [1.0.1] - 2026-11-14
 
 ### Fixed

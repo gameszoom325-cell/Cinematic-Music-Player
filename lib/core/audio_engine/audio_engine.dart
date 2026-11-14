@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:audio_service/audio_service.dart';
+import 'package:audio_session/audio_session.dart';
 import 'package:just_audio/just_audio.dart';
 import '../database/models/song_model.dart';
 import 'audio_service_handler.dart';
@@ -14,6 +15,7 @@ class AudioEngine {
   final CinematicAudioHandler _handler;
   Completer<void>? _serviceInitCompleter;
   bool _audioServiceRegistered = false;
+  AudioSession? _audioSession;
 
   AudioEngine._() : _handler = CinematicAudioHandler();
 
@@ -30,10 +32,45 @@ class AudioEngine {
     final completer = Completer<void>();
     _serviceInitCompleter = completer;
 
-    // AudioService provides the background media session on Android/iOS.
+    // AudioSession & AudioService provide background media session & audio focus on Android/iOS.
     // On Windows desktop, just_audio directly handles audio output through WASAPI.
     if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
       try {
+        _audioSession = await AudioSession.instance;
+        await _audioSession!.configure(const AudioSessionConfiguration.music());
+        
+        // Handle headphone unplug / Bluetooth disconnect automatically
+        _audioSession!.becomingNoisyEventStream.listen((_) {
+          debugPrint("AudioEngine: Becoming noisy event received - pausing playback");
+          _handler.pause();
+        });
+
+        // Handle system audio interruptions (e.g. phone calls, alarms)
+        _audioSession!.interruptionEventStream.listen((event) {
+          if (event.begin) {
+            switch (event.type) {
+              case AudioInterruptionType.duck:
+                _handler.player.setVolume(0.3);
+                break;
+              case AudioInterruptionType.pause:
+              case AudioInterruptionType.unknown:
+                _handler.pause();
+                break;
+            }
+          } else {
+            switch (event.type) {
+              case AudioInterruptionType.duck:
+                _handler.player.setVolume(1.0);
+                break;
+              case AudioInterruptionType.pause:
+                _handler.play();
+                break;
+              case AudioInterruptionType.unknown:
+                break;
+            }
+          }
+        });
+
         await AudioService.init(
           builder: () => _handler,
           config: const AudioServiceConfig(
@@ -42,10 +79,11 @@ class AudioEngine {
             androidNotificationOngoing: true,
             androidStopForegroundOnPause: true,
             androidNotificationIcon: 'mipmap/ic_launcher',
+            androidShowNotificationBadge: true,
           ),
         );
         _audioServiceRegistered = true;
-        debugPrint("AudioEngine: AudioService platform session registered successfully.");
+        debugPrint("AudioEngine: AudioService & AudioSession registered successfully.");
       } catch (e, stack) {
         debugPrint("AudioEngine: AudioService platform registration notice (standalone handler active): $e\n$stack");
       }
@@ -134,8 +172,21 @@ class AudioEngine {
       await _handler.play();
       return true;
     } catch (e, stack) {
-      debugPrint("AudioEngine.playTrack error: $e\n$stack");
-      rethrow;
+      debugPrint("AudioEngine.playTrack primary queue error: $e\n$stack");
+      // Resilient fallback: direct player playback without throwing handler errors
+      try {
+        if (queue.isNotEmpty && index >= 0 && index < queue.length) {
+          final target = queue[index];
+          await _handler.player.setAudioSource(
+            AudioSource.uri(CinematicAudioHandler.parseAudioUri(target.path)),
+          );
+          await _handler.player.play();
+          return true;
+        }
+      } catch (fallbackErr) {
+        debugPrint("AudioEngine.playTrack fallback error: $fallbackErr");
+      }
+      return false;
     }
   }
 

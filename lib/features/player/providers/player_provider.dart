@@ -118,11 +118,19 @@ class PlayerNotifier extends StateNotifier<CinematicPlayerState> {
         isLoading: true,
         clearError: true,
       );
-      await AudioEngine.instance.playTrack(validQueue, validIndex >= 0 ? validIndex : 0);
+      final success = await AudioEngine.instance.playTrack(validQueue, validIndex >= 0 ? validIndex : 0);
+      if (!success) {
+        state = state.copyWith(
+          errorMessage: "Unable to start playback for '${targetSong.title}'. Please verify the audio file.",
+          isPlaying: false,
+          isLoading: false,
+        );
+        return false;
+      }
       return true;
     } catch (e, stack) {
-      final msg = "Playback failed for '${targetSong.title}': $e";
-      debugPrint("CRITICAL PLAYBACK ERROR: $msg\n$stack");
+      final msg = "Unable to start playback for '${targetSong.title}'.";
+      debugPrint("Playback error for '${targetSong.title}': $e\n$stack");
       state = state.copyWith(errorMessage: msg, isPlaying: false, isLoading: false);
       return false;
     }

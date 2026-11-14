@@ -26,17 +26,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     super.dispose();
   }
 
-  static const List<String> categories = [
-    "All",
-    "Hindi",
-    "English",
-    "Tamil",
-    "Japanese",
-    "Korean",
-    "Instrumental",
-    "Anime OST",
-    "Lo-Fi",
-  ];
+  List<String> _getCategories(List<SongModel> songs) {
+    final genres = songs
+        .map((s) => s.genre.trim())
+        .where((g) => g.isNotEmpty && g.toLowerCase() != 'unknown' && g.toLowerCase() != 'other')
+        .toSet()
+        .toList()
+      ..sort();
+    return ["All", ...genres];
+  }
 
   String _formatDuration(int ms) {
     final d = Duration(milliseconds: ms);
@@ -75,6 +73,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     final playerState = ref.watch(playerProvider);
     final playerNotifier = ref.read(playerProvider.notifier);
 
+    final categories = _getCategories(libraryState.songs);
+    final activeCategory = categories.contains(_selectedCategory) ? _selectedCategory : "All";
     final filteredSongs = _filterSongs(libraryState.songs);
 
     return Scaffold(
@@ -140,62 +140,64 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               ),
               const SizedBox(height: 14),
 
-              // Premium Category Filter Chips
-              SizedBox(
-                height: 36,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: categories.length,
-                  itemBuilder: (context, index) {
-                    final cat = categories[index];
-                    final isSelected = _selectedCategory == cat;
+              // Premium Category Filter Chips (shown when genres are available)
+              if (categories.length > 1) ...[
+                SizedBox(
+                  height: 36,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: categories.length,
+                    itemBuilder: (context, index) {
+                      final cat = categories[index];
+                      final isSelected = activeCategory == cat;
 
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedCategory = cat;
-                        });
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        margin: const EdgeInsets.only(right: 10),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? CinematicColors.electricViolet
-                              : Colors.white.withOpacity(0.06),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedCategory = cat;
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          margin: const EdgeInsets.only(right: 10),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
                             color: isSelected
                                 ? CinematicColors.electricViolet
-                                : Colors.white.withOpacity(0.12),
-                            width: 1.0,
+                                : Colors.white.withOpacity(0.06),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isSelected
+                                  ? CinematicColors.electricViolet
+                                  : Colors.white.withOpacity(0.12),
+                              width: 1.0,
+                            ),
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: CinematicColors.electricViolet.withOpacity(0.4),
+                                      blurRadius: 12,
+                                      spreadRadius: 1,
+                                    ),
+                                  ]
+                                : null,
                           ),
-                          boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: CinematicColors.electricViolet.withOpacity(0.4),
-                                    blurRadius: 12,
-                                    spreadRadius: 1,
-                                  ),
-                                ]
-                              : null,
-                        ),
-                        child: Text(
-                          cat,
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.white70,
-                            fontSize: 12,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                          child: Text(
+                            cat,
+                            style: TextStyle(
+                              color: isSelected ? Colors.white : Colors.white70,
+                              fontSize: 12,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
-              ),
-              const SizedBox(height: 14),
+                const SizedBox(height: 14),
+              ],
 
               // Song List
               Expanded(

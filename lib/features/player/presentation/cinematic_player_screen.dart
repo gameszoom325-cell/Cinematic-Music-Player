@@ -96,7 +96,9 @@ class CinematicPlayerScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  currentSong?.technicalSpecs ?? "STUDIO MASTER • 24-BIT",
+                                  (currentSong != null && currentSong.technicalSpecs.trim().isNotEmpty)
+                                      ? currentSong.technicalSpecs
+                                      : "OFFLINE AUDIO",
                                   style: CinematicTypography.technicalBadge.copyWith(
                                     color: palette.lightVibrant,
                                   ),

@@ -213,17 +213,34 @@ class ScannerService {
         hasArtwork = true;
       }
 
-      // 2. Fallback to folder cover.jpg / folder.jpg
+      // 2. Fallback to folder artwork images (cover.jpg, folder.jpg, album.png, etc.)
       if (!hasArtwork) {
         final parentDir = file.parent;
-        final localCover = File(p.join(parentDir.path, 'cover.jpg'));
-        final localFolder = File(p.join(parentDir.path, 'folder.jpg'));
-        if (await localCover.exists()) {
-          hasArtwork = true;
-          artworkPath = localCover.path;
-        } else if (await localFolder.exists()) {
-          hasArtwork = true;
-          artworkPath = localFolder.path;
+        const candidateNames = [
+          'cover.jpg',
+          'cover.jpeg',
+          'cover.png',
+          'folder.jpg',
+          'folder.jpeg',
+          'folder.png',
+          'album.jpg',
+          'album.jpeg',
+          'album.png',
+          'front.jpg',
+          'front.jpeg',
+          'front.png',
+          'Artwork.jpg',
+          'artwork.jpg',
+          'Artwork.png',
+          'artwork.png',
+        ];
+        for (final name in candidateNames) {
+          final candidate = File(p.join(parentDir.path, name));
+          if (await candidate.exists()) {
+            hasArtwork = true;
+            artworkPath = candidate.path;
+            break;
+          }
         }
       }
 

@@ -97,35 +97,62 @@ class PlaylistScreen extends ConsumerWidget {
               const SizedBox(height: 20),
 
               Expanded(
-                child: GridView.builder(
-                  physics: const BouncingScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 0.9,
-                  ),
-                  itemCount: playlists.length,
-                  itemBuilder: (context, index) {
-                    final pl = playlists[index];
-                    return _PlaylistCard(
-                      playlist: pl,
-                      onTap: () {
-                        final songs = playlistNotifier.getSongsForPlaylist(pl);
-                        if (songs.isNotEmpty) {
-                          playerNotifier.playTrack(songs, 0);
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text("Playlist '${pl.name}' is empty"),
-                              backgroundColor: CinematicColors.obsidianCard,
+                child: playlists.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.queue_music_rounded,
+                              size: 64,
+                              color: Colors.white.withOpacity(0.25),
                             ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              "No playlists created yet",
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              "Tap '+' to create your first custom playlist.",
+                              style: TextStyle(color: Colors.white38, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      )
+                    : GridView.builder(
+                        physics: const BouncingScrollPhysics(),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: 0.9,
+                        ),
+                        itemCount: playlists.length,
+                        itemBuilder: (context, index) {
+                          final pl = playlists[index];
+                          return _PlaylistCard(
+                            playlist: pl,
+                            onTap: () {
+                              final songs = playlistNotifier.getSongsForPlaylist(pl);
+                              if (songs.isNotEmpty) {
+                                playerNotifier.playTrack(songs, 0);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text("Playlist '${pl.name}' is empty"),
+                                    backgroundColor: CinematicColors.obsidianCard,
+                                  ),
+                                );
+                              }
+                            },
                           );
-                        }
-                      },
-                    );
-                  },
-                ),
+                        },
+                      ),
               ),
             ],
           ),

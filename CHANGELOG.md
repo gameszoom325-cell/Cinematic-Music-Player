@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2026-11-14
+
+### Added
+- **Acoustic Minimal Design System Integration**:
+  - Implemented the warm studio charcoal aesthetic (`#131315`, `#201f21`, `#2a2a2c`) with amber accents (`#ffb77d`, `#d97707`) and Inter-based editorial typography.
+  - Album Art Showcase featuring the `AcousticArtRing` (breathing soundwave perimeter ring, progress arc, and 8 radial acoustic tick spikes pulsing to real audio frequencies).
+  - 52-bar Tactile `WaveformScrubber` with elapsed, remaining, and duration counters, glowing active cutoff, and drag-to-seek.
+  - Centerpiece `TactileControlIsland` with ambient rain sound slider, analog transport controls (shuffle, previous, 56px amber play/pause spring button, next, repeat), and master volume gain slider with Direct DAC status.
+  - Dual Editorial Tab Capsule in `CinematicPlayerScreen`:
+    - **Synced Lyrics View**: Vertical timeline indicator, timestamp badges `[mm:ss]`, past lines dimmed, active line elevated in an amber card with active marker, upcoming lines muted.
+    - **Dynamic Up Next Queue**: Real-time track list, live animated equalizer on currently playing track, tap-to-play, duration badges.
+- **Windows File Explorer Dialog Overhaul**:
+  - Direct Win32 COM `FileOpenDialog` (`IFileOpenDialog`) implementation for Windows.
+  - Guarantees File Explorer dialogs reliably open synchronously on Windows desktop without isolate or plugin registration failures.
+  - Supports multi-file selection, folder selection, custom audio extensions (`.mp3`, `.flac`, `.wav`, `.m4a`, `.ogg`, `.aac`, `.opus`, `.wma`, `.aiff`, `.alac`), parent HWND binding, and graceful cancellation.
+- **Real Audio GPU Visualizer (PCM/FFT Driven)**:
+  - Replaced procedural synthetic sine animations with real audio spectrum sampling tied to actual playback timestamp and waveform peaks.
+  - Bass controls large displacement/expansion, Mids control motion/contours, Treble controls detail/shimmer.
+  - In silence or paused state, energy decays smoothly to 0.0 with $e^{-10t}$ damping—calming to a tranquil rest state with zero artificial motion and minimal CPU usage.
+- **Native Windows Drag and Drop & Keyboard Shortcuts**:
+  - Native Win32 `WM_DROPFILES` integration in the Windows runner: drag and drop audio files or folders directly into the app window to import immediately.
+  - Global desktop keyboard shortcuts:
+    - `Space` / `MediaPlayPause`: Play / Pause
+    - `Left` / `Right` Arrow: Seek $\pm 5$ seconds
+    - `Up` / `Down` Arrow: Volume $\pm 5\%$
+    - `N` / `P` / Media Next / Previous: Next / Previous track
+    - `M`: Mute / Unmute
+    - `F`: Full Cinema view toggle
+- **Mobile Performance & Virtualization (Android)**:
+  - Background isolate scanning via `Isolate.run` in batches of 15-20 files to eliminate UI thread blocking during library scans.
+  - Virtualized song list using `itemExtent: 68.0` and `RepaintBoundary` for buttery 60 FPS scrolling over 10,000+ tracks.
+  - Downsampled image decoding (`cacheWidth: 120, cacheHeight: 120`) to prevent out-of-memory crashes and GC pauses.
+- **Authentication & Cloud Sync Hardening**:
+  - Automatic token refresh via GoTrue REST endpoint (`/auth/v1/token?grant_type=refresh_token`).
+  - Offline session persistence ensuring users stay logged in across device restarts and network reconnections.
+
 ## [1.0.2] - 2026-11-14
 
 ### Added

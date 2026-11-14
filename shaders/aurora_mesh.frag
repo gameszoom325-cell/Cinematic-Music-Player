@@ -4,12 +4,12 @@
 
 uniform vec2 u_resolution;
 uniform float u_time;
-uniform float u_energy;     // Overall track energy / RMS level
-uniform float u_bass;       // Sub-bass / bass pulse
-uniform vec3 u_color_1;     // Vibrant primary from album art
-uniform vec3 u_color_2;     // Secondary color from album art
-uniform vec3 u_color_3;     // Accent / highlight color
-uniform vec3 u_color_bg;    // Deep midnight background base
+uniform float u_energy;     // Overall track energy / RMS level (0.0 to 1.0)
+uniform float u_bass;       // Sub-bass / bass pulse (0.0 to 1.0)
+uniform vec3 u_color_1;     // Primary warm amber from album art
+uniform vec3 u_color_2;     // Secondary honey tone from album art
+uniform vec3 u_color_3;     // Highlight accent
+uniform vec3 u_color_bg;    // Studio charcoal background base
 
 out vec4 fragColor;
 
@@ -19,10 +19,10 @@ vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
 vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
 
 float snoise(vec2 v) {
-  const vec4 C = vec4(0.211324865405187,  // (3.0-sqrt(3.0))/6.0
-                      0.366025403784439,  // 0.5*(sqrt(3.0)-1.0)
-                     -0.577350269189626,  // -1.0 + 2.0 * C.x
-                      0.024390243902439); // 1.0 / 41.0
+  const vec4 C = vec4(0.211324865405187,
+                      0.366025403784439,
+                     -0.577350269189626,
+                      0.024390243902439);
   vec2 i  = floor(v + dot(v, C.yy));
   vec2 x0 = v -   i + dot(i, C.xx);
   vec2 i1;
@@ -48,8 +48,8 @@ float snoise(vec2 v) {
 void main() {
   vec2 uv = gl_FragCoord.xy / u_resolution.xy;
   
-  // Dynamic animated coordinate warping (domain warping)
-  float speed = 0.2 + (u_energy * 0.3);
+  // Fluid speed directly proportional to audio energy: calm during silence
+  float speed = 0.02 + (u_energy * 0.45);
   float t = u_time * speed;
   
   // First warp octave
@@ -60,30 +60,32 @@ void main() {
   
   // Second warp octave with audio energy injection
   vec2 r = vec2(
-    snoise(uv * 2.5 + 4.0 * q + vec2(1.7, 9.2) + 0.15 * t),
-    snoise(uv * 2.5 + 4.0 * q + vec2(8.3, 2.8) + 0.126 * t)
+    snoise(uv * 2.4 + 3.5 * q + vec2(1.7, 9.2) + 0.15 * t),
+    snoise(uv * 2.4 + 3.5 * q + vec2(8.3, 2.8) + 0.12 * t)
   );
   
   // Organic mesh density field
-  float f = snoise(uv * 1.5 + 4.0 * r);
+  float f = snoise(uv * 1.5 + 3.5 * r);
   f = 0.5 + 0.5 * f;
   
   // Bass pulses expand the illuminated mesh nodes
-  f += u_bass * 0.25;
+  f += u_bass * 0.32;
   
   // Multi-stop cinematic gradient interpolation
   vec3 color = u_color_bg;
   
-  // Blend primary fluid blobs
-  color = mix(color, u_color_1, smoothstep(0.1, 0.65, f));
+  // Blend primary warm amber blobs
+  color = mix(color, u_color_1, smoothstep(0.12, 0.7, f * (0.4 + u_energy * 0.6)));
   
-  // Blend secondary color waves
+  // Blend secondary honey waves
   float f2 = 0.5 + 0.5 * snoise(uv * 2.0 - r * 2.0 + t * 0.4);
-  color = mix(color, u_color_2, smoothstep(0.3, 0.8, f2 * (0.8 + u_energy * 0.5)));
+  color = mix(color, u_color_2, smoothstep(0.35, 0.85, f2 * (0.3 + u_energy * 0.7)));
   
   // Accent highlights at turbulent peaks
-  float highlight = pow(smoothstep(0.65, 0.95, f), 2.5);
-  color = mix(color, u_color_3, highlight * (0.6 + u_energy * 0.7));
+  if (u_energy > 0.05) {
+    float highlight = pow(smoothstep(0.65, 0.95, f), 2.5);
+    color = mix(color, u_color_3, highlight * (u_energy * 0.85));
+  }
   
   // Deep ambient vignetting to maintain UI contrast
   vec2 centeredUV = (gl_FragCoord.xy - 0.5 * u_resolution) / min(u_resolution.x, u_resolution.y);

@@ -235,10 +235,24 @@ class AuthService {
 
         await SessionManager.instance.saveSession(user, token: token, rememberMe: rememberMe);
         return user;
+      } else {
+        throw Exception("Invalid email or password");
       }
     }
 
-    throw Exception(cloudError ?? "Invalid email or password");
+    if (cloudError != null) {
+      final lower = cloudError.toLowerCase();
+      if (lower.contains("socket") ||
+          lower.contains("timeout") ||
+          lower.contains("network") ||
+          lower.contains("clientexception") ||
+          lower.contains("failed host lookup")) {
+        throw Exception("Unable to reach cloud server. Please check your internet connection or tap 'Continue Offline'.");
+      }
+      throw Exception(cloudError);
+    }
+
+    throw Exception("Invalid email or password");
   }
 
   /// Continue without account (Offline Guest Vault)

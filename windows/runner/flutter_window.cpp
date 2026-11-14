@@ -1,6 +1,10 @@
 #include "flutter_window.h"
 
 #include <optional>
+#include <shellapi.h>
+#include <flutter/method_channel.h>
+#include <flutter/standard_method_codec.h>
+#include <flutter/encodable_value.h>
 
 #include "flutter/generated_plugin_registrant.h"
 
@@ -36,6 +40,9 @@ bool FlutterWindow::OnCreate() {
   // window is shown. It is a no-op if the first frame hasn't completed yet.
   flutter_controller_->ForceRedraw();
 
+  // Register for native drag and drop files
+  ::DragAcceptFiles(GetHandle(), TRUE);
+
   return true;
 }
 
@@ -65,6 +72,33 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
     case WM_FONTCHANGE:
       flutter_controller_->engine()->ReloadSystemFonts();
       break;
+    case WM_DROPFILES: {
+      HDROP hDrop = reinterpret_cast<HDROP>(wparam);
+      UINT count = DragQueryFileW(hDrop, 0xFFFFFFFF, nullptr, 0);
+      std::vector<flutter::EncodableValue> fileList;
+      for (UINT i = 0; i < count; ++i) {
+        UINT len = DragQueryFileW(hDrop, i, nullptr, 0);
+        if (len > 0) {
+          std::vector<wchar_t> buffer(len + 1);
+          DragQueryFileW(hDrop, i, buffer.data(), len + 1);
+          int utf8_size = WideCharToMultiByte(CP_UTF8, 0, buffer.data(), -1, nullptr, 0, nullptr, nullptr);
+          if (utf8_size > 0) {
+            std::string utf8_path(utf8_size - 1, 0);
+            WideCharToMultiByte(CP_UTF8, 0, buffer.data(), -1, &utf8_path[0], utf8_size, nullptr, nullptr);
+            fileList.push_back(flutter::EncodableValue(utf8_path));
+          }
+        }
+      }
+      DragFinish(hDrop);
+      if (flutter_controller_ && !fileList.empty()) {
+        auto channel = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+            flutter_controller_->engine()->messenger(),
+            "cinematic/drag_drop",
+            &flutter::StandardMethodCodec::GetInstance());
+        channel->InvokeMethod("onDropFiles", std::make_unique<flutter::EncodableValue>(fileList));
+      }
+      return 0;
+    }
   }
 
   return Win32Window::MessageHandler(hwnd, message, wparam, lparam);

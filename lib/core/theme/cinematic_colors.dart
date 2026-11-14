@@ -1,42 +1,76 @@
 import 'package:flutter/material.dart';
 
+/// "Acoustic Minimal" Studio Design System Colors
+/// Inspired by high-end analog audio equipment, vinyl packaging,
+/// and minimalist editorial publications.
 class CinematicColors {
-  // Deep OLED Obsidian backgrounds
-  static const Color obsidianBlack = Color(0xFF08080B);
-  static const Color obsidianDark = Color(0xFF0E0E14);
-  static const Color obsidianSurface = Color(0xFF14141E);
-  static const Color obsidianCard = Color(0xFF1A1A28);
+  // Acoustic Studio Charcoal Canvas & Surfaces
+  static const Color background = Color(0xFF131315);
+  static const Color surface = Color(0xFF131315);
+  static const Color surfaceDim = Color(0xFF131315);
+  static const Color surfaceBright = Color(0xFF39393B);
+  static const Color surfaceContainerLowest = Color(0xFF0E0E10);
+  static const Color surfaceContainerLow = Color(0xFF1B1B1D);
+  static const Color surfaceContainer = Color(0xFF201F21);
+  static const Color surfaceContainerHigh = Color(0xFF2A2A2C);
+  static const Color surfaceContainerHighest = Color(0xFF353437);
 
-  // Glass specular borders & highlights
-  static const Color glassHighlight = Color(0x33FFFFFF);
-  static const Color glassBorder = Color(0x1FFFFFFF);
-  static const Color glassBackground = Color(0x12FFFFFF);
+  // Backward-compatible surface aliases
+  static const Color obsidianBlack = Color(0xFF0E0E10);
+  static const Color obsidianDark = Color(0xFF131315);
+  static const Color obsidianSurface = Color(0xFF1B1B1D);
+  static const Color obsidianCard = Color(0xFF201F21);
 
-  // Default Cinematic Neon Palette
-  static const Color electricViolet = Color(0xFF8B5CF6);
-  static const Color neonCyan = Color(0xFF06B6D4);
-  static const Color hotPink = Color(0xFFEC4899);
-  static const Color radioactiveGreen = Color(0xFF10B981);
+  // Text & Typography Tones
+  static const Color onSurface = Color(0xFFE5E1E4);         // Unbleached parchment
+  static const Color onSurfaceVariant = Color(0xFFA1A1AA);  // Muted editorial secondary
+  static const Color outline = Color(0xFFA38C7C);           // Warm cardstock outline
+  static const Color outlineVariant = Color(0xFF554336);
+
+  // Tactile Hairlines & Translucent Frosted Glass
+  static const Color hairlineBorder = Color(0x14FFFFFF);    // 1px tactile hairline
+  static const Color glassHighlight = Color(0x26FFFFFF);
+  static const Color glassBorder = Color(0x14FFFFFF);
+  static const Color glassBackground = Color(0xBF1B1B1D);   // 75% frosted studio charcoal
+
+  // Acoustic Amber & Honey Primary Accents
+  static const Color primary = Color(0xFFFFB77D);           // Warm amber light
+  static const Color primaryContainer = Color(0xFFD97707);  // Deep acoustic amber
+  static const Color onPrimary = Color(0xFF4D2600);
+  static const Color onPrimaryContainer = Color(0xFF432100);
+
+  static const Color secondary = Color(0xFFFFB95F);         // Radiant warm sand / honey
+  static const Color secondaryContainer = Color(0xFFEE9800);
+  static const Color onSecondary = Color(0xFF472A00);
+
+  static const Color tertiary = Color(0xFFC6C6C6);
+  static const Color tertiaryContainer = Color(0xFF909191);
+
+  // Vibrant legacy aliases mapped gracefully to the new acoustic warm palette
+  static const Color electricViolet = Color(0xFFFFB77D);     // Primary accent mapped to warm amber
+  static const Color neonCyan = Color(0xFFFFB95F);           // Secondary accent mapped to honey sand
   static const Color emberAmber = Color(0xFFF59E0B);
-  static const Color deepPlum = Color(0xFF4C1D95);
-  static const Color cyberCyan = Color(0xFF06B6D4);
+  static const Color hotPink = Color(0xFFFFB77D);
+  static const Color radioactiveGreen = Color(0xFF10B981);
+  static const Color deepPlum = Color(0xFF201F21);
+  static const Color cyberCyan = Color(0xFFFFB95F);
   static const Color crimsonRed = Color(0xFFE11D48);
 
-  // Audio Spectrum Perceptual Band Colors
-  static const Color subBassColor = Color(0xFFE11D48); // Deep crimson
-  static const Color bassColor = Color(0xFFF97316);    // Rich orange
-  static const Color lowMidColor = Color(0xFFFBBF24);  // Warm amber
-  static const Color midColor = Color(0xFF10B981);     // Emerald green
-  static const Color upperMidColor = Color(0xFF06B6D4);// Bright cyan
-  static const Color presenceColor = Color(0xFF6366F1);// Deep indigo
-  static const Color brillianceColor = Color(0xFFA855F7); // Violet shimmer
+  // Audio Spectrum Frequency Band Colors
+  static const Color subBassColor = Color(0xFFD97707);      // Deep amber
+  static const Color bassColor = Color(0xFFF59E0B);         // Warm honey
+  static const Color lowMidColor = Color(0xFFFFB77D);       // Light amber
+  static const Color midColor = Color(0xFFE5E1E4);          // Parchment
+  static const Color upperMidColor = Color(0xFFC6C6C6);     // Slate
+  static const Color presenceColor = Color(0xFFA38C7C);     // Cardstock
+  static const Color brillianceColor = Color(0xFF909191);   // Silver
 
-  // Gradients
+  // Tactile Gradients
   static const LinearGradient glassGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0x1FFFFFFF),
+      Color(0x1AFFFFFF),
       Color(0x05FFFFFF),
     ],
   );
@@ -46,8 +80,8 @@ class CinematicColors {
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
       colors: [
-        primary.withOpacity(0.65),
-        secondary.withOpacity(0.35),
+        primary.withOpacity(0.55),
+        secondary.withOpacity(0.25),
       ],
     );
   }
@@ -69,24 +103,10 @@ class DynamicAlbumPalette {
   });
 
   static const fallback = DynamicAlbumPalette(
-    dominant: Color(0xFF181829),
-    vibrant: Color(0xFF8B5CF6),
-    muted: Color(0xFF4338CA),
-    darkMuted: Color(0xFF0F0F1A),
-    lightVibrant: Color(0xFFC084FC),
+    dominant: Color(0xFF1B1B1D),
+    vibrant: Color(0xFFFFB77D),
+    muted: Color(0xFFA1A1AA),
+    darkMuted: Color(0xFF131315),
+    lightVibrant: Color(0xFFFFB95F),
   );
-
-  static DynamicAlbumPalette lerp(
-    DynamicAlbumPalette a,
-    DynamicAlbumPalette b,
-    double t,
-  ) {
-    return DynamicAlbumPalette(
-      dominant: Color.lerp(a.dominant, b.dominant, t) ?? b.dominant,
-      vibrant: Color.lerp(a.vibrant, b.vibrant, t) ?? b.vibrant,
-      muted: Color.lerp(a.muted, b.muted, t) ?? b.muted,
-      darkMuted: Color.lerp(a.darkMuted, b.darkMuted, t) ?? b.darkMuted,
-      lightVibrant: Color.lerp(a.lightVibrant, b.lightVibrant, t) ?? b.lightVibrant,
-    );
-  }
 }

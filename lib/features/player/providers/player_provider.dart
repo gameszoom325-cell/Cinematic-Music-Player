@@ -200,6 +200,34 @@ class PlayerNotifier extends StateNotifier<CinematicPlayerState> {
     }
   }
 
+  Future<void> setVolume(double volume) async {
+    final v = volume.clamp(0.0, 1.0);
+    state = state.copyWith(volume: v);
+    await AudioEngine.instance.setVolume(v);
+  }
+
+  double _previousVolume = 1.0;
+  Future<void> toggleMute() async {
+    if (state.volume > 0.0) {
+      _previousVolume = state.volume;
+      await setVolume(0.0);
+    } else {
+      await setVolume(_previousVolume > 0.0 ? _previousVolume : 1.0);
+    }
+  }
+
+  void setAmbientLevel(double level) {
+    state = state.copyWith(ambientLevel: level.clamp(0.0, 1.0));
+  }
+
+  void toggleRainMode() {
+    final next = !state.rainModeActive;
+    state = state.copyWith(
+      rainModeActive: next,
+      ambientLevel: next ? (state.ambientLevel > 0 ? state.ambientLevel : 0.35) : 0.0,
+    );
+  }
+
   @override
   void dispose() {
     _posSub?.cancel();

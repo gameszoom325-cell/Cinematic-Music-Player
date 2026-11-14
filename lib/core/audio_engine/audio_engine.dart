@@ -16,12 +16,18 @@ class AudioEngine {
   Completer<void>? _serviceInitCompleter;
   bool _audioServiceRegistered = false;
   AudioSession? _audioSession;
+  SongModel? _currentSong;
 
   AudioEngine._() : _handler = CinematicAudioHandler();
 
   bool get isInitialized => true;
   bool get isAudioServiceRegistered => _audioServiceRegistered;
   CinematicAudioHandler get handler => _handler;
+  SongModel? get currentSong => _currentSong;
+  bool get isPlaying => _handler.player.playing;
+  Duration get position => _handler.player.position;
+  Duration? get duration => _handler.player.duration;
+  double get volume => _handler.player.volume;
 
   /// Initializes the background AudioService and links it to the active CinematicAudioHandler.
   /// If the system foreground service fails to register, the standalone handler remains 100% operational.
@@ -167,6 +173,9 @@ class AudioEngine {
 
   Future<bool> playTrack(List<SongModel> queue, int index) async {
     await ensureInitialized();
+    if (queue.isNotEmpty && index >= 0 && index < queue.length) {
+      _currentSong = queue[index];
+    }
     try {
       await _handler.setQueue(queue, initialIndex: index);
       await _handler.play();

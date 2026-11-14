@@ -17,10 +17,10 @@ class PlaylistScreen extends ConsumerWidget {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: CinematicColors.obsidianCard,
+          backgroundColor: CinematicColors.surfaceContainerLow,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: BorderSide(color: Colors.white.withOpacity(0.15)),
+            side: BorderSide(color: Colors.white.withOpacity(0.1)),
           ),
           title: const Text("New Playlist", style: TextStyle(color: Colors.white)),
           content: TextField(
@@ -48,7 +48,8 @@ class PlaylistScreen extends ConsumerWidget {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: CinematicColors.electricViolet,
+                backgroundColor: CinematicColors.primary,
+                foregroundColor: Colors.black87,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               onPressed: () {
@@ -59,7 +60,7 @@ class PlaylistScreen extends ConsumerWidget {
                 Navigator.pop(context);
                 textCtrl.dispose();
               },
-              child: const Text("Create", style: TextStyle(color: Colors.white)),
+              child: const Text("Create", style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         );
@@ -191,8 +192,8 @@ class _PlaylistCard extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: playlist.id == 'favorites'
-                        ? [CinematicColors.hotPink.withOpacity(0.8), CinematicColors.electricViolet]
-                        : [CinematicColors.electricViolet.withOpacity(0.7), CinematicColors.neonCyan.withOpacity(0.5)],
+                        ? [CinematicColors.primary, CinematicColors.primaryContainer]
+                        : [CinematicColors.surfaceContainerHigh, CinematicColors.surfaceContainerHighest],
                   ),
                 ),
                 child: Center(
@@ -200,7 +201,7 @@ class _PlaylistCard extends StatelessWidget {
                     playlist.id == 'favorites'
                         ? Icons.favorite_rounded
                         : (playlist.isSmartPlaylist ? Icons.history_rounded : Icons.queue_music_rounded),
-                    color: Colors.white,
+                    color: playlist.id == 'favorites' ? Colors.black87 : CinematicColors.primary,
                     size: 38,
                   ),
                 ),

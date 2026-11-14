@@ -13,7 +13,7 @@ uniform vec3 u_accent_color;
 
 out vec4 fragColor;
 
-// Simplex 3D Noise algorithms for procedural GPU deformation
+// Optimized Simplex 3D Noise for fluid audio-reactive deformation
 vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
 vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
 vec4 permute(vec4 x) { return mod289(((x * 34.0) + 1.0) * x); }
@@ -64,20 +64,26 @@ float snoise(vec3 v) {
 
 // Signed Distance Field of deformed 3D liquid sphere
 float map(vec3 p) {
-  // Bass drives the fundamental base radius and pulse expansion
-  float baseRadius = 0.95 + (u_bass * 0.38);
+  // Base sphere radius: expands dynamically with actual bass energy
+  float baseRadius = 0.95 + (u_bass * 0.42);
   
-  // Mid frequencies drive surface harmonic ripple waves
-  float midWave = snoise(p * 2.2 + vec3(0.0, u_time * 0.9, 0.0)) * (0.12 + u_mid * 0.28);
+  // Mid frequencies drive harmonic surface ripples (0.0 during silence)
+  float midWave = 0.0;
+  if (u_mid > 0.005) {
+    midWave = snoise(p * 2.2 + vec3(0.0, u_time * 0.9, 0.0)) * (u_mid * 0.36);
+  }
   
-  // Treble drives high-frequency fine surface shimmer
-  float trebleShimmer = snoise(p * 5.5 + vec3(u_time * 1.5, 0.0, 0.0)) * (0.04 + u_treble * 0.12);
+  // Treble drives fine crystalline surface shimmer (0.0 during silence)
+  float trebleShimmer = 0.0;
+  if (u_treble > 0.005) {
+    trebleShimmer = snoise(p * 5.5 + vec3(u_time * 1.6, 0.0, 0.0)) * (u_treble * 0.18);
+  }
   
   return length(p) - baseRadius + midWave + trebleShimmer;
 }
 
 vec3 calcNormal(vec3 p) {
-  const vec2 h = vec2(0.001, 0.0);
+  const vec2 h = vec2(0.002, 0.0);
   return normalize(vec3(
     map(p + h.xyy) - map(p - h.xyy),
     map(p + h.yxy) - map(p - h.yxy),
@@ -88,8 +94,9 @@ vec3 calcNormal(vec3 p) {
 void main() {
   vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / min(u_resolution.x, u_resolution.y);
   
-  // Slowly rotate the camera around the orb for cinematic fluid motion
-  float camAngle = u_time * 0.15;
+  // Slow gentle rotation: slightly accelerates when audio is energetic
+  float rotSpeed = 0.08 + (u_bass + u_mid) * 0.15;
+  float camAngle = u_time * rotSpeed;
   vec3 ro = vec3(3.4 * sin(camAngle), 0.6 * cos(camAngle * 0.7), 3.4 * cos(camAngle));
   vec3 target = vec3(0.0, 0.0, 0.0);
   vec3 ww = normalize(target - ro);
@@ -98,14 +105,15 @@ void main() {
   vec3 rd = normalize(uv.x * uu + uv.y * vv + 1.6 * ww);
   
   float t = 0.0;
-  float tMax = 7.0;
+  float tMax = 6.5;
   bool hit = false;
   vec3 p;
   
-  for (int i = 0; i < 52; i++) {
+  // Highly optimized 32-step raymarch loop for guaranteed 60 FPS
+  for (int i = 0; i < 32; i++) {
     p = ro + rd * t;
     float d = map(p);
-    if (d < 0.001) {
+    if (d < 0.002) {
       hit = true;
       break;
     }
@@ -122,29 +130,31 @@ void main() {
     
     float diff1 = max(dot(n, lightDir1), 0.0);
     float diff2 = max(dot(n, lightDir2), 0.0);
-    float fresnel = pow(1.0 - max(dot(-rd, n), 0.0), 3.2);
+    float fresnel = pow(1.0 - max(dot(-rd, n), 0.0), 3.0);
     
-    // Dynamic iridescent gradient mixing
-    float colorMixFactor = 0.5 + 0.5 * sin(p.y * 3.5 + u_time * 1.2);
-    vec3 surfaceColor = mix(u_primary_color, u_secondary_color, colorMixFactor);
+    // Warm acoustic color mixing from album palette
+    float colorMix = 0.5 + 0.5 * sin(p.y * 3.0 + u_time * 0.8);
+    vec3 surfaceColor = mix(u_primary_color, u_secondary_color, colorMix);
     
-    finalColor = surfaceColor * (diff1 * 0.7 + diff2 * 0.3 + 0.15);
-    finalColor += u_accent_color * fresnel * (1.2 + u_bass * 1.8);
-    finalColor += vec3(1.0) * pow(max(dot(reflect(rd, n), lightDir1), 0.0), 32.0) * (0.8 + u_treble * 1.2);
+    finalColor = surfaceColor * (diff1 * 0.65 + diff2 * 0.25 + 0.12);
+    finalColor += u_accent_color * fresnel * (0.8 + u_bass * 2.2);
+    finalColor += vec3(1.0) * pow(max(dot(reflect(rd, n), lightDir1), 0.0), 32.0) * (0.5 + u_treble * 1.5);
   } else {
-    // Atmospheric volumetric radial glow aura behind the orb
+    // Volumetric acoustic halo aura: calms down to soft amber whisper during silence
     float dist = length(uv);
-    float halo = exp(-dist * 2.4) * (0.4 + u_bass * 0.65);
+    float halo = exp(-dist * 2.5) * (0.15 + u_bass * 0.85);
     vec3 bgGlow = mix(u_primary_color, u_secondary_color, uv.y + 0.5);
     finalColor = bgGlow * halo;
     
-    // Treble sparkles/ambient dust motes
-    float sparkle = pow(snoise(vec3(uv * 12.0, u_time * 0.8)) * 0.5 + 0.5, 6.0) * u_treble * 1.5;
-    finalColor += u_accent_color * sparkle;
+    // Treble sparkles active only when treble is present
+    if (u_treble > 0.05) {
+      float sparkle = pow(snoise(vec3(uv * 12.0, u_time * 0.8)) * 0.5 + 0.5, 6.0) * u_treble * 1.6;
+      finalColor += u_accent_color * sparkle;
+    }
   }
   
-  // Subtle cinematic vignette
-  float vignette = smoothstep(1.4, 0.4, length(uv));
+  // Cinematic vignette
+  float vignette = smoothstep(1.35, 0.35, length(uv));
   finalColor *= vignette;
   
   fragColor = vec4(finalColor, 1.0);

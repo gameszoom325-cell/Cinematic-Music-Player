@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/player_provider.dart';
 import '../../visualizer/providers/visualizer_provider.dart';
 import '../../../core/theme/cinematic_colors.dart';
-import '../../../core/theme/glassmorphism.dart';
 import '../../../core/theme/typography.dart';
 import '../../../core/database/models/song_model.dart';
 import 'cinematic_player_screen.dart';
@@ -35,7 +34,7 @@ class MiniPlayerBar extends ConsumerWidget {
                 opacity: anim,
                 child: SlideTransition(
                   position: Tween<Offset>(
-                    begin: const Offset(0.0, 0.15),
+                    begin: const Offset(0.0, 0.12),
                     end: Offset.zero,
                   ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
                   child: child,
@@ -45,28 +44,39 @@ class MiniPlayerBar extends ConsumerWidget {
           ),
         );
       },
-      child: CinematicGlassCard(
+      child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        borderRadius: 22,
-        tintColor: palette.dominant,
-        tintOpacity: 0.35,
-        borderOpacity: 0.25,
+        decoration: BoxDecoration(
+          color: CinematicColors.surfaceContainerLow.withOpacity(0.95),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.08),
+            width: 1.0,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.35),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               children: [
-                // Small Glowing Album Art Thumbnail
+                // Small Glowing Album Art Thumbnail with cacheWidth/Height
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                   child: SizedBox(
-                    width: 46,
-                    height: 46,
+                    width: 44,
+                    height: 44,
                     child: _buildThumb(currentSong, palette.vibrant),
                   ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
 
                 // Title & Artist
                 Expanded(
@@ -78,78 +88,92 @@ class MiniPlayerBar extends ConsumerWidget {
                         currentSong.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: CinematicTypography.songTitleMedium.copyWith(fontSize: 14),
+                        style: CinematicTypography.songTitleMedium.copyWith(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: CinematicColors.onSurface,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        currentSong.artist,
+                        "${currentSong.artist} • ${currentSong.format.toUpperCase()}",
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: CinematicTypography.artistSubtitle.copyWith(fontSize: 12),
+                        style: CinematicTypography.artistSubtitle.copyWith(
+                          fontSize: 11,
+                          color: CinematicColors.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
                 ),
 
-                // Controls
-                GlassIconButton(
-                  icon: (currentSong.isFavorite)
-                      ? Icons.favorite_rounded
-                      : Icons.favorite_border_rounded,
+                // Favorite Button
+                IconButton(
+                  icon: Icon(
+                    currentSong.isFavorite
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    color: currentSong.isFavorite ? palette.vibrant : Colors.white54,
+                    size: 20,
+                  ),
                   onPressed: () => playerNotifier.toggleFavorite(),
-                  size: 38,
-                  iconSize: 18,
-                  glowColor: CinematicColors.hotPink,
-                  isSelected: currentSong.isFavorite,
                 ),
-                const SizedBox(width: 8),
 
+                // Play / Pause Button
                 playerState.isLoading
                     ? const SizedBox(
-                        width: 44,
-                        height: 44,
+                        width: 36,
+                        height: 36,
                         child: Center(
                           child: SizedBox(
-                            width: 22,
-                            height: 22,
+                            width: 18,
+                            height: 18,
                             child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              strokeWidth: 2.0,
+                              valueColor: AlwaysStoppedAnimation<Color>(CinematicColors.primary),
                             ),
                           ),
                         ),
                       )
-                    : GlassIconButton(
-                        icon: playerState.isPlaying
-                            ? Icons.pause_rounded
-                            : Icons.play_arrow_rounded,
-                        onPressed: () => playerNotifier.togglePlayPause(),
-                        size: 44,
-                        iconSize: 24,
-                        glowColor: palette.vibrant,
-                        isSelected: true,
+                    : Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: palette.vibrant,
+                        ),
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          icon: Icon(
+                            playerState.isPlaying
+                                ? Icons.pause_rounded
+                                : Icons.play_arrow_rounded,
+                            color: Colors.black87,
+                            size: 22,
+                          ),
+                          onPressed: () => playerNotifier.togglePlayPause(),
+                        ),
                       ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 4),
 
-                GlassIconButton(
-                  icon: Icons.skip_next_rounded,
+                // Next Button
+                IconButton(
+                  icon: const Icon(Icons.skip_next_rounded, color: Colors.white70, size: 22),
                   onPressed: () => playerNotifier.skipToNext(),
-                  size: 38,
-                  iconSize: 20,
-                  glowColor: palette.vibrant,
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
 
             // Continuous Progress Bar
             ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(2),
               child: SizedBox(
-                height: 3,
+                height: 2.5,
                 child: LinearProgressIndicator(
                   value: progress,
-                  backgroundColor: Colors.white.withOpacity(0.12),
+                  backgroundColor: Colors.white.withOpacity(0.08),
                   valueColor: AlwaysStoppedAnimation<Color>(palette.vibrant),
                 ),
               ),
@@ -167,16 +191,18 @@ class MiniPlayerBar extends ConsumerWidget {
         return Image.file(
           file,
           fit: BoxFit.cover,
+          cacheWidth: 120,
+          cacheHeight: 120,
           errorBuilder: (context, error, stackTrace) => Container(
-            color: fallbackColor.withOpacity(0.4),
-            child: const Icon(Icons.music_note_rounded, size: 24, color: Colors.white),
+            color: fallbackColor.withOpacity(0.3),
+            child: const Icon(Icons.music_note_rounded, size: 22, color: Colors.white70),
           ),
         );
       }
     }
     return Container(
-      color: fallbackColor.withOpacity(0.4),
-      child: const Icon(Icons.music_note_rounded, size: 24, color: Colors.white),
+      color: fallbackColor.withOpacity(0.3),
+      child: const Icon(Icons.music_note_rounded, size: 22, color: Colors.white70),
     );
   }
 }

@@ -22,38 +22,65 @@ class _AddMusicScreenState extends ConsumerState<AddMusicScreen> {
   int _total = 0;
 
   Future<void> _handleSelectFolder() async {
-    final folderPath = await ScannerService.pickMusicFolder();
-    if (folderPath != null) {
-      _startDirectoryScan(Directory(folderPath));
+    try {
+      final folderPath = await ScannerService.pickMusicFolder();
+      if (folderPath != null) {
+        _startDirectoryScan(Directory(folderPath));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Folder selection: ${e.toString().replaceAll('Exception: ', '')}"),
+            backgroundColor: CinematicColors.obsidianCard,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
   Future<void> _handleImportFiles() async {
-    final files = await ScannerService.pickAudioFiles();
-    if (files != null && files.isNotEmpty) {
-      setState(() {
-        _isImporting = true;
-        _current = 0;
-        _total = files.length;
-        _statusText = "Importing selected audio tracks...";
-      });
+    try {
+      final files = await ScannerService.pickAudioFiles();
+      if (files != null && files.isNotEmpty) {
+        setState(() {
+          _isImporting = true;
+          _current = 0;
+          _total = files.length;
+          _statusText = "Importing selected audio tracks...";
+        });
 
-      await ScannerService.importFiles(
-        files,
-        onProgress: (current, total) {
-          setState(() {
-            _current = current;
-            _total = total;
-          });
-        },
-      );
+        await ScannerService.importFiles(
+          files,
+          onProgress: (current, total) {
+            setState(() {
+              _current = current;
+              _total = total;
+            });
+          },
+        );
 
-      ref.read(libraryProvider.notifier).refreshLibrary();
+        ref.read(libraryProvider.notifier).refreshLibrary();
+        setState(() {
+          _isImporting = false;
+          _statusText = "Successfully imported ${files.length} tracks!";
+        });
+        _showSuccessSnackbar("Imported ${files.length} songs into your personal library");
+      }
+    } catch (e) {
       setState(() {
         _isImporting = false;
-        _statusText = "Successfully imported ${files.length} tracks!";
       });
-      _showSuccessSnackbar("Imported ${files.length} songs into your personal library");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("File import: ${e.toString().replaceAll('Exception: ', '')}"),
+            backgroundColor: CinematicColors.obsidianCard,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 

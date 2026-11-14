@@ -14,6 +14,8 @@ class CinematicPlayerState {
   final int repeatMode; // 0 = off, 1 = one, 2 = all
   final double volume;
   final double speed;
+  final double ambientLevel;
+  final bool rainModeActive;
   final WaveformCacheModel? currentWaveform;
   final String? errorMessage;
 
@@ -30,6 +32,8 @@ class CinematicPlayerState {
     this.repeatMode = 0,
     this.volume = 1.0,
     this.speed = 1.0,
+    this.ambientLevel = 0.35,
+    this.rainModeActive = false,
     this.currentWaveform,
     this.errorMessage,
   });
@@ -47,6 +51,8 @@ class CinematicPlayerState {
     int? repeatMode,
     double? volume,
     double? speed,
+    double? ambientLevel,
+    bool? rainModeActive,
     WaveformCacheModel? currentWaveform,
     String? errorMessage,
     bool clearError = false,
@@ -64,6 +70,8 @@ class CinematicPlayerState {
       repeatMode: repeatMode ?? this.repeatMode,
       volume: volume ?? this.volume,
       speed: speed ?? this.speed,
+      ambientLevel: ambientLevel ?? this.ambientLevel,
+      rainModeActive: rainModeActive ?? this.rainModeActive,
       currentWaveform: currentWaveform ?? this.currentWaveform,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );

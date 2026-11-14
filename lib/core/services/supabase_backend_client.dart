@@ -182,6 +182,25 @@ class SupabaseBackendClient {
     } catch (_) {}
   }
 
+  /// Refresh an expired session token
+  Future<String?> refreshToken(String refreshToken) async {
+    try {
+      final uri = Uri.parse('${SupabaseConfig.instance.url}/auth/v1/token?grant_type=refresh_token');
+      final res = await _client.post(
+        uri,
+        headers: _buildHeaders(),
+        body: jsonEncode({'refresh_token': refreshToken}),
+      ).timeout(_timeout);
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        return data['access_token'] as String?;
+      }
+    } catch (e) {
+      debugPrint("Error refreshing token: $e");
+    }
+    return null;
+  }
+
   // =========================================================================
   // PROFILES TABLE (PostgREST API)
   // =========================================================================

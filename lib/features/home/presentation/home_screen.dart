@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/cinematic_colors.dart';
-import '../../../core/theme/glassmorphism.dart';
 import '../../../core/theme/typography.dart';
 import '../../../core/database/database_service.dart';
 import '../../../core/database/models/song_model.dart';
@@ -49,26 +48,35 @@ class HomeScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          allSongs.isEmpty ? "OFFLINE MUSIC VAULT" : "${allSongs.length} TRACKS LOADED",
-                          style: TextStyle(
-                            color: CinematicColors.electricViolet.withOpacity(0.8),
+                          allSongs.isEmpty ? "OFFLINE ACOUSTIC VAULT" : "${allSongs.length} MASTER TRACKS",
+                          style: const TextStyle(
+                            color: CinematicColors.primary,
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 2.0,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text("Music Library", style: CinematicTypography.displayTitle),
+                        const Text(
+                          "Daily Flow",
+                          style: TextStyle(
+                            color: CinematicColors.onSurface,
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
                       ],
                     ),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: CinematicColors.electricViolet,
-                        foregroundColor: Colors.white,
+                        backgroundColor: CinematicColors.primary.withOpacity(0.18),
+                        foregroundColor: CinematicColors.primary,
                         elevation: 0,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(color: CinematicColors.primary.withOpacity(0.5)),
                         ),
                       ),
                       onPressed: () => _openAddMusic(context),
@@ -85,47 +93,46 @@ class HomeScreen extends ConsumerWidget {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
-                  child: CinematicGlassCard(
-                    padding: const EdgeInsets.all(28),
-                    borderRadius: 24,
+                  child: Container(
+                    padding: const EdgeInsets.all(26),
+                    decoration: BoxDecoration(
+                      color: CinematicColors.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withOpacity(0.08)),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          width: 56,
-                          height: 56,
+                          width: 52,
+                          height: 52,
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [CinematicColors.electricViolet, CinematicColors.deepPlum],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(16),
+                            color: CinematicColors.primary.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(14),
                           ),
-                          child: const Icon(Icons.library_music_rounded, color: Colors.white, size: 30),
+                          child: const Icon(Icons.library_music_rounded, color: CinematicColors.primary, size: 28),
                         ),
-                        const SizedBox(height: 18),
-                        const Text("Your Library is Empty", style: CinematicTypography.songTitleLarge),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 16),
                         const Text(
-                          "Import your local MP3, FLAC, WAV, M4A, or OGG tracks from your device to listen offline with full GPU audio visualizers and synchronized lyrics.",
-                          style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
+                          "Your Acoustic Vault is Empty",
+                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                         ),
-                        const SizedBox(height: 22),
-                        Row(
-                          children: [
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: CinematicColors.electricViolet,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                              ),
-                              onPressed: () => _openAddMusic(context),
-                              icon: const Icon(Icons.folder_open_rounded, size: 18),
-                              label: const Text("Import Music Files", style: TextStyle(fontWeight: FontWeight.bold)),
-                            ),
-                          ],
+                        const SizedBox(height: 6),
+                        const Text(
+                          "Import your local FLAC, WAV, MP3, M4A, or OGG tracks to listen offline with full GPU audio visualizers, synchronized lyrics, and bitperfect playback.",
+                          style: TextStyle(color: CinematicColors.onSurfaceVariant, fontSize: 13, height: 1.5),
+                        ),
+                        const SizedBox(height: 20),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: CinematicColors.primary,
+                            foregroundColor: Colors.black87,
+                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed: () => _openAddMusic(context),
+                          icon: const Icon(Icons.folder_open_rounded, size: 18),
+                          label: const Text("Import Music Files", style: TextStyle(fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ),
@@ -265,8 +272,8 @@ class HomeScreen extends ConsumerWidget {
         title,
         style: const TextStyle(
           color: Colors.white54,
-          fontSize: 12,
-          fontWeight: FontWeight.w800,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
           letterSpacing: 1.5,
         ),
       ),
@@ -283,7 +290,7 @@ class HomeScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(14),
               child: AspectRatio(
                 aspectRatio: 1.0,
                 child: _buildThumb(song.artworkPath, song.title),
@@ -318,7 +325,7 @@ class HomeScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(14),
               child: AspectRatio(
                 aspectRatio: 1.0,
                 child: _buildThumb(album.artworkPath, album.name),
@@ -351,8 +358,8 @@ class HomeScreen extends ConsumerWidget {
           children: [
             ClipOval(
               child: SizedBox(
-                width: 76,
-                height: 76,
+                width: 72,
+                height: 72,
                 child: _buildThumb(artist.sampleArtworkPath, artist.name),
               ),
             ),
@@ -373,26 +380,26 @@ class HomeScreen extends ConsumerWidget {
   Widget _buildPlaylistTile(PlaylistModel playlist, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
-      child: CinematicGlassCard(
-        borderRadius: 14,
+      child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: CinematicColors.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withOpacity(0.06)),
+        ),
         child: Row(
           children: [
             Container(
-              width: 38,
-              height: 38,
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
-                gradient: LinearGradient(
-                  colors: playlist.id == 'favorites'
-                      ? [CinematicColors.hotPink, CinematicColors.electricViolet]
-                      : [CinematicColors.electricViolet, CinematicColors.neonCyan],
-                ),
+                color: CinematicColors.primary.withOpacity(0.2),
               ),
               child: Icon(
                 playlist.id == 'favorites' ? Icons.favorite_rounded : Icons.queue_music_rounded,
-                size: 20,
-                color: Colors.white,
+                size: 18,
+                color: CinematicColors.primary,
               ),
             ),
             const SizedBox(width: 10),
@@ -427,6 +434,8 @@ class HomeScreen extends ConsumerWidget {
         return Image.file(
           file,
           fit: BoxFit.cover,
+          cacheWidth: 160,
+          cacheHeight: 160,
           errorBuilder: (context, error, stackTrace) => _fallbackThumb(),
         );
       }
@@ -436,18 +445,9 @@ class HomeScreen extends ConsumerWidget {
 
   Widget _fallbackThumb() {
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            CinematicColors.electricViolet.withOpacity(0.4),
-            CinematicColors.obsidianCard,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
+      color: CinematicColors.surfaceContainerHighest,
       child: const Center(
-        child: Icon(Icons.music_note_rounded, color: Colors.white54, size: 28),
+        child: Icon(Icons.music_note_rounded, color: Colors.white38, size: 24),
       ),
     );
   }

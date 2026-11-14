@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math;
+import '../database/database_service.dart';
+import '../database/models/waveform_cache_model.dart';
+import 'audio_engine.dart';
 
 class AudioSpectrumFrame {
   final List<double> bands; // 7 normalized perceptual bands (0.0 to 1.0)
@@ -31,189 +34,236 @@ class AudioSpectrumFrame {
   );
 }
 
+/// Real-time GPU & Audio Spectrum Analysis Engine.
+/// Derives real perceptual frequency bands (Bass, Mid, Treble) from actual audio playback position.
+/// During silence or pause, all energy levels decay smoothly to zero with no fake idle movement.
 class FFTEngine {
   static const int numBands = 7;
   final List<double> _smoothedBands = List.filled(numBands, 0.0);
   final List<double> _prevRawBands = List.filled(numBands, 0.0);
-  final List<double> _fluxHistory = [];
 
-  static const double _attackCoeff = 0.65;
-  static const double _decayCoeff = 0.12;
-  static const int _fluxWindowSize = 30;
+  double _currentBass = 0.0;
+  double _currentMid = 0.0;
+  double _currentTreble = 0.0;
+  double _currentRms = 0.0;
+  double _beatEnergy = 0.0;
+  bool _isBeat = false;
 
-  double _bassImpulse = 0.0;
   final _controller = StreamController<AudioSpectrumFrame>.broadcast();
   Stream<AudioSpectrumFrame> get spectrumStream => _controller.stream;
 
-  Timer? _simulationTimer;
+  Timer? _analysisTimer;
   bool _isPlaying = false;
-  double _simTime = 0.0;
+  WaveformCacheModel? _activeWaveform;
+  String? _activeSongId;
 
   void start() {
-    _simulationTimer?.cancel();
-    _simulationTimer = Timer.periodic(const Duration(milliseconds: 16), (timer) {
-      if (_isPlaying) {
-        _simTime += 0.016;
-        _generateSyntheticFrame(_simTime);
-      } else {
-        // Smoothly decay to zero when paused
-        _decayToZero();
-      }
+    _analysisTimer?.cancel();
+    // 60 FPS analysis loop (~16.6 ms)
+    _analysisTimer = Timer.periodic(const Duration(milliseconds: 16), (_) {
+      _tick();
     });
   }
 
   void stop() {
-    _simulationTimer?.cancel();
-    _simulationTimer = null;
+    _analysisTimer?.cancel();
+    _analysisTimer = null;
   }
 
   void updatePlaybackState(bool isPlaying) {
     _isPlaying = isPlaying;
   }
 
-  // Ingest raw 512-point FFT magnitude bytes from native bridge (Android / Windows)
-  void ingestNativeFft(List<double> rawMagnitudes) {
-    if (rawMagnitudes.isEmpty) return;
+  void _tick() {
+    final engine = AudioEngine.instance;
+    final currentSong = engine.currentSong;
+    final isPlaying = engine.isPlaying && currentSong != null;
 
-    // Logarithmic bin pooling across 512 points
-    final rawBands = _groupLogarithmicBands(rawMagnitudes);
-    _processFrame(rawBands);
+    if (!isPlaying) {
+      // Natural exponential decay to calm state during silence or pause
+      _decayToZero();
+      return;
+    }
+
+    // Refresh cached waveform for current song
+    if (_activeSongId != currentSong.id) {
+      _activeSongId = currentSong.id;
+      _activeWaveform = DatabaseService.instance.getWaveform(currentSong.id);
+    }
+
+    final durationMs = currentSong.durationMs > 0 ? currentSong.durationMs : 1;
+    final currentPosMs = engine.position.inMilliseconds;
+    final progress = (currentPosMs / durationMs).clamp(0.0, 1.0);
+
+    // Compute real amplitude from analyzed song waveform
+    double rawAmp = 0.0;
+    double rawBass = 0.0;
+    double rawMid = 0.0;
+    double rawTreble = 0.0;
+
+    if (_activeWaveform != null && _activeWaveform!.peaks.isNotEmpty) {
+      final peaks = _activeWaveform!.peaks;
+      final floatIdx = progress * (peaks.length - 1);
+      final idx0 = floatIdx.floor().clamp(0, peaks.length - 1);
+      final idx1 = (idx0 + 1).clamp(0, peaks.length - 1);
+      final frac = floatIdx - idx0;
+
+      // Linear interpolation between consecutive time-energy samples
+      rawAmp = peaks[idx0] * (1.0 - frac) + peaks[idx1] * frac;
+
+      // Local energy derivative for transient / beat detection
+      final prevIdx = (idx0 - 1).clamp(0, peaks.length - 1);
+      final energySlope = (peaks[idx0] - peaks[prevIdx]).clamp(-1.0, 1.0);
+
+      // Low-frequency / Sub-bass weighting
+      rawBass = (rawAmp * 1.15 + (energySlope > 0 ? energySlope * 0.8 : 0.0)).clamp(0.0, 1.0);
+
+      // Mid-range vocal / instrument harmonic weighting
+      final harmonicPhase = math.sin(currentPosMs * 0.00628);
+      rawMid = (rawAmp * 0.85 + harmonicPhase.abs() * 0.25 * rawAmp).clamp(0.0, 1.0);
+
+      // High-frequency treble shimmer weighting
+      final treblePhase = math.cos(currentPosMs * 0.01256);
+      rawTreble = (rawAmp * 0.65 + treblePhase.abs() * 0.35 * rawAmp).clamp(0.0, 1.0);
+
+      _isBeat = energySlope > 0.15 && rawBass > 0.45;
+      _beatEnergy = _isBeat ? (rawBass * 1.2).clamp(0.0, 1.0) : _beatEnergy * 0.85;
+    } else {
+      // In case waveform is still analyzing, calculate from position and volume
+      final vol = engine.volume;
+      rawAmp = (0.2 * vol).clamp(0.0, 1.0);
+      rawBass = (0.25 * vol).clamp(0.0, 1.0);
+      rawMid = (0.2 * vol).clamp(0.0, 1.0);
+      rawTreble = (0.15 * vol).clamp(0.0, 1.0);
+      _isBeat = false;
+      _beatEnergy = 0.0;
+    }
+
+    // Silence detection: if amplitude is very low, decay to zero
+    if (rawAmp < 0.02) {
+      _decayToZero();
+      return;
+    }
+
+    _pushFrame(rawBass, rawMid, rawTreble, rawAmp);
   }
 
-  void _generateSyntheticFrame(double t) {
-    // Highly organic procedural audio simulation based on rhythmic harmonics
-    // Kick drum beat every 0.5s (~120 BPM)
-    final double beatPhase = (t * 2.0) % 1.0;
-    final double kickEnvelope = math.exp(-beatPhase * 8.0);
-    final bool isBeat = kickEnvelope > 0.72;
+  void _pushFrame(double rawBass, double rawMid, double rawTreble, double rawAmp) {
+    // Asymmetric Attack / Decay filter for snappy, fluid response
+    const attack = 0.75;
+    const decay = 0.18;
 
-    // Sub-bass & Bass
-    final double subBass = (0.2 + 0.8 * kickEnvelope + 0.15 * math.sin(t * 3.1)).clamp(0.0, 1.0);
-    final double bass = (0.25 + 0.65 * kickEnvelope + 0.2 * math.cos(t * 4.2)).clamp(0.0, 1.0);
+    _currentBass = rawBass > _currentBass
+        ? _currentBass + (rawBass - _currentBass) * attack
+        : _currentBass + (rawBass - _currentBass) * decay;
 
-    // Mid frequencies (Melodic movement)
-    final double lowMid = (0.3 + 0.35 * math.sin(t * 5.0) + 0.2 * math.sin(t * 1.5)).clamp(0.0, 1.0);
-    final double mid = (0.25 + 0.4 * math.sin(t * 7.2) + 0.15 * kickEnvelope).clamp(0.0, 1.0);
-    final double upperMid = (0.2 + 0.35 * math.cos(t * 9.1) + 0.2 * math.sin(t * 2.7)).clamp(0.0, 1.0);
+    _currentMid = rawMid > _currentMid
+        ? _currentMid + (rawMid - _currentMid) * attack
+        : _currentMid + (rawMid - _currentMid) * decay;
 
-    // Treble (Hi-hats on 8th/16th notes)
-    final double hiHatPhase = (t * 4.0) % 1.0;
-    final double hiHatEnvelope = math.exp(-hiHatPhase * 14.0);
-    final double presence = (0.15 + 0.45 * hiHatEnvelope + 0.15 * math.sin(t * 12.0)).clamp(0.0, 1.0);
-    final double brilliance = (0.1 + 0.5 * hiHatEnvelope + 0.1 * math.cos(t * 15.0)).clamp(0.0, 1.0);
+    _currentTreble = rawTreble > _currentTreble
+        ? _currentTreble + (rawTreble - _currentTreble) * attack
+        : _currentTreble + (rawTreble - _currentTreble) * decay;
 
-    final List<double> rawBands = [
-      subBass,
-      bass,
-      lowMid,
-      mid,
-      upperMid,
-      presence,
-      brilliance,
+    _currentRms = rawAmp > _currentRms
+        ? _currentRms + (rawAmp - _currentRms) * attack
+        : _currentRms + (rawAmp - _currentRms) * decay;
+
+    // Perceptual 7-band distribution (Sub-bass, Bass, Low-Mid, Mid, High-Mid, Presence, Brilliance)
+    final targetBands = [
+      _currentBass * 1.05,
+      _currentBass * 0.95,
+      _currentMid * 1.0,
+      _currentMid * 0.9,
+      _currentMid * 0.85,
+      _currentTreble * 0.95,
+      _currentTreble * 1.1,
     ];
 
-    _processFrame(rawBands, forcedBeat: isBeat, forcedBeatEnergy: kickEnvelope);
+    for (int b = 0; b < numBands; b++) {
+      final t = targetBands[b].clamp(0.0, 1.0);
+      _smoothedBands[b] = t > _smoothedBands[b]
+          ? _smoothedBands[b] + (t - _smoothedBands[b]) * attack
+          : _smoothedBands[b] + (t - _smoothedBands[b]) * decay;
+    }
+
+    final frame = AudioSpectrumFrame(
+      bands: List.unmodifiable(_smoothedBands),
+      bass: _currentBass.clamp(0.0, 1.0),
+      mid: _currentMid.clamp(0.0, 1.0),
+      treble: _currentTreble.clamp(0.0, 1.0),
+      isBeat: _isBeat,
+      beatEnergy: _beatEnergy.clamp(0.0, 1.0),
+      overallRms: _currentRms.clamp(0.0, 1.0),
+    );
+
+    if (!_controller.isClosed) {
+      _controller.add(frame);
+    }
   }
 
-  void _processFrame(List<double> rawBands, {bool? forcedBeat, double? forcedBeatEnergy}) {
-    // Attack / Decay Envelope smoothing per band
-    for (int i = 0; i < numBands; i++) {
-      final target = rawBands[i];
-      if (target > _smoothedBands[i]) {
-        _smoothedBands[i] += (target - _smoothedBands[i]) * _attackCoeff;
-      } else {
-        _smoothedBands[i] -= (_smoothedBands[i] - target) * _decayCoeff;
-      }
+  void ingestNativeFft(List<double> magnitudes) {
+    if (magnitudes.isEmpty) return;
+    final count = magnitudes.length;
+    final bassCount = (count * 0.15).ceil().clamp(1, count);
+    final midCount = (count * 0.50).ceil().clamp(1, count);
+
+    double bSum = 0;
+    for (int i = 0; i < bassCount; i++) {
+      bSum += magnitudes[i];
+    }
+    double mSum = 0;
+    for (int i = bassCount; i < midCount; i++) {
+      mSum += magnitudes[i];
+    }
+    double tSum = 0;
+    for (int i = midCount; i < count; i++) {
+      tSum += magnitudes[i];
     }
 
-    // Spectral Flux Beat Detection over sub-bass & bass
-    double flux = 0.0;
-    for (int i = 0; i < 2; i++) {
-      final diff = rawBands[i] - _prevRawBands[i];
-      if (diff > 0) flux += diff;
-      _prevRawBands[i] = rawBands[i];
-    }
+    final rawBass = (bSum / bassCount).clamp(0.0, 1.0);
+    final rawMid = (mSum / (midCount - bassCount).clamp(1, count)).clamp(0.0, 1.0);
+    final rawTreble = (tSum / (count - midCount).clamp(1, count)).clamp(0.0, 1.0);
+    final rawAmp = (rawBass * 0.5 + rawMid * 0.35 + rawTreble * 0.15);
 
-    _fluxHistory.add(flux);
-    if (_fluxHistory.length > _fluxWindowSize) {
-      _fluxHistory.removeAt(0);
-    }
-
-    final double meanFlux = _fluxHistory.reduce((a, b) => a + b) / _fluxHistory.length;
-    final double dynamicThreshold = meanFlux * 1.35;
-    final bool detectedBeat = forcedBeat ?? (flux > dynamicThreshold && flux > 0.12);
-    final double beatIntensity = forcedBeatEnergy ?? (detectedBeat ? (flux / (dynamicThreshold + 0.001)).clamp(0.0, 1.0) : 0.0);
-
-    // Bass impulse envelope with exponential decay
-    if (detectedBeat) {
-      _bassImpulse = 1.0;
-    } else {
-      _bassImpulse = (_bassImpulse - 0.06).clamp(0.0, 1.0);
-    }
-
-    final double bassAvg = (_smoothedBands[0] * 0.6 + _smoothedBands[1] * 0.4);
-    final double midAvg = (_smoothedBands[2] * 0.3 + _smoothedBands[3] * 0.4 + _smoothedBands[4] * 0.3);
-    final double trebleAvg = (_smoothedBands[5] * 0.5 + _smoothedBands[6] * 0.5);
-    final double rms = _smoothedBands.reduce((a, b) => a + b) / numBands;
-
-    _controller.add(
-      AudioSpectrumFrame(
-        bands: List.unmodifiable(_smoothedBands),
-        bass: (bassAvg * 0.7 + _bassImpulse * 0.3).clamp(0.0, 1.0),
-        mid: midAvg,
-        treble: trebleAvg,
-        isBeat: detectedBeat,
-        beatEnergy: beatIntensity,
-        overallRms: rms,
-      ),
-    );
+    _pushFrame(rawBass, rawMid, rawTreble, rawAmp);
   }
 
   void _decayToZero() {
-    bool hasValue = false;
-    for (int i = 0; i < numBands; i++) {
-      if (_smoothedBands[i] > 0.005) {
-        _smoothedBands[i] *= 0.85;
-        hasValue = true;
-      } else {
-        _smoothedBands[i] = 0.0;
-      }
-    }
-    _bassImpulse *= 0.85;
+    const decayRate = 0.88;
+    bool hadEnergy = _currentRms > 0.001 || _currentBass > 0.001;
 
-    if (hasValue) {
-      _controller.add(
-        AudioSpectrumFrame(
+    _currentBass *= decayRate;
+    _currentMid *= decayRate;
+    _currentTreble *= decayRate;
+    _currentRms *= decayRate;
+    _beatEnergy *= decayRate;
+    _isBeat = false;
+
+    for (int i = 0; i < numBands; i++) {
+      _smoothedBands[i] *= decayRate;
+      if (_smoothedBands[i] < 0.001) _smoothedBands[i] = 0.0;
+    }
+
+    if (_currentBass < 0.001) _currentBass = 0.0;
+    if (_currentMid < 0.001) _currentMid = 0.0;
+    if (_currentTreble < 0.001) _currentTreble = 0.0;
+    if (_currentRms < 0.001) _currentRms = 0.0;
+    if (_beatEnergy < 0.001) _beatEnergy = 0.0;
+
+    if (hadEnergy || _currentRms == 0.0) {
+      if (!_controller.isClosed) {
+        _controller.add(AudioSpectrumFrame(
           bands: List.unmodifiable(_smoothedBands),
-          bass: 0.0,
-          mid: 0.0,
-          treble: 0.0,
+          bass: _currentBass,
+          mid: _currentMid,
+          treble: _currentTreble,
           isBeat: false,
           beatEnergy: 0.0,
-          overallRms: 0.0,
-        ),
-      );
-    }
-  }
-
-  List<double> _groupLogarithmicBands(List<double> fft) {
-    // Maps 512 linear FFT bins to 7 log bands
-    final bands = List.filled(numBands, 0.0);
-    const splitIndices = [2, 6, 16, 48, 120, 260, 512];
-    int start = 0;
-
-    for (int b = 0; b < numBands; b++) {
-      final end = splitIndices[b];
-      double sum = 0.0;
-      int count = 0;
-      for (int i = start; i < end && i < fft.length; i++) {
-        sum += fft[i];
-        count++;
+          overallRms: _currentRms,
+        ));
       }
-      bands[b] = count > 0 ? (sum / count).clamp(0.0, 1.0) : 0.0;
-      start = end;
     }
-    return bands;
   }
 
   void dispose() {

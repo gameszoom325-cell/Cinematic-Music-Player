@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -9,10 +10,11 @@ import '../database/models/song_model.dart';
 import '../database/database_service.dart';
 import '../audio_engine/waveform_analyzer.dart';
 import 'audio_metadata_parser.dart';
+import 'windows_file_dialog.dart';
 
 class ScannerService {
   static const Set<String> supportedExtensions = {
-    '.mp3', '.flac', '.wav', '.m4a', '.ogg', '.aac'
+    '.mp3', '.flac', '.wav', '.m4a', '.ogg', '.aac', '.opus', '.wma', '.aiff', '.alac'
   };
 
   static Future<bool> requestStoragePermissions() async {
@@ -41,10 +43,21 @@ class ScannerService {
 
   // Option 1: Pick Music Folder
   static Future<String?> pickMusicFolder() async {
+    if (kIsWeb) return null;
+
+    // Use native Win32 COM FileOpenDialog on Windows
+    if (Platform.isWindows) {
+      try {
+        final path = WindowsFileDialog.pickFolder(dialogTitle: "Select Music Folder");
+        return path;
+      } catch (e) {
+        debugPrint("WindowsFileDialog.pickFolder fallback: $e");
+      }
+    }
+
     final granted = await requestStoragePermissions();
     if (!granted && defaultTargetPlatform == TargetPlatform.android) {
-      debugPrint("Storage permission denied on Android.");
-      return null;
+      throw Exception("Storage permission denied. Please grant audio/storage permissions to pick folders.");
     }
 
     try {
@@ -54,18 +67,39 @@ class ScannerService {
       return selectedPath;
     } catch (e) {
       debugPrint("Error picking folder: $e");
-      return null;
+      throw Exception("Failed to open folder picker: $e");
     }
   }
 
   // Option 2: Pick Multiple Audio Files
   static Future<List<File>?> pickAudioFiles() async {
+    if (kIsWeb) return null;
+
+    // Use native Win32 COM FileOpenDialog on Windows
+    if (Platform.isWindows) {
+      try {
+        final paths = WindowsFileDialog.pickAudioFiles(dialogTitle: "Import Audio Tracks");
+        if (paths != null && paths.isNotEmpty) {
+          return paths
+              .map((p) => File(p))
+              .where((file) => file.existsSync())
+              .toList();
+        }
+        return null;
+      } catch (e) {
+        debugPrint("WindowsFileDialog.pickAudioFiles fallback: $e");
+      }
+    }
+
     final granted = await requestStoragePermissions();
-    if (!granted && defaultTargetPlatform == TargetPlatform.android) return null;
+    if (!granted && defaultTargetPlatform == TargetPlatform.android) {
+      throw Exception("Storage permission denied. Please grant audio/storage permissions to import tracks.");
+    }
 
     try {
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.audio,
+        type: FileType.custom,
+        allowedExtensions: ['mp3', 'flac', 'wav', 'm4a', 'ogg', 'aac', 'opus', 'wma', 'aiff', 'alac'],
         allowMultiple: true,
         dialogTitle: "Import Audio Tracks",
       );
@@ -77,10 +111,11 @@ class ScannerService {
             .where((file) => file.existsSync())
             .toList();
       }
+      return null;
     } catch (e) {
       debugPrint("Error picking audio files: $e");
+      throw Exception("Failed to open file picker: $e");
     }
-    return null;
   }
 
   // Option 3: Standard Storage Directories
@@ -103,7 +138,7 @@ class ScannerService {
     return paths;
   }
 
-  // Import a custom batch of files with persistent caching for temporary picker paths
+  // Import a batch of files using background Isolate to prevent UI frame drops
   static Future<List<SongModel>> importFiles(
     List<File> files, {
     void Function(int current, int total)? onProgress,
@@ -116,13 +151,15 @@ class ScannerService {
     if (!await musicDir.exists()) await musicDir.create(recursive: true);
 
     final total = files.length;
+    final List<File> targetFiles = [];
+
+    // Pre-check files and copy temporary picker files to persistent directory
     for (int i = 0; i < total; i++) {
       final file = files[i];
       if (!file.existsSync()) continue;
 
       File targetFile = file;
       final lowerPath = file.path.toLowerCase();
-      // If file was picked from a temporary cache directory, make a permanent copy
       if (lowerPath.contains('/cache/') ||
           lowerPath.contains('\\cache\\') ||
           lowerPath.contains('file_picker') ||
@@ -136,22 +173,48 @@ class ScannerService {
           targetFile = file;
         }
       }
+      targetFiles.add(targetFile);
+    }
 
-      final song = await _processAudioFile(targetFile, artDir);
-      if (song != null && song.isLocalFileAvailable) {
-        importedSongs.add(song);
-        WaveformAnalyzer.analyzeSong(song.id, song.path).ignore();
-      }
-      onProgress?.call(i + 1, total);
+    // Process files in isolate batches of 15 to keep memory footprint light and reporting progress smoothly
+    final artDirPath = artDir.path;
+    const batchSize = 15;
+
+    for (int i = 0; i < targetFiles.length; i += batchSize) {
+      final end = (i + batchSize < targetFiles.length) ? i + batchSize : targetFiles.length;
+      final batchSlice = targetFiles.sublist(i, end).map((f) => f.path).toList();
+
+      final batchSongs = await Isolate.run(() async {
+        final List<SongModel> songs = [];
+        final dir = Directory(artDirPath);
+        for (final path in batchSlice) {
+          final file = File(path);
+          if (file.existsSync()) {
+            final song = await _processAudioFileInternal(file, dir);
+            if (song != null && song.isLocalFileAvailable) {
+              songs.add(song);
+            }
+          }
+        }
+        return songs;
+      });
+
+      importedSongs.addAll(batchSongs);
+      onProgress?.call(end, targetFiles.length);
     }
 
     if (importedSongs.isNotEmpty) {
       await DatabaseService.instance.upsertSongs(importedSongs);
+      // Asynchronously compute waveforms in background without waiting
+      for (final s in importedSongs) {
+        WaveformAnalyzer.analyzeSong(s.id, s.path).ignore();
+      }
     }
+
     return importedSongs;
   }
 
-  // Scan directory recursively
+  // Scan directory recursively with background isolate batching
   static Future<List<SongModel>> scanDirectory(
     Directory rootDir, {
     void Function(int current, int total)? onProgress,
@@ -177,18 +240,39 @@ class ScannerService {
         await artDir.create(recursive: true);
       }
 
+      final artDirPath = artDir.path;
       final total = audioFiles.length;
-      for (int i = 0; i < total; i++) {
-        final file = audioFiles[i];
-        final song = await _processAudioFile(file, artDir);
-        if (song != null) {
-          detectedSongs.add(song);
-          WaveformAnalyzer.analyzeSong(song.id, song.path).ignore();
-        }
-        onProgress?.call(i + 1, total);
+      const batchSize = 20;
+
+      for (int i = 0; i < total; i += batchSize) {
+        final end = (i + batchSize < total) ? i + batchSize : total;
+        final batchSlice = audioFiles.sublist(i, end).map((f) => f.path).toList();
+
+        final batchSongs = await Isolate.run(() async {
+          final List<SongModel> songs = [];
+          final dir = Directory(artDirPath);
+          for (final path in batchSlice) {
+            final file = File(path);
+            if (file.existsSync()) {
+              final s = await _processAudioFileInternal(file, dir);
+              if (s != null && s.isLocalFileAvailable) {
+                songs.add(s);
+              }
+            }
+          }
+          return songs;
+        });
+
+        detectedSongs.addAll(batchSongs);
+        onProgress?.call(end, total);
       }
 
-      await DatabaseService.instance.upsertSongs(detectedSongs);
+      if (detectedSongs.isNotEmpty) {
+        await DatabaseService.instance.upsertSongs(detectedSongs);
+        for (final s in detectedSongs) {
+          WaveformAnalyzer.analyzeSong(s.id, s.path).ignore();
+        }
+      }
     } catch (e) {
       debugPrint("Library scan error: $e");
     }
@@ -196,7 +280,8 @@ class ScannerService {
     return detectedSongs;
   }
 
-  static Future<SongModel?> _processAudioFile(File file, Directory artDir) async {
+  // Internal audio processing executed inside background isolate
+  static Future<SongModel?> _processAudioFileInternal(File file, Directory artDir) async {
     try {
       final stat = await file.stat();
       final parsed = await AudioMetadataParser.parseFile(file);
@@ -205,10 +290,10 @@ class ScannerService {
       String? artworkPath;
       bool hasArtwork = false;
 
-      // 1. Check embedded cover art bytes
+      // 1. Embedded cover art
       if (parsed.pictureBytes != null && parsed.pictureBytes!.isNotEmpty) {
         final artFile = File(p.join(artDir.path, '$id.jpg'));
-        await artFile.writeAsBytes(parsed.pictureBytes!);
+        await artFile.writeAsBytes(parsed.pictureBytes!, flush: false);
         artworkPath = artFile.path;
         hasArtwork = true;
       }
@@ -236,7 +321,7 @@ class ScannerService {
         ];
         for (final name in candidateNames) {
           final candidate = File(p.join(parentDir.path, name));
-          if (await candidate.exists()) {
+          if (candidate.existsSync()) {
             hasArtwork = true;
             artworkPath = candidate.path;
             break;
@@ -244,12 +329,12 @@ class ScannerService {
         }
       }
 
-      // 3. Check for companion .lrc lyrics file (Song.mp3 -> Song.lrc)
+      // 3. Companion .lrc lyrics file (Song.mp3 -> Song.lrc)
       String? lrcPath;
       final dir = file.parent.path;
       final baseName = p.basenameWithoutExtension(file.path);
       final potentialLrc = File(p.join(dir, '$baseName.lrc'));
-      if (await potentialLrc.exists()) {
+      if (potentialLrc.existsSync()) {
         lrcPath = potentialLrc.path;
       }
 

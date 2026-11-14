@@ -40,7 +40,10 @@ class PlaylistScreen extends ConsumerWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                Navigator.pop(context);
+                textCtrl.dispose();
+              },
               child: const Text("Cancel", style: TextStyle(color: Colors.white60)),
             ),
             ElevatedButton(
@@ -52,8 +55,9 @@ class PlaylistScreen extends ConsumerWidget {
                 final name = textCtrl.text.trim();
                 if (name.isNotEmpty) {
                   ref.read(playlistProvider.notifier).createPlaylist(name);
-                  Navigator.pop(context);
                 }
+                Navigator.pop(context);
+                textCtrl.dispose();
               },
               child: const Text("Create", style: TextStyle(color: Colors.white)),
             ),

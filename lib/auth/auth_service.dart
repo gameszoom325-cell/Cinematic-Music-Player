@@ -226,7 +226,12 @@ class AuthService {
   Future<void> _saveAccounts(List<Map<String, dynamic>> accounts) async {
     try {
       if (_accountsFile != null) {
-        await _accountsFile!.writeAsString(jsonEncode(accounts));
+        final temp = File('${_accountsFile!.path}.tmp');
+        await temp.writeAsString(jsonEncode(accounts), flush: true);
+        if (await temp.exists()) {
+          if (await _accountsFile!.exists()) await _accountsFile!.delete();
+          await temp.rename(_accountsFile!.path);
+        }
       }
     } catch (e) {
       debugPrint("Error saving accounts: $e");

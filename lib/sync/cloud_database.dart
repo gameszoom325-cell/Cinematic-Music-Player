@@ -293,7 +293,12 @@ class CloudDatabase {
       if (!await file.parent.exists()) {
         await file.parent.create(recursive: true);
       }
-      await file.writeAsString(jsonEncode(payload.toJson()));
+      final temp = File('${file.path}.tmp');
+      await temp.writeAsString(jsonEncode(payload.toJson()), flush: true);
+      if (await temp.exists()) {
+        if (await file.exists()) await file.delete();
+        await temp.rename(file.path);
+      }
       uploadedSuccessfully = true;
     } catch (e) {
       debugPrint("Error writing cloud payload to vault: $e");
@@ -378,7 +383,12 @@ class CloudDatabase {
         devices.add(device.toJson());
       }
 
-      await file.writeAsString(jsonEncode(devices));
+      final temp = File('${file.path}.tmp');
+      await temp.writeAsString(jsonEncode(devices), flush: true);
+      if (await temp.exists()) {
+        if (await file.exists()) await file.delete();
+        await temp.rename(file.path);
+      }
 
       // Also notify remote if configured
       if (remoteApiUrl != null && remoteApiUrl!.isNotEmpty) {
@@ -410,7 +420,12 @@ class CloudDatabase {
             .where((d) => d['deviceId'] != deviceId)
             .toList();
 
-        await file.writeAsString(jsonEncode(devices));
+        final temp = File('${file.path}.tmp');
+      await temp.writeAsString(jsonEncode(devices), flush: true);
+      if (await temp.exists()) {
+        if (await file.exists()) await file.delete();
+        await temp.rename(file.path);
+      }
         return true;
       }
     } catch (e) {

@@ -20,6 +20,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
   String _selectedCategory = "All";
 
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
   static const List<String> categories = [
     "All",
     "Hindi",

@@ -141,7 +141,12 @@ class DatabaseService {
         'playlists': _playlists.values.map((p) => p.toMap()).toList(),
         'history': _historySongIds,
       };
-      await _dbFile!.writeAsString(json.encode(data));
+      final tempFile = File('${_dbFile!.path}.tmp');
+      await tempFile.writeAsString(json.encode(data), flush: true);
+      if (await tempFile.exists()) {
+        if (await _dbFile!.exists()) await _dbFile!.delete();
+        await tempFile.rename(_dbFile!.path);
+      }
     } catch (e) {
       debugPrint("Error persisting DB: $e");
     }
@@ -151,7 +156,12 @@ class DatabaseService {
     if (_waveformFile == null) return;
     try {
       final data = _waveformCache.map((k, v) => MapEntry(k, v.toMap()));
-      await _waveformFile!.writeAsString(json.encode(data));
+      final tempFile = File('${_waveformFile!.path}.tmp');
+      await tempFile.writeAsString(json.encode(data), flush: true);
+      if (await tempFile.exists()) {
+        if (await _waveformFile!.exists()) await _waveformFile!.delete();
+        await tempFile.rename(_waveformFile!.path);
+      }
     } catch (e) {
       debugPrint("Error persisting waveforms: $e");
     }

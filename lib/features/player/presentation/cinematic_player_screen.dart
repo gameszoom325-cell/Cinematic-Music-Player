@@ -27,121 +27,127 @@ class CinematicPlayerScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: CinematicColors.obsidianBlack,
-      body: Stack(
-        children: [
-          // 1. Cinematic Background Visualizer & Atmospheric Stage
-          Positioned.fill(
-            child: VisualizerViewport(
-              centerChild: visualizerState.preset == VisualizerPresetType.polarRing
-                  ? TiltAlbumArtwork(
-                      song: currentSong,
-                      size: 220,
-                      glowColor: palette.vibrant,
-                    )
-                  : null,
-            ),
-          ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxHeight < 680;
+          final artSize = (constraints.maxHeight * (isCompact ? 0.28 : 0.35)).clamp(160.0, 300.0);
+          final ringArtSize = (constraints.maxHeight * 0.25).clamp(130.0, 230.0);
 
-          // 2. Glassmorphic HUD & Player Deck
-          SafeArea(
-            child: Column(
-              children: [
-                // Top App Bar
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      GlassIconButton(
-                        icon: Icons.keyboard_arrow_down_rounded,
-                        onPressed: () => Navigator.of(context).maybePop(),
-                        size: 42,
-                        iconSize: 26,
-                      ),
+          return Stack(
+            children: [
+              // 1. Cinematic Background Visualizer & Atmospheric Stage
+              Positioned.fill(
+                child: VisualizerViewport(
+                  centerChild: visualizerState.preset == VisualizerPresetType.polarRing
+                      ? TiltAlbumArtwork(
+                          song: currentSong,
+                          size: ringArtSize,
+                          glowColor: palette.vibrant,
+                        )
+                      : null,
+                ),
+              ),
 
-                      // Format & Hi-Res Audio Technical Badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: palette.vibrant.withOpacity(0.4),
-                            width: 1.0,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: palette.vibrant,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: palette.vibrant,
-                                    blurRadius: 8,
-                                    spreadRadius: 1,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              currentSong?.technicalSpecs ?? "STUDIO MASTER • 24-BIT",
-                              style: CinematicTypography.technicalBadge.copyWith(
-                                color: palette.lightVibrant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      Row(
+              // 2. Glassmorphic HUD & Player Deck
+              SafeArea(
+                child: Column(
+                  children: [
+                    // Top App Bar
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           GlassIconButton(
-                            icon: Icons.lyrics_rounded,
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                PageRouteBuilder(
-                                  pageBuilder: (context, anim, secAnim) => const LyricsView(),
-                                  transitionsBuilder: (context, anim, secAnim, child) {
-                                    return FadeTransition(opacity: anim, child: child);
-                                  },
-                                ),
-                              );
-                            },
+                            icon: Icons.keyboard_arrow_down_rounded,
+                            onPressed: () => Navigator.of(context).maybePop(),
                             size: 42,
-                            iconSize: 20,
-                            tooltip: "Synchronized Lyrics",
+                            iconSize: 26,
                           ),
-                          const SizedBox(width: 8),
-                          // Visualizer Preset Switcher Menu
-                          _buildPresetSelector(context, visualizerState, visualizerNotifier),
+
+                          // Format & Hi-Res Audio Technical Badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: palette.vibrant.withOpacity(0.4),
+                                width: 1.0,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: palette.vibrant,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: palette.vibrant,
+                                        blurRadius: 8,
+                                        spreadRadius: 1,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  currentSong?.technicalSpecs ?? "STUDIO MASTER • 24-BIT",
+                                  style: CinematicTypography.technicalBadge.copyWith(
+                                    color: palette.lightVibrant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          Row(
+                            children: [
+                              GlassIconButton(
+                                icon: Icons.lyrics_rounded,
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    PageRouteBuilder(
+                                      pageBuilder: (context, anim, secAnim) => const LyricsView(),
+                                      transitionsBuilder: (context, anim, secAnim, child) {
+                                        return FadeTransition(opacity: anim, child: child);
+                                      },
+                                    ),
+                                  );
+                                },
+                                size: 42,
+                                iconSize: 20,
+                                tooltip: "Synchronized Lyrics",
+                              ),
+                              const SizedBox(width: 8),
+                              // Visualizer Preset Switcher Menu
+                              _buildPresetSelector(context, visualizerState, visualizerNotifier),
+                            ],
+                          ),
                         ],
                       ),
+                    ),
+
+                    const Spacer(),
+
+                    // Center Stage: 3D Tilt Album Artwork (Only when not Polar Ring)
+                    if (visualizerState.preset != VisualizerPresetType.polarRing) ...[
+                      TiltAlbumArtwork(
+                        song: currentSong,
+                        size: artSize,
+                        glowColor: palette.vibrant,
+                      ),
+                      SizedBox(height: isCompact ? 12 : 24),
                     ],
-                  ),
-                ),
 
-                const Spacer(),
+                    const Spacer(),
 
-                // Center Stage: 3D Tilt Album Artwork (Only when not Polar Ring)
-                if (visualizerState.preset != VisualizerPresetType.polarRing) ...[
-                  TiltAlbumArtwork(
-                    song: currentSong,
-                    size: 280,
-                    glowColor: palette.vibrant,
-                  ),
-                  const SizedBox(height: 32),
-                ],
-
-                const Spacer(),
-
-                // Bottom Glassmorphic Control Deck
-                CinematicGlassCard(
+                    // Bottom Glassmorphic Control Deck
+                    CinematicGlassCard(
                   margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                   borderRadius: 28,
@@ -225,12 +231,11 @@ class CinematicPlayerScreen extends ConsumerWidget {
                   ),
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+            );
+          },
+        ),
+      );
+    }
 
   Widget _buildPresetSelector(
     BuildContext context,

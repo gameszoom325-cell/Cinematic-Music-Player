@@ -1,73 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/visualizer_preset.dart';
 import '../providers/visualizer_provider.dart';
-import '../../../core/audio_engine/fft_engine.dart';
-import '../../../core/theme/cinematic_colors.dart';
-import 'presets/orb_shader_visualizer.dart';
-import 'presets/polar_spectrum_visualizer.dart';
-import 'presets/aurora_mesh_visualizer.dart';
-import 'atmospheres/atmospheric_particles.dart';
+import 'cinematic_line_visualizer.dart';
 
+/// Lightweight viewport hosting the minimal horizontal line visualizer.
+/// 
+/// Free of heavy 3D GPU raymarching, particles, and compute overhead.
+/// Renders an audio-reactive horizontal waveform line in pure Canvas 2D.
 class VisualizerViewport extends ConsumerWidget {
   final Widget? centerChild;
+  final double verticalAlignment;
 
-  const VisualizerViewport({super.key, this.centerChild});
+  const VisualizerViewport({
+    super.key,
+    this.centerChild,
+    this.verticalAlignment = 0.52,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final visualizerState = ref.watch(visualizerProvider);
     final palette = ref.watch(dynamicPaletteProvider);
-    final spectrumAsync = ref.watch(spectrumStreamProvider);
-    final spectrum = spectrumAsync.value ?? AudioSpectrumFrame.empty;
+
+    if (!visualizerState.isEnabled) {
+      if (centerChild != null) {
+        return Center(child: centerChild!);
+      }
+      return const SizedBox.shrink();
+    }
 
     return Stack(
       fit: StackFit.expand,
       children: [
-        // 1. Base Visualizer Preset Layer
-        RepaintBoundary(
-          child: _buildPreset(visualizerState.preset, spectrum, palette),
+        // 1. Real-time Minimal Horizontal Waveform Line
+        Positioned.fill(
+          child: CinematicLineVisualizer(
+            activeColor: palette.vibrant,
+            verticalAlignment: verticalAlignment,
+            strokeWidth: visualizerState.strokeWidth,
+            isGlowEnabled: visualizerState.isGlowEnabled,
+          ),
         ),
 
-        // 2. Atmospheric Simulation Layer
-        if (visualizerState.atmosphere != AtmosphereType.none)
-          RepaintBoundary(
-            child: AtmosphericParticlesOverlay(
-              type: visualizerState.atmosphere,
-              bassImpulse: spectrum.bass,
-              accentColor: palette.vibrant,
-            ),
-          ),
-
-        // 3. Center Injected Child (e.g. 3D Tilt Album Artwork for Polar Ring)
-        if (centerChild != null && visualizerState.preset != VisualizerPresetType.polarRing)
+        // 2. Center Injected Child
+        if (centerChild != null)
           Center(child: centerChild!),
       ],
     );
-  }
-
-  Widget _buildPreset(
-    VisualizerPresetType preset,
-    AudioSpectrumFrame spectrum,
-    DynamicAlbumPalette palette,
-  ) {
-    switch (preset) {
-      case VisualizerPresetType.orb3d:
-        return OrbShaderVisualizer(
-          spectrum: spectrum,
-          palette: palette,
-        );
-      case VisualizerPresetType.polarRing:
-        return PolarSpectrumVisualizer(
-          spectrum: spectrum,
-          palette: palette,
-          centerChild: centerChild,
-        );
-      case VisualizerPresetType.auroraMesh:
-        return AuroraMeshVisualizer(
-          spectrum: spectrum,
-          palette: palette,
-        );
-    }
   }
 }

@@ -7,6 +7,7 @@ import 'package:just_audio/just_audio.dart';
 import '../database/models/song_model.dart';
 import '../services/audio_stream_cache_manager.dart';
 import '../services/next_track_preload_service.dart';
+import 'audio_reactive_analyzer.dart';
 import 'audio_service_handler.dart';
 
 enum PlaybackRepeatMode { off, one, all }
@@ -131,6 +132,7 @@ class AudioEngine {
     await ensureInitialized();
     try {
       await _handler.play();
+      AudioReactiveAnalyzer.instance.wake();
     } catch (e) {
       debugPrint("AudioEngine.play error: $e");
     }
@@ -139,6 +141,7 @@ class AudioEngine {
   Future<void> pause() async {
     try {
       await _handler.pause();
+      AudioReactiveAnalyzer.instance.sleep();
     } catch (e) {
       debugPrint("AudioEngine.pause error: $e");
     }
@@ -189,6 +192,7 @@ class AudioEngine {
     try {
       await _handler.setQueue(queue, initialIndex: index);
       await _handler.play();
+      AudioReactiveAnalyzer.instance.wake();
       return true;
     } catch (e, stack) {
       debugPrint("AudioEngine.playTrack primary queue error: $e\n$stack");
@@ -200,6 +204,7 @@ class AudioEngine {
             AudioSource.uri(CinematicAudioHandler.parseAudioUri(target.path)),
           );
           await _handler.player.play();
+          AudioReactiveAnalyzer.instance.wake();
           return true;
         }
       } catch (fallbackErr) {

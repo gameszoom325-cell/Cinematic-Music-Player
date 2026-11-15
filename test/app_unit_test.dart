@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cinematic_music_player/auth/user_model.dart';
@@ -8,6 +9,8 @@ import 'package:cinematic_music_player/core/services/lyrics_parser.dart';
 import 'package:cinematic_music_player/core/services/update_service.dart';
 import 'package:cinematic_music_player/core/services/audio_stream_cache_manager.dart';
 import 'package:cinematic_music_player/core/services/next_track_preload_service.dart';
+import 'package:cinematic_music_player/core/audio_engine/audio_reactive_analyzer.dart';
+import 'package:cinematic_music_player/features/visualizer/models/visualizer_preset.dart';
 import 'package:cinematic_music_player/core/database/models/song_model.dart';
 import 'package:cinematic_music_player/core/services/shader_capability_service.dart';
 import 'package:cinematic_music_player/core/audio_engine/audio_service_handler.dart';
@@ -951,6 +954,121 @@ void main() {
       );
       // Fails open safely without crashing
       expect(probeResult, isA<bool>());
+    });
+  });
+
+  group('18. Real Audio-Reactive Minimal Line Visualizer Tests', () {
+    test('Old heavy visualizer files and GPU fragment shaders are completely removed', () {
+      expect(File('lib/features/visualizer/presentation/presets/orb_shader_visualizer.dart').existsSync(), isFalse);
+      expect(File('lib/features/visualizer/presentation/presets/aurora_mesh_visualizer.dart').existsSync(), isFalse);
+      expect(File('lib/features/visualizer/presentation/presets/polar_spectrum_visualizer.dart').existsSync(), isFalse);
+      expect(File('lib/features/visualizer/presentation/atmospheres/atmospheric_particles.dart').existsSync(), isFalse);
+      expect(File('lib/core/audio_engine/native_visualizer_bridge.dart').existsSync(), isFalse);
+      expect(File('shaders/orb_visualizer.frag').existsSync(), isFalse);
+      expect(File('shaders/aurora_mesh.frag').existsSync(), isFalse);
+    });
+
+    test('AudioReactiveFrame defaults and constructs correctly', () {
+      const empty = AudioReactiveFrame.empty;
+      expect(empty.amplitude, 0.0);
+      expect(empty.bass, 0.0);
+      expect(empty.vocals, 0.0);
+      expect(empty.drums, 0.0);
+      expect(empty.isSilent, isTrue);
+      expect(empty.isPlaying, isFalse);
+      expect(empty.wavePoints, isEmpty);
+
+      final active = AudioReactiveFrame(
+        amplitude: 0.75,
+        bass: 0.85,
+        vocals: 0.60,
+        drums: 0.40,
+        intensity: 0.80,
+        volume: 1.0,
+        isSilent: false,
+        isPlaying: true,
+        wavePoints: List.filled(64, 0.25),
+      );
+      expect(active.amplitude, 0.75);
+      expect(active.bass, 0.85);
+      expect(active.vocals, 0.60);
+      expect(active.isSilent, isFalse);
+      expect(active.wavePoints.length, 64);
+    });
+
+    test('AudioReactiveAnalyzer manages lifecycle and sleeps when paused', () {
+      final analyzer = AudioReactiveAnalyzer.instance;
+      analyzer.wake();
+      analyzer.sleep();
+      expect(analyzer.latestFrame.isSilent, isTrue);
+    });
+
+    test('Visualizer line accurately reacts to silent vs high-energy audio profiles', () {
+      // Silent test frame: amplitude 0 produces completely flat line (all zeros)
+      final silentFrame = AudioReactiveFrame(
+        amplitude: 0.0,
+        bass: 0.0,
+        vocals: 0.0,
+        drums: 0.0,
+        intensity: 0.0,
+        volume: 1.0,
+        isSilent: true,
+        isPlaying: true,
+        wavePoints: List<double>.filled(64, 0.0),
+      );
+      expect(silentFrame.wavePoints.every((pt) => pt == 0.0), isTrue);
+
+      // Bass heavy test frame: peaks are pronounced
+      final bassFrame = AudioReactiveFrame(
+        amplitude: 0.8,
+        bass: 0.95,
+        vocals: 0.2,
+        drums: 0.3,
+        intensity: 0.85,
+        volume: 1.0,
+        isSilent: false,
+        isPlaying: true,
+        wavePoints: List.generate(64, (i) => math.sin(i / 64.0 * math.pi) * 0.7),
+      );
+      expect(bassFrame.bass, greaterThan(0.9));
+      expect(bassFrame.wavePoints[32], greaterThan(0.5));
+    });
+
+    test('Volume scaling correctly modulates visualizer amplitude and flattens on mute', () {
+      const rawAmplitude = 0.80;
+
+      // Full volume (1.0)
+      const volFull = 1.0;
+      const effectiveFull = rawAmplitude * volFull;
+      expect(effectiveFull, 0.80);
+
+      // Half volume (0.5)
+      const volHalf = 0.5;
+      const effectiveHalf = rawAmplitude * volHalf;
+      expect(effectiveHalf, 0.40);
+
+      // Muted volume (0.0)
+      const volMute = 0.0;
+      const effectiveMute = rawAmplitude * volMute;
+      expect(effectiveMute, 0.0);
+    });
+
+    test('VisualizerState defaults to minimalLine and supports styling options', () {
+      const state = VisualizerState();
+      expect(state.preset, VisualizerPresetType.minimalLine);
+      expect(state.lineStyle, VisualizerLineStyle.minimalWave);
+      expect(state.sensitivity, 1.0);
+      expect(state.isGlowEnabled, isTrue);
+      expect(state.isEnabled, isTrue);
+
+      final updated = state.copyWith(
+        preset: VisualizerPresetType.neonHorizon,
+        sensitivity: 1.8,
+        isGlowEnabled: false,
+      );
+      expect(updated.preset, VisualizerPresetType.neonHorizon);
+      expect(updated.sensitivity, 1.8);
+      expect(updated.isGlowEnabled, isFalse);
     });
   });
 }

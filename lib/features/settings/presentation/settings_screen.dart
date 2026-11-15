@@ -114,27 +114,27 @@ class SettingsScreen extends ConsumerWidget {
                     ],
 
                     // 4. Visualizer Engine
-                    _buildSectionHeader("VISUALIZER ENGINE"),
+                    _buildSectionHeader("MINIMAL HORIZONTAL LINE VISUALIZER"),
                     CinematicGlassCard(
                       padding: const EdgeInsets.all(16),
                       borderRadius: 18,
                       child: Column(
                         children: [
                           _buildDropdownTile<VisualizerPresetType>(
-                            title: "Active Visualizer Preset",
+                            title: "Waveform Line Style",
                             value: visualizerState.preset,
                             items: const [
                               DropdownMenuItem(
-                                value: VisualizerPresetType.orb3d,
-                                child: Text("3D Liquid Raymarched Orb"),
+                                value: VisualizerPresetType.minimalLine,
+                                child: Text("Minimal Horizon Line"),
                               ),
                               DropdownMenuItem(
-                                value: VisualizerPresetType.polarRing,
-                                child: Text("Polar Spectrum Ring"),
+                                value: VisualizerPresetType.neonHorizon,
+                                child: Text("Neon Beam Waveform"),
                               ),
                               DropdownMenuItem(
-                                value: VisualizerPresetType.auroraMesh,
-                                child: Text("Aurora Dynamic Mesh"),
+                                value: VisualizerPresetType.pulseRibbon,
+                                child: Text("Cinematic Pulse Ribbon"),
                               ),
                             ],
                             onChanged: (val) {
@@ -142,19 +142,13 @@ class SettingsScreen extends ConsumerWidget {
                             },
                           ),
                           const Divider(color: Colors.white12, height: 24),
-                          _buildDropdownTile<AtmosphereType>(
-                            title: "Atmospheric Simulation",
-                            value: visualizerState.atmosphere,
-                            items: const [
-                              DropdownMenuItem(value: AtmosphereType.none, child: Text("None")),
-                              DropdownMenuItem(value: AtmosphereType.rain, child: Text("Rain Mode")),
-                              DropdownMenuItem(value: AtmosphereType.snow, child: Text("Snow Particles")),
-                              DropdownMenuItem(value: AtmosphereType.dust, child: Text("Floating Dust")),
-                              DropdownMenuItem(value: AtmosphereType.fireflies, child: Text("Fireflies")),
-                            ],
-                            onChanged: (val) {
-                              if (val != null) visualizerNotifier.setAtmosphere(val);
-                            },
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text("Dual-Layer Neon Glow", style: TextStyle(color: Colors.white, fontSize: 14)),
+                            subtitle: const Text("Soft diffused bloom behind the crisp core wave", style: TextStyle(color: Colors.white54, fontSize: 12)),
+                            value: visualizerState.isGlowEnabled,
+                            activeColor: CinematicColors.neonCyan,
+                            onChanged: (_) => visualizerNotifier.toggleGlow(),
                           ),
                           const Divider(color: Colors.white12, height: 24),
                           Column(
@@ -198,9 +192,9 @@ class SettingsScreen extends ConsumerWidget {
                         children: [
                           _buildInfoTile("Platform Backend", "just_audio (Gapless) + audio_service"),
                           const Divider(color: Colors.white12, height: 20),
-                          _buildInfoTile("Audio Reactive Bridge", "Hybrid: Native FFT + Offline Waveform"),
+                          _buildInfoTile("Audio Reactive Bridge", "Real-time Waveform & Multi-Band Energy Analyzer"),
                           const Divider(color: Colors.white12, height: 20),
-                          _buildInfoTile("Target Render Framerate", "60 - 120 FPS (Impeller GPU Accelerated)"),
+                          _buildInfoTile("Rendering Architecture", "Pure 2D Vector Canvas (Idle sleep mode enabled)"),
                         ],
                       ),
                     ),

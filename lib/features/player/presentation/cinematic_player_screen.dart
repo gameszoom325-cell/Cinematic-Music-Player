@@ -5,6 +5,7 @@ import '../providers/player_provider.dart';
 import '../../visualizer/providers/visualizer_provider.dart';
 import '../../visualizer/models/visualizer_preset.dart';
 import '../../visualizer/presentation/visualizer_viewport.dart';
+import '../../../core/audio_engine/audio_reactive_analyzer.dart';
 import 'widgets/acoustic_art_ring.dart';
 import 'widgets/tilt_album_art.dart';
 import 'widgets/waveform_scrubber.dart';
@@ -96,6 +97,7 @@ class _CinematicPlayerScreenState extends ConsumerState<CinematicPlayerScreen> {
     final palette = ref.watch(dynamicPaletteProvider);
     final visualizerState = ref.watch(visualizerProvider);
     final visualizerNotifier = ref.read(visualizerProvider.notifier);
+    final reactiveFrame = ref.watch(audioReactiveFrameProvider).value ?? AudioReactiveFrame.empty;
     final currentSong = playerState.currentSong;
 
     if (currentSong != null && currentSong.id != _loadedSongId) {
@@ -121,17 +123,9 @@ class _CinematicPlayerScreenState extends ConsumerState<CinematicPlayerScreen> {
       backgroundColor: CinematicColors.background,
       body: Stack(
         children: [
-          // 1. GPU Visualizer Stage (Calm in silence, active during sound)
-          Positioned.fill(
-            child: VisualizerViewport(
-              centerChild: visualizerState.preset == VisualizerPresetType.polarRing
-                  ? TiltAlbumArtwork(
-                      song: currentSong,
-                      size: 200,
-                      glowColor: palette.vibrant,
-                    )
-                  : null,
-            ),
+          // 1. Real-time Minimal Horizontal Waveform Line Visualizer
+          const Positioned.fill(
+            child: VisualizerViewport(),
           ),
 
           // 2. Diffused Warm Amber Acoustic Bloom Overlay
@@ -164,8 +158,8 @@ class _CinematicPlayerScreenState extends ConsumerState<CinematicPlayerScreen> {
                     // Main Content Split (Wide 2-column or Narrow scrollable)
                     Expanded(
                       child: isWide
-                          ? _buildWideStage(context, currentSong, playerState, playerNotifier, palette, progress, activeLyricIndex)
-                          : _buildNarrowStage(context, currentSong, playerState, playerNotifier, palette, progress, activeLyricIndex),
+                          ? _buildWideStage(context, currentSong, playerState, playerNotifier, palette, progress, activeLyricIndex, reactiveFrame: reactiveFrame)
+                          : _buildNarrowStage(context, currentSong, playerState, playerNotifier, palette, progress, activeLyricIndex, reactiveFrame: reactiveFrame),
                     ),
 
                     // Bottom Centerpiece Tactile Control Island
@@ -333,8 +327,9 @@ class _CinematicPlayerScreenState extends ConsumerState<CinematicPlayerScreen> {
     PlayerNotifier playerNotifier,
     dynamic palette,
     double progress,
-    int activeLyricIndex,
-  ) {
+    int activeLyricIndex, {
+    AudioReactiveFrame reactiveFrame = AudioReactiveFrame.empty,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Row(
@@ -355,8 +350,8 @@ class _CinematicPlayerScreenState extends ConsumerState<CinematicPlayerScreen> {
                       child: AcousticArtRing(
                         size: 320,
                         progress: progress,
-                        bassEnergy: playerState.isPlaying ? 0.45 : 0.0,
-                        midEnergy: playerState.isPlaying ? 0.35 : 0.0,
+                        bassEnergy: playerState.isPlaying ? reactiveFrame.bass : 0.0,
+                        midEnergy: playerState.isPlaying ? reactiveFrame.vocals : 0.0,
                         activeColor: palette.vibrant,
                         child: TiltAlbumArtwork(
                           song: song,
@@ -492,8 +487,9 @@ class _CinematicPlayerScreenState extends ConsumerState<CinematicPlayerScreen> {
     PlayerNotifier playerNotifier,
     dynamic palette,
     double progress,
-    int activeLyricIndex,
-  ) {
+    int activeLyricIndex, {
+    AudioReactiveFrame reactiveFrame = AudioReactiveFrame.empty,
+  }) {
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -505,8 +501,8 @@ class _CinematicPlayerScreenState extends ConsumerState<CinematicPlayerScreen> {
             child: AcousticArtRing(
               size: 240,
               progress: progress,
-              bassEnergy: playerState.isPlaying ? 0.45 : 0.0,
-              midEnergy: playerState.isPlaying ? 0.35 : 0.0,
+              bassEnergy: playerState.isPlaying ? reactiveFrame.bass : 0.0,
+              midEnergy: playerState.isPlaying ? reactiveFrame.vocals : 0.0,
               activeColor: palette.vibrant,
               child: TiltAlbumArtwork(
                 song: song,
@@ -983,7 +979,7 @@ class _CinematicPlayerScreenState extends ConsumerState<CinematicPlayerScreen> {
     VisualizerNotifier notifier,
   ) {
     return PopupMenuButton<VisualizerPresetType>(
-      tooltip: "Visualizer Preset",
+      tooltip: "Visualizer Waveform Style",
       icon: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
@@ -991,7 +987,7 @@ class _CinematicPlayerScreenState extends ConsumerState<CinematicPlayerScreen> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.white.withOpacity(0.1)),
         ),
-        child: const Icon(Icons.auto_awesome_rounded, size: 18, color: Colors.white),
+        child: const Icon(Icons.waves_rounded, size: 18, color: Colors.white),
       ),
       color: CinematicColors.surfaceContainerHigh,
       shape: RoundedRectangleBorder(
@@ -1001,16 +997,16 @@ class _CinematicPlayerScreenState extends ConsumerState<CinematicPlayerScreen> {
       onSelected: (preset) => notifier.setPreset(preset),
       itemBuilder: (context) => [
         const PopupMenuItem(
-          value: VisualizerPresetType.orb3d,
-          child: Text("3D Liquid Raymarched Orb", style: TextStyle(color: Colors.white, fontSize: 13)),
+          value: VisualizerPresetType.minimalLine,
+          child: Text("Minimal Horizon Line", style: TextStyle(color: Colors.white, fontSize: 13)),
         ),
         const PopupMenuItem(
-          value: VisualizerPresetType.polarRing,
-          child: Text("Polar Spectrum Ring", style: TextStyle(color: Colors.white, fontSize: 13)),
+          value: VisualizerPresetType.neonHorizon,
+          child: Text("Neon Beam Waveform", style: TextStyle(color: Colors.white, fontSize: 13)),
         ),
         const PopupMenuItem(
-          value: VisualizerPresetType.auroraMesh,
-          child: Text("Aurora Dynamic Mesh", style: TextStyle(color: Colors.white, fontSize: 13)),
+          value: VisualizerPresetType.pulseRibbon,
+          child: Text("Cinematic Pulse Ribbon", style: TextStyle(color: Colors.white, fontSize: 13)),
         ),
       ],
     );

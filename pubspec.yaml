@@ -46,11 +46,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # Shaders used for real-time GPU visualizers
-  shaders:
-    - shaders/orb_visualizer.frag
-    - shaders/aurora_mesh.frag
-
   assets:
     - assets/images/
     - assets/icons/

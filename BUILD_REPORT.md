@@ -1,9 +1,9 @@
 # CINEMATIC MUSIC PLAYER - PRODUCTION BUILD REPORT
 
 **Project Location:** `C:\MY PROJECTS`  
-**Application Version:** `1.0.0+1`  
-**Build Date:** 2026-11-14  
-**Target Platforms:** Android Mobile (ARM64/v7/x86_64), Windows Desktop (x64)  
+**Application Version:** `1.1.5+11`  
+**Release Date:** 2026-11-15  
+**Target Platforms:** Windows Desktop (x64), Android Mobile (API 21 - 36, ARM64/v7/x86_64)  
 
 ---
 
@@ -11,9 +11,72 @@
 
 | Artifact Name | Platform | File Size | Location | Build Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **`CinematicMusicPlayer.apk`** | Android (API 21 - 36) | **60.9 MB** (63,881,067 bytes) | `dist\release\Android\CinematicMusicPlayer.apk` | **SUCCESS (Compiled & Verified)** |
-| **`CinematicMusicPlayerSetup.exe`** | Windows Desktop (x64) | Pending | `dist\release\Windows\` | **BLOCKED (Requires Dev Mode & VS C++)** |
-| **`CinematicMusicPlayer.zip`** | Windows Desktop (x64) | Pending | `dist\release\Windows\` | **BLOCKED (Requires Dev Mode & VS C++)** |
+| **`CinematicMusicPlayerSetup.exe`** | Windows Desktop (x64) | **29.7 MB** (31,207,424 bytes) | [CinematicMusicPlayerSetup.exe](file:///C:/MY%20PROJECTS/dist/release/Windows/CinematicMusicPlayerSetup.exe) | **SUCCESS (Compiled & Packaged with Inno Setup 6)** |
+| **`CinematicMusicPlayer-Windows.zip`** | Windows Desktop (x64) | **40.8 MB** (42,822,656 bytes) | [CinematicMusicPlayer.zip](file:///C:/MY%20PROJECTS/dist/release/Windows/CinematicMusicPlayer.zip) | **SUCCESS (Portable Distribution Archive)** |
+| **`CinematicMusicPlayer.apk`** | Android (API 21 - 36) | **63.4 MB** (66,478,080 bytes) | [CinematicMusicPlayer.apk](file:///C:/MY%20PROJECTS/dist/release/Android/CinematicMusicPlayer.apk) | **SUCCESS (Universal Multi-ABI Release)** |
+
+---
+
+## 2. Release v1.1.5 Architectural Enhancements
+
+### Task 1: Fix Lag and Frame Drops
+- **Studio Performance Modes**: Added Performance setting under Studio Settings with 4 selectable levels:
+  - `High`: Unconstrained 60 FPS real-time audio wave analysis and glow.
+  - `Balanced` (Default): 30 FPS capped analysis loop (`33ms` tick interval). Recommended for integrated Intel/AMD GPUs.
+  - `Low`: 15 FPS analysis loop (`66ms` interval).
+  - `Off`: Shuts down the periodic ticker completely and sets amplitude to zero, resulting in zero background CPU/GPU load.
+- **Isolated Frame Rebuilding**:
+  - Encapsulated seekbar slider into isolated `_IndependentSeekBar` widget, decoupling position ticks (200ms) from parent player screens and eliminating whole-tree rebuilding.
+  - Downscaled extracted album artwork to $96\times 96$ via `ResizeImage` in `PaletteService`, eliminating UI frame stutter during track transitions.
+- **Global Crash Logger**:
+  - Initialized `CrashLogger` in `lib/main.dart` catching `FlutterError.onError` and `PlatformDispatcher.instance.onError`.
+  - Writes diagnostics to `%USERPROFILE%/Documents/CinematicMusicPlayer/logs/app.log` with automatic 5MB log rotation (`app.old.log`).
+
+### Task 2: High-DPI Display Sharpness Fix
+- Updated `windows/runner/runner.exe.manifest` with both:
+  - `<dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness>`
+  - `<dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/pm</dpiAware>`
+- Eliminates Windows GDI bitmap stretching on 125%, 150%, and 200% scaling, rendering all typography, custom painters, and icons at native sharpness.
+
+### Task 3: 100% Free & Offline Local Music Vault
+- Completely operational without any external or paid API key.
+- Multi-folder library indexing via native `ScannerService.pickMusicFolder()`:
+  - Folders are persisted in `SharedPreferences` (`cinematic_library_folders`) and `library_db.json`.
+  - Background recursive isolate scan for MP3, FLAC, WAV, M4A, OGG, AAC, OPUS, and WMA.
+  - Automatic startup folder rescanning and manual "Rescan Library" button in the library header.
+  - All credentials (YouTube, Jamendo, Supabase) decoupled into git-ignored `lib/core/config/app_secrets.dart`.
+
+### Task 5: Spotify-Style Desktop Player Interface
+- **Collapsible Desktop Sidebar**:
+  - Direct navigation to Home, Search, Your Library, Liked Songs, and custom Playlists.
+  - Quick "+ Create Playlist" dialog.
+- **Persistent Bottom Player Bar**:
+  - Left: Thumbnail, title, artist, and favorite heart button.
+  - Center: Shuffle, previous, play/pause, next, repeat, with dedicated independent seekbar and elapsed/duration counters.
+  - Right: Studio visualizer mode indicator, volume slider with mute toggle, queue drawer toggle, and full-screen view button.
+- **Sliding Queue Panel**:
+  - Accessible via bottom right button or keyboard shortcut.
+  - Live equalizer animation on playing track, track removal, drag-to-reorder via `ReorderableListView`, and "Clear Queue" button.
+- **Tabbed Library Views**:
+  - Songs: Tabular track list with `#`, title, album, duration, and contextual action menu.
+  - Albums & Artists: Grid layouts with sample artwork and song counts.
+  - Folders: Monitored folders list with "Add Folder", "Rescan All", and "Remove" actions.
+- **Global Desktop Keyboard Shortcuts**:
+  - `Space`: Play / Pause
+  - `Ctrl + Right`: Skip to Next
+  - `Ctrl + Left`: Skip to Previous
+  - `Up` / `Down`: Volume $\pm 5\%$
+  - `M`: Toggle Mute
+  - `/` or `Ctrl + K`: Focus Search
+
+---
+
+## 3. Test Suite Verification
+
+- **Total Test Cases**: 72
+- **Pass Rate**: 100% (72/72 passing)
+- **Execution Command**: `flutter test`
+- **Coverage**: UserModel, Cloud Database Sync, Supabase Config, LRC Lyrics Engine, AppVersion Semantic Comparator, SongModel, ShaderCapabilityService, AudioMetadataParser, Playable Song Availability, AudioEngine, Cloud Streaming, MusicSource Architecture, InnerTubeX-inspired OnlineMusicSource, Bollywood Catalog System, YouTube Data API v3, Metrolist Backend Evolution & Stream Cache, Real Audio-Reactive Minimal Line Visualizer, Jamendo API, Android Background Playback & Media3, and Desktop Performance & Offline Library (v1.1.5).
 
 ---
 

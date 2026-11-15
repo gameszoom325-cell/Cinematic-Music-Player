@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/cinematic_colors.dart';
-import '../../../core/theme/typography.dart';
 import '../../../core/database/database_service.dart';
 import '../../../core/database/models/song_model.dart';
 import '../../../core/database/models/playlist_model.dart';
@@ -26,6 +25,8 @@ class HomeScreen extends ConsumerWidget {
 
     final db = DatabaseService.instance;
     final recentlyPlayed = db.getRecentlyPlayedSongs();
+    final mostPlayed = db.getMostPlayedSongs();
+    final recentlyAdded = db.getRecentlyAddedSongs();
     final albums = db.getAllAlbums();
     final artists = db.getAllArtists();
     final playlists = db.getAllPlaylists();
@@ -157,6 +158,56 @@ class HomeScreen extends ConsumerWidget {
                       final song = recentlyPlayed[index];
                       return _buildRecentCard(song, () {
                         playerNotifier.playTrack(recentlyPlayed, index);
+                      });
+                    },
+                  ),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            ],
+
+            // 2. Most Played / Heavy Rotation
+            if (mostPlayed.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: _buildSectionHeader("MOST PLAYED • HEAVY ROTATION"),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 175,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: mostPlayed.length,
+                    itemBuilder: (context, index) {
+                      final song = mostPlayed[index];
+                      return _buildRecentCard(song, () {
+                        playerNotifier.playTrack(mostPlayed, index);
+                      });
+                    },
+                  ),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            ],
+
+            // 3. Recently Added
+            if (recentlyAdded.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: _buildSectionHeader("RECENTLY ADDED TO VAULT"),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 175,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: recentlyAdded.length,
+                    itemBuilder: (context, index) {
+                      final song = recentlyAdded[index];
+                      return _buildRecentCard(song, () {
+                        playerNotifier.playTrack(recentlyAdded, index);
                       });
                     },
                   ),

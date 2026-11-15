@@ -10,14 +10,34 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.1.3-blueviolet.svg?style=flat-square" alt="Latest Release"></a>
+  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.1.5-blueviolet.svg?style=flat-square" alt="Latest Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Android-success.svg?style=flat-square" alt="Platforms">
 </p>
 
 ---
 
-## What's New in v1.1.3 (Backend Evolution + Smart Update System)
+## What's New in v1.1.5 (Desktop Performance Overhaul & Spotify-Style Experience)
+
+- **Complete Desktop Performance Overhaul (Windows .exe)**:
+  - **Visualizer Performance Modes**: High (60 FPS unconstrained), Balanced (30 FPS capped ticker, recommended for integrated GPUs), Low (15 FPS minimal compute), and Off (completely suspends the ticker and GPU rendering).
+  - **Isolated UI Rebuilding**: Seekbar scrubber and album art downsampling (96x96 cached palette generation) now run in isolated sub-trees using `RepaintBoundary`, eliminating 60fps frame drops on the main UI thread.
+  - **Per-Monitor V2 High-DPI Clarity**: Added explicit `<dpiAware>true/pm</dpiAware>` and `<dpiAwareness>PerMonitorV2</dpiAwareness>` to Windows executable manifest, rendering UI at native crispness across 100%, 125%, 150%, and 200% scaling factors without fuzziness.
+  - **Global Crash Logger**: Unhandled Flutter and native errors are intercepted and persisted to `%USERPROFILE%/Documents/CinematicMusicPlayer/logs/app.log` with automatic 5MB rotation.
+
+- **100% Free & Offline Local Music Vault**:
+  - Full offline capability without requiring any paid API key.
+  - **Multi-Folder Library Management**: Add arbitrary music directories via directory picker; paths are persisted in `SharedPreferences` and auto-scanned on launch.
+  - **Background Isolate Scanner**: Tag and duration extraction operates off the UI thread via `ScannerService`, saving metadata to `library_db.json`.
+  - Manual "Add Folder" and "Rescan Library" controls in library view.
+  - Fully decoupled credentials (`AppSecrets`) kept out of source tracking.
+
+- **Spotify-Style Desktop Layout & Workflow**:
+  - **Collapsible Desktop Sidebar**: Instant navigation to Home, Search, Your Library, Liked Songs, and custom Playlists with quick playlist creation dialog.
+  - **Persistent Bottom Player Bar**: Left album artwork & title, center transport controls with dedicated independent seekbar, right volume slider, queue toggle, and full-screen view.
+  - **Rich Library Views**: Tabbed browsing for Songs (with tabular track row format: #, artwork, title, album, duration, action menu), Albums, Artists, and Folders.
+  - **Desktop Queue Drawer**: Sliding side drawer with live equalizer, track deletion, drag-to-reorder (`ReorderableListView`), and clear queue button.
+  - **Global Keyboard Shortcuts**: Space (Play/Pause), Ctrl+Right (Next), Ctrl+Left (Previous), Up/Down (Volume $\pm 5\%$), M (Mute), `/` or Ctrl+K (Quick Search focus).
 
 - **Complete Metrolist Ecosystem Architecture Integration**:
   - Researched and synthesized patterns from all 10 MetrolistGroup projects (`Metrolist`, `innertubex`, `quackjs`, `faraday`, `metroserver`, `metroproto`, `metrolist-coverart-lib`, `MetrolistManager`, `metrosite`, `metrobot`).

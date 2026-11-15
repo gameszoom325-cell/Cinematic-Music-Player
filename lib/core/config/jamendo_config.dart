@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'app_secrets.dart';
 
 /// Secure configuration manager for Jamendo Music API integration.
 /// 
@@ -12,10 +13,10 @@ class JamendoConfig {
 
   static const String _prefKey = 'cinematic_jamendo_client_id';
 
-  // Default Client ID supplied for this project
+  // Client ID loaded from git-ignored AppSecrets or environment variable
   static const String _defaultClientId = String.fromEnvironment(
     'JAMENDO_CLIENT_ID',
-    defaultValue: 'fd914c0b',
+    defaultValue: AppSecrets.jamendoClientId,
   );
 
   String _clientId = _defaultClientId;

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'app_secrets.dart';
 
 /// Configuration provider for Supabase Authentication and Database Cloud Backend.
 /// Supports both compile-time environment injection, runtime SharedPreferences overrides,
@@ -11,15 +12,15 @@ class SupabaseConfig {
   static const String _keyUrl = 'cinematic_supabase_url';
   static const String _keyAnonKey = 'cinematic_supabase_anon_key';
 
-  // Default cloud endpoints (can be populated or overridden by user at runtime)
+  // Default cloud endpoints loaded from git-ignored AppSecrets or environment variable
   static const String _defaultUrl = String.fromEnvironment(
     'SUPABASE_URL',
-    defaultValue: 'https://cinematic-music.supabase.co',
+    defaultValue: AppSecrets.supabaseUrl,
   );
 
   static const String _defaultAnonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
-    defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.dummy_cinematic_key',
+    defaultValue: AppSecrets.supabaseAnonKey,
   );
 
   String _url = _defaultUrl;

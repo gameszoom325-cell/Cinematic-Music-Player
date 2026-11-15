@@ -6,8 +6,15 @@ import '../theme/cinematic_colors.dart';
 import '../database/models/song_model.dart';
 
 class PaletteService {
+  static final Map<String, DynamicAlbumPalette> _cache = {};
+
   static Future<DynamicAlbumPalette> extractPalette(SongModel? song) async {
     if (song == null) return DynamicAlbumPalette.fallback;
+
+    final cacheKey = song.id.isNotEmpty ? song.id : (song.artworkPath ?? song.title);
+    if (_cache.containsKey(cacheKey)) {
+      return _cache[cacheKey]!;
+    }
 
     if (song.artworkPath != null && song.artworkPath!.isNotEmpty) {
       ImageProvider? imgProvider;
@@ -22,9 +29,17 @@ class PaletteService {
 
       if (imgProvider != null) {
         try {
-          final paletteGenerator = await PaletteGenerator.fromImageProvider(
+          // Downsample image to 96x96 to eliminate UI isolate thread blocks and latency
+          final resizedProvider = ResizeImage(
             imgProvider,
-            maximumColorCount: 16,
+            width: 96,
+            height: 96,
+            allowUpscaling: false,
+          );
+
+          final paletteGenerator = await PaletteGenerator.fromImageProvider(
+            resizedProvider,
+            maximumColorCount: 12,
           );
 
           final dominant = paletteGenerator.dominantColor?.color ??
@@ -40,19 +55,23 @@ class PaletteService {
           final lightVibrant = paletteGenerator.lightVibrantColor?.color ??
               CinematicColors.neonCyan;
 
-          return DynamicAlbumPalette(
+          final palette = DynamicAlbumPalette(
             dominant: dominant,
             vibrant: vibrant,
             muted: muted,
             darkMuted: darkMuted,
             lightVibrant: lightVibrant,
           );
+          _cache[cacheKey] = palette;
+          return palette;
         } catch (_) {}
       }
     }
 
     // Procedural neon palette seeded from track title
-    return _generateProceduralPalette(song.title + song.artist);
+    final procedural = _generateProceduralPalette(song.title + song.artist);
+    _cache[cacheKey] = procedural;
+    return procedural;
   }
 
   static DynamicAlbumPalette _generateProceduralPalette(String seed) {

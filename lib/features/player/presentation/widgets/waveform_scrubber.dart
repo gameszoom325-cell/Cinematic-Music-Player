@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../../core/theme/cinematic_colors.dart';
-import '../../../../core/theme/typography.dart';
 import '../../../../core/database/models/waveform_cache_model.dart';
 
 /// Tactile 52-bar Audio Waveform Scrubber from the "Acoustic Minimal" design system.

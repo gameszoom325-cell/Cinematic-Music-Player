@@ -164,7 +164,6 @@ class _TactileControlIslandState extends State<TactileControlIsland> {
               const SizedBox(height: 5),
               GestureDetector(
                 onHorizontalDragUpdate: (details) {
-                  final RenderBox box = context.findRenderObject() as RenderBox;
                   final delta = details.delta.dx / width;
                   widget.onAmbientChanged((widget.ambientLevel + delta).clamp(0.0, 1.0));
                 },

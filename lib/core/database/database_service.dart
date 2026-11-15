@@ -2,9 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'models/song_model.dart';
 import 'models/playlist_model.dart';
 import 'models/waveform_cache_model.dart';
+import '../services/scanner_service.dart';
 
 class AlbumSummary {
   final String name;
@@ -45,10 +47,13 @@ class DatabaseService {
   final Map<String, PlaylistModel> _playlists = {};
   final Map<String, WaveformCacheModel> _waveformCache = {};
   final List<String> _historySongIds = [];
+  final Set<String> _libraryFolders = {};
 
   bool _initialized = false;
   File? _dbFile;
   File? _waveformFile;
+
+  List<String> get libraryFolders => _libraryFolders.toList();
 
   Future<void> init() async {
     if (_initialized) return;
@@ -90,8 +95,21 @@ class DatabaseService {
           if (data['history'] != null) {
             _historySongIds.addAll(List<String>.from(data['history'] as List));
           }
+
+          if (data['folders'] != null) {
+            _libraryFolders.addAll(List<String>.from(data['folders'] as List));
+          }
         }
       }
+
+      // Merge with SharedPreferences folder list
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final spFolders = prefs.getStringList('cinematic_library_folders');
+        if (spFolders != null && spFolders.isNotEmpty) {
+          _libraryFolders.addAll(spFolders);
+        }
+      } catch (_) {}
 
       if (await _waveformFile!.exists()) {
         final content = await _waveformFile!.readAsString();
@@ -138,12 +156,18 @@ class DatabaseService {
   }
 
   Future<void> _persistDb() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList('cinematic_library_folders', _libraryFolders.toList());
+    } catch (_) {}
+
     if (_dbFile == null) return;
     try {
       final data = {
         'songs': _songs.values.map((s) => s.toMap()).toList(),
         'playlists': _playlists.values.map((p) => p.toMap()).toList(),
         'history': _historySongIds,
+        'folders': _libraryFolders.toList(),
       };
       final tempFile = File('${_dbFile!.path}.tmp');
       await tempFile.writeAsString(json.encode(data), flush: true);
@@ -247,6 +271,18 @@ class DatabaseService {
     }).whereType<ArtistSummary>().toList();
   }
 
+  List<SongModel> getSongsForAlbum(String albumName) {
+    return _songs.values
+        .where((s) => s.isLocalFileAvailable && s.album.toLowerCase() == albumName.toLowerCase())
+        .toList();
+  }
+
+  List<SongModel> getSongsForArtist(String artistName) {
+    return _songs.values
+        .where((s) => s.isLocalFileAvailable && s.artist.toLowerCase() == artistName.toLowerCase())
+        .toList();
+  }
+
   Future<void> upsertSongs(List<SongModel> newSongs) async {
     for (final song in newSongs) {
       if (song.isLocalFileAvailable) {
@@ -263,6 +299,67 @@ class DatabaseService {
       _songs[song.id] = song;
       await _persistDb();
     }
+  }
+
+  Future<void> removeSong(String songId) async {
+    _songs.remove(songId);
+    _historySongIds.remove(songId);
+    for (final pl in _playlists.values) {
+      pl.songIds.remove(songId);
+    }
+    await _persistDb();
+  }
+
+  // --- Folder Management ---
+  Future<void> addLibraryFolder(String folderPath) async {
+    final clean = folderPath.trim();
+    if (clean.isNotEmpty && !_libraryFolders.contains(clean)) {
+      _libraryFolders.add(clean);
+      await _persistDb();
+    }
+  }
+
+  Future<void> removeLibraryFolder(String folderPath) async {
+    _libraryFolders.remove(folderPath.trim());
+    await _persistDb();
+  }
+
+  Future<int> rescanLibrary({void Function(int current, int total)? onProgress}) async {
+    int totalScanned = 0;
+    final foldersToScan = List<String>.from(_libraryFolders);
+
+    for (int i = 0; i < foldersToScan.length; i++) {
+      final folderPath = foldersToScan[i];
+      final dir = Directory(folderPath);
+      if (!await dir.exists()) {
+        debugPrint("Notice: Library folder does not exist or moved: $folderPath");
+        continue;
+      }
+      try {
+        final scanned = await ScannerService.scanDirectory(
+          dir,
+          onProgress: (current, total) {
+            onProgress?.call(totalScanned + current, totalScanned + total);
+          },
+        );
+        totalScanned += scanned.length;
+      } catch (e) {
+        debugPrint("Error scanning folder $folderPath: $e");
+      }
+    }
+    return totalScanned;
+  }
+
+  List<SongModel> getMostPlayedSongs({int limit = 20}) {
+    final list = _songs.values.where((s) => s.isLocalFileAvailable && s.playCount > 0).toList();
+    list.sort((a, b) => b.playCount.compareTo(a.playCount));
+    return list.take(limit).toList();
+  }
+
+  List<SongModel> getRecentlyAddedSongs({int limit = 20}) {
+    final list = _songs.values.where((s) => s.isLocalFileAvailable).toList();
+    list.sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
+    return list.take(limit).toList();
   }
 
   Future<void> toggleFavorite(String songId, [SongModel? fallbackSong]) async {

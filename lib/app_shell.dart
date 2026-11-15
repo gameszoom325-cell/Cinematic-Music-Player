@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/cinematic_colors.dart';
 import 'core/services/update_service.dart';
 import 'core/services/scanner_service.dart';
+import 'features/home/presentation/home_screen.dart';
 import 'features/library/presentation/library_screen.dart';
 import 'features/library/presentation/music_search_screen.dart';
 import 'features/library/providers/library_provider.dart';
@@ -12,8 +13,10 @@ import 'features/cloud/presentation/cloud_library_screen.dart';
 import 'features/favorites/presentation/favorites_screen.dart';
 import 'features/playlists/presentation/playlist_screen.dart';
 import 'features/settings/presentation/settings_screen.dart';
-import 'features/player/presentation/mini_player_bar.dart';
+import 'features/player/presentation/widgets/spotify_now_playing_bar.dart';
+import 'features/player/presentation/widgets/queue_panel.dart';
 import 'features/player/presentation/cinematic_player_screen.dart';
+import 'features/navigation/presentation/desktop_sidebar.dart';
 import 'features/player/providers/player_provider.dart';
 import 'features/player/models/player_state.dart';
 
@@ -25,14 +28,18 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
-  int _selectedIndex = 1; // Default to Cloud Library
+  int _selectedIndex = 0; // Default to Home
+  bool _isSidebarCollapsed = false;
+  bool _isQueueOpen = false;
 
   final List<Widget> _screens = const [
-    LibraryScreen(),        // 0: Local Music
-    CloudLibraryScreen(),   // 1: Cloud Library
-    PlaylistScreen(),       // 2: Playlists
-    FavoritesScreen(),      // 3: Favorites
-    SettingsScreen(),       // 4: Settings
+    HomeScreen(),           // 0: Home
+    MusicSearchScreen(),    // 1: Search
+    LibraryScreen(),        // 2: Your Library
+    FavoritesScreen(),      // 3: Liked Songs
+    PlaylistScreen(),       // 4: Playlists
+    SettingsScreen(),       // 5: Settings
+    CloudLibraryScreen(),   // 6: Cloud Library
   ];
 
   @override
@@ -81,22 +88,39 @@ class _AppShellState extends ConsumerState<AppShell> {
   // Windows Desktop Keyboard Shortcuts & Media Key Handler
   bool _handleKeyEvent(KeyEvent event) {
     if (event is KeyDownEvent) {
-      if (event.logicalKey == LogicalKeyboardKey.keyF && HardwareKeyboard.instance.isControlPressed) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const MusicSearchScreen()),
-        );
+      // Focus Search: '/' or 'Ctrl+K'
+      if (event.logicalKey == LogicalKeyboardKey.slash ||
+          (event.logicalKey == LogicalKeyboardKey.keyK && HardwareKeyboard.instance.isControlPressed) ||
+          (event.logicalKey == LogicalKeyboardKey.keyF && HardwareKeyboard.instance.isControlPressed)) {
+        setState(() => _selectedIndex = 1);
         return true;
       }
 
       final playerNotifier = ref.read(playerProvider.notifier);
       final playerState = ref.read(playerProvider);
 
+      // Play / Pause: Space or MediaPlayPause
       if (event.logicalKey == LogicalKeyboardKey.space ||
           event.logicalKey == LogicalKeyboardKey.mediaPlayPause) {
         playerNotifier.togglePlayPause();
         return true;
-      } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+      }
+
+      // Next / Previous: Ctrl+Right / Ctrl+Left or Media Keys
+      if ((HardwareKeyboard.instance.isControlPressed && event.logicalKey == LogicalKeyboardKey.arrowRight) ||
+          event.logicalKey == LogicalKeyboardKey.keyN ||
+          event.logicalKey == LogicalKeyboardKey.mediaTrackNext) {
+        playerNotifier.skipToNext();
+        return true;
+      } else if ((HardwareKeyboard.instance.isControlPressed && event.logicalKey == LogicalKeyboardKey.arrowLeft) ||
+          event.logicalKey == LogicalKeyboardKey.keyP ||
+          event.logicalKey == LogicalKeyboardKey.mediaTrackPrevious) {
+        playerNotifier.skipToPrevious();
+        return true;
+      }
+
+      // Seek +-5s: Bare Left / Right Arrows
+      if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
         final newPos = playerState.position - const Duration(seconds: 5);
         playerNotifier.seek(newPos < Duration.zero ? Duration.zero : newPos);
         return true;
@@ -104,24 +128,25 @@ class _AppShellState extends ConsumerState<AppShell> {
         final newPos = playerState.position + const Duration(seconds: 5);
         playerNotifier.seek(newPos > playerState.duration ? playerState.duration : newPos);
         return true;
-      } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      }
+
+      // Volume Up / Down: ArrowUp / ArrowDown
+      if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
         playerNotifier.setVolume(playerState.volume + 0.05);
         return true;
       } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
         playerNotifier.setVolume(playerState.volume - 0.05);
         return true;
-      } else if (event.logicalKey == LogicalKeyboardKey.keyN ||
-          event.logicalKey == LogicalKeyboardKey.mediaTrackNext) {
-        playerNotifier.skipToNext();
-        return true;
-      } else if (event.logicalKey == LogicalKeyboardKey.keyP ||
-          event.logicalKey == LogicalKeyboardKey.mediaTrackPrevious) {
-        playerNotifier.skipToPrevious();
-        return true;
-      } else if (event.logicalKey == LogicalKeyboardKey.keyM) {
+      }
+
+      // Mute / Unmute: 'M'
+      if (event.logicalKey == LogicalKeyboardKey.keyM) {
         playerNotifier.toggleMute();
         return true;
-      } else if (event.logicalKey == LogicalKeyboardKey.keyF) {
+      }
+
+      // Full Cinema View: 'F'
+      if (event.logicalKey == LogicalKeyboardKey.keyF && !HardwareKeyboard.instance.isControlPressed) {
         Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const CinematicPlayerScreen()),
         );
@@ -153,7 +178,7 @@ class _AppShellState extends ConsumerState<AppShell> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isDesktop = constraints.maxWidth >= 900;
+        final isDesktop = constraints.maxWidth >= 850;
 
         return Scaffold(
           backgroundColor: CinematicColors.background,
@@ -163,296 +188,50 @@ class _AppShellState extends ConsumerState<AppShell> {
     );
   }
 
-  // Desktop Tri-Pane Layout (Windows)
+  // Desktop Tri-Pane Layout (Spotify-style)
   Widget _buildDesktopLayout() {
-    final playerState = ref.watch(playerProvider);
-    final currentSong = playerState.currentSong;
-
     return Column(
       children: [
-        // Top Acoustic Header Bar
-        _buildDesktopHeader(currentSong),
-
         Expanded(
           child: Row(
             children: [
-              // Left Vault Navigation Sidebar
-              _buildDesktopSidebar(),
+              // 1. Left Sidebar
+              DesktopSidebar(
+                selectedIndex: _selectedIndex,
+                onItemSelected: (index) {
+                  setState(() => _selectedIndex = index);
+                },
+                isCollapsed: _isSidebarCollapsed,
+                onToggleCollapse: () {
+                  setState(() => _isSidebarCollapsed = !_isSidebarCollapsed);
+                },
+              ),
 
-              // Center Screen Content
+              // 2. Main Center Screen Content
               Expanded(
                 child: IndexedStack(
                   index: _selectedIndex,
                   children: _screens,
                 ),
               ),
+
+              // 3. Sliding Queue Panel
+              if (_isQueueOpen)
+                QueuePanel(
+                  onClose: () => setState(() => _isQueueOpen = false),
+                ),
             ],
           ),
         ),
 
-        // Bottom Deck: Mini Player Bar
-        const MiniPlayerBar(),
+        // 4. Persistent Bottom Spotify-style Now Playing Bar
+        SpotifyNowPlayingBar(
+          isQueueOpen: _isQueueOpen,
+          onToggleQueue: () {
+            setState(() => _isQueueOpen = !_isQueueOpen);
+          },
+        ),
       ],
-    );
-  }
-
-  Widget _buildDesktopHeader(dynamic currentSong) {
-    return Container(
-      height: 52,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: CinematicColors.surfaceContainerLowest,
-        border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.06))),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Logo & Brand
-          Row(
-            children: [
-              const Icon(Icons.album_rounded, color: CinematicColors.primary, size: 22),
-              const SizedBox(width: 8),
-              RichText(
-                text: const TextSpan(
-                  style: TextStyle(
-                    color: CinematicColors.onSurface,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 2.0,
-                  ),
-                  children: [
-                    TextSpan(text: "STILL"),
-                    TextSpan(text: ".", style: TextStyle(color: CinematicColors.primary)),
-                    TextSpan(text: "AUDIO"),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          // Central Navigation Pills
-          Container(
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-              color: CinematicColors.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildHeaderPill("Local Music", 0),
-                _buildHeaderPill("Cloud Library", 1),
-                _buildHeaderPill("Playlists", 2),
-                _buildHeaderPill("Favorites", 3),
-                _buildHeaderPill("Settings", 4),
-              ],
-            ),
-          ),
-
-          // Right Technical Badge & Rain Mode Indicator
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: CinematicColors.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  (currentSong != null && currentSong.technicalSpecs.isNotEmpty)
-                      ? currentSong.technicalSpecs
-                      : "Direct DAC • Lossless",
-                  style: const TextStyle(
-                    color: Colors.white60,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Search Across All Sources (InnerTubeX Pattern)
-              IconButton(
-                icon: const Icon(Icons.search_rounded, color: CinematicColors.primary, size: 22),
-                tooltip: "Search Music & Discover (Ctrl+F)",
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const MusicSearchScreen()),
-                  );
-                },
-              ),
-              const SizedBox(width: 8),
-              // Cinema View Pill
-              IconButton(
-                icon: const Icon(Icons.fullscreen_rounded, color: Colors.white70, size: 22),
-                tooltip: "Open Full Cinema View (F)",
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const CinematicPlayerScreen()),
-                  );
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeaderPill(String label, int index) {
-    final isSelected = _selectedIndex == index;
-
-    return GestureDetector(
-      onTap: () => setState(() => _selectedIndex = index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? CinematicColors.surfaceContainerHigh : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? CinematicColors.primary : CinematicColors.onSurfaceVariant,
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDesktopSidebar() {
-    return Container(
-      width: 220,
-      decoration: BoxDecoration(
-        color: CinematicColors.surfaceContainerLowest,
-        border: Border(right: BorderSide(color: Colors.white.withOpacity(0.06))),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 20, 20, 12),
-            child: Text(
-              "THE VAULT",
-              style: TextStyle(
-                color: Colors.white38,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.5,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(10),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const MusicSearchScreen()),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: CinematicColors.surfaceContainerHigh.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.white.withOpacity(0.06)),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.search_rounded, size: 16, color: CinematicColors.primary),
-                    SizedBox(width: 8),
-                    Text(
-                      "Search & Discover",
-                      style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          _buildSidebarNavItem(Icons.folder_special_rounded, "Local Music", 0),
-          _buildSidebarNavItem(Icons.cloud_done_rounded, "Cloud Library", 1),
-          _buildSidebarNavItem(Icons.queue_music_rounded, "Playlists", 2),
-          _buildSidebarNavItem(Icons.favorite_rounded, "Favorites", 3),
-          _buildSidebarNavItem(Icons.tune_rounded, "Studio Settings", 4),
-
-          const Spacer(),
-
-          // Analog Signal status box
-          Padding(
-            padding: const EdgeInsets.all(14.0),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: CinematicColors.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withOpacity(0.06)),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "ANALOG SIGNAL",
-                    style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0),
-                  ),
-                  SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text("Direct DAC", style: TextStyle(color: Colors.white70, fontSize: 12)),
-                      Text("Bitperfect", style: TextStyle(color: CinematicColors.primary, fontSize: 11, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSidebarNavItem(IconData icon, String label, int index) {
-    final isSelected = _selectedIndex == index;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: () => setState(() => _selectedIndex = index),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-          decoration: BoxDecoration(
-            color: isSelected ? CinematicColors.surfaceContainerHigh : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                size: 18,
-                color: isSelected ? CinematicColors.primary : CinematicColors.onSurfaceVariant,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                label,
-                style: TextStyle(
-                  color: isSelected ? CinematicColors.onSurface : CinematicColors.onSurfaceVariant,
-                  fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -466,7 +245,10 @@ class _AppShellState extends ConsumerState<AppShell> {
             children: _screens,
           ),
         ),
-        const MiniPlayerBar(),
+        SpotifyNowPlayingBar(
+          isQueueOpen: false,
+          onToggleQueue: null,
+        ),
         _buildBottomNav(),
       ],
     );
@@ -476,17 +258,17 @@ class _AppShellState extends ConsumerState<AppShell> {
     return Container(
       height: 62,
       decoration: BoxDecoration(
-        color: CinematicColors.surfaceContainerLowest,
+        color: const Color(0xFF0F0F12),
         border: Border(top: BorderSide(color: Colors.white.withOpacity(0.08))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildMobileNavIcon(Icons.folder_special_rounded, "Local", 0),
-          _buildMobileNavIcon(Icons.cloud_done_rounded, "Cloud", 1),
-          _buildMobileNavIcon(Icons.queue_music_rounded, "Playlists", 2),
-          _buildMobileNavIcon(Icons.favorite_rounded, "Favorites", 3),
-          _buildMobileNavIcon(Icons.tune_rounded, "Settings", 4),
+          _buildMobileNavIcon(Icons.home_filled, "Home", 0),
+          _buildMobileNavIcon(Icons.search_rounded, "Search", 1),
+          _buildMobileNavIcon(Icons.library_music_rounded, "Library", 2),
+          _buildMobileNavIcon(Icons.favorite_rounded, "Liked", 3),
+          _buildMobileNavIcon(Icons.tune_rounded, "Settings", 5),
         ],
       ),
     );
@@ -498,7 +280,7 @@ class _AppShellState extends ConsumerState<AppShell> {
       onTap: () => setState(() => _selectedIndex = index),
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

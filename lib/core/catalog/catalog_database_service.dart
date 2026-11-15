@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'models/catalog_song.dart';
 import 'models/catalog_artist.dart';
 import 'models/catalog_album.dart';

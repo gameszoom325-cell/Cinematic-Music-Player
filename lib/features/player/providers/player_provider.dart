@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/audio_engine/audio_engine.dart';
+import '../../../core/audio_engine/audio_service_handler.dart';
 import '../../../core/audio_engine/waveform_analyzer.dart';
 import '../../../core/database/database_service.dart';
 import '../../../core/database/models/song_model.dart';
@@ -21,6 +23,32 @@ class PlayerNotifier extends StateNotifier<CinematicPlayerState> {
 
   PlayerNotifier(this._ref) : super(const CinematicPlayerState()) {
     _bindEngineStreams();
+    _restoreLastState();
+  }
+
+  Future<void> _restoreLastState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedVol = prefs.getDouble('cinematic_volume');
+      if (savedVol != null) {
+        final v = savedVol.clamp(0.0, 1.0);
+        state = state.copyWith(volume: v);
+        await AudioEngine.instance.setVolume(v);
+      }
+
+      final lastSongId = prefs.getString('cinematic_last_song_id');
+      if (lastSongId != null && state.currentSong == null) {
+        final song = DatabaseService.instance.getSongById(lastSongId);
+        if (song != null && song.isLocalFileAvailable) {
+          state = state.copyWith(
+            currentSong: song,
+            queue: [song],
+            currentIndex: 0,
+          );
+          _ref.read(dynamicPaletteProvider.notifier).updateForSong(song);
+        }
+      }
+    } catch (_) {}
   }
 
   void _bindEngineStreams() {
@@ -81,6 +109,10 @@ class PlayerNotifier extends StateNotifier<CinematicPlayerState> {
 
               // Record play count & history in local database
               DatabaseService.instance.recordPlay(song.id, song);
+              try {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setString('cinematic_last_song_id', song.id);
+              } catch (_) {}
             }
           } catch (e) {
             debugPrint("Index stream handling error: $e");
@@ -211,6 +243,10 @@ class PlayerNotifier extends StateNotifier<CinematicPlayerState> {
     final v = volume.clamp(0.0, 1.0);
     state = state.copyWith(volume: v);
     await AudioEngine.instance.setVolume(v);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble('cinematic_volume', v);
+    } catch (_) {}
   }
 
   double _previousVolume = 1.0;
@@ -233,6 +269,73 @@ class PlayerNotifier extends StateNotifier<CinematicPlayerState> {
       rainModeActive: next,
       ambientLevel: next ? (state.ambientLevel > 0 ? state.ambientLevel : 0.35) : 0.0,
     );
+  }
+
+  void addToQueue(SongModel song) {
+    if (!song.isLocalFileAvailable) return;
+    final updated = List<SongModel>.from(state.queue);
+    updated.add(song);
+    state = state.copyWith(queue: updated);
+    AudioEngine.instance.handler.addQueueItem(CinematicAudioHandler.songToMediaItem(song));
+  }
+
+  void playNext(SongModel song) {
+    if (!song.isLocalFileAvailable) return;
+    final updated = List<SongModel>.from(state.queue);
+    final insertIndex = state.currentIndex + 1;
+    if (insertIndex <= updated.length) {
+      updated.insert(insertIndex, song);
+    } else {
+      updated.add(song);
+    }
+    state = state.copyWith(queue: updated);
+  }
+
+  void reorderQueue(int oldIndex, int newIndex) {
+    if (oldIndex < 0 || oldIndex >= state.queue.length) return;
+    if (newIndex < 0 || newIndex > state.queue.length) return;
+
+    final updated = List<SongModel>.from(state.queue);
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+    final item = updated.removeAt(oldIndex);
+    updated.insert(newIndex, item);
+
+    // Update currentIndex if needed
+    int newCurrent = state.currentIndex;
+    if (oldIndex == state.currentIndex) {
+      newCurrent = newIndex;
+    } else if (oldIndex < state.currentIndex && newIndex >= state.currentIndex) {
+      newCurrent -= 1;
+    } else if (oldIndex > state.currentIndex && newIndex <= state.currentIndex) {
+      newCurrent += 1;
+    }
+
+    state = state.copyWith(queue: updated, currentIndex: newCurrent);
+  }
+
+  void removeFromQueue(int index) {
+    if (index < 0 || index >= state.queue.length) return;
+    final updated = List<SongModel>.from(state.queue);
+    updated.removeAt(index);
+
+    int newCurrent = state.currentIndex;
+    if (index < state.currentIndex) {
+      newCurrent -= 1;
+    } else if (index == state.currentIndex && updated.isNotEmpty) {
+      newCurrent = newCurrent.clamp(0, updated.length - 1);
+    }
+
+    state = state.copyWith(
+      queue: updated,
+      currentIndex: newCurrent,
+      currentSong: updated.isNotEmpty ? updated[newCurrent] : null,
+    );
+  }
+
+  void clearQueue() {
+    state = state.copyWith(queue: [], currentIndex: 0);
   }
 
   @override

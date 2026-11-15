@@ -52,3 +52,7 @@ CMakeSettings.json
 
 # Local build artifacts
 /dist/
+
+# Private secrets
+lib/core/config/app_secrets.dart
+

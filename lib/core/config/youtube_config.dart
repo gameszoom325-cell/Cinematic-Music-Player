@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'app_secrets.dart';
 
 /// Secure configuration manager for YouTube Data API v3 integration.
 /// 
@@ -12,10 +13,10 @@ class YouTubeConfig {
 
   static const String _prefKey = 'cinematic_youtube_api_key';
 
-  // Default API key supplied for this private project
+  // API key loaded from git-ignored AppSecrets or environment variable
   static const String _defaultApiKey = String.fromEnvironment(
     'YOUTUBE_API_KEY',
-    defaultValue: 'AIzaSyAoqbmfwc618y2JLqwuJ1XNESNXzseVV4k',
+    defaultValue: AppSecrets.youtubeApiKey,
   );
 
   String _apiKey = _defaultApiKey;

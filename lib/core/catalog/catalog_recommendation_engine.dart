@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'models/catalog_song.dart';
-import 'models/catalog_artist.dart';
 
 /// Recommendation foundation engine for Cinematic Music Player.
 /// Implements content-based, artist-affinity, era-proximity, and trending scoring algorithms.

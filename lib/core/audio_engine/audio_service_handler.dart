@@ -132,7 +132,7 @@ class CinematicAudioHandler extends BaseAudioHandler with QueueHandler, SeekHand
     );
   }
 
-  MediaItem _songToMediaItem(SongModel song) {
+  static MediaItem songToMediaItem(SongModel song) {
     return MediaItem(
       id: song.id,
       title: song.title,
@@ -157,7 +157,7 @@ class CinematicAudioHandler extends BaseAudioHandler with QueueHandler, SeekHand
     _currentQueue.clear();
     _currentQueue.addAll(validSongs);
 
-    queue.add(validSongs.map((s) => _songToMediaItem(s)).toList());
+    queue.add(validSongs.map((s) => songToMediaItem(s)).toList());
 
     final sources = validSongs.map((s) => AudioSource.uri(parseAudioUri(s.path))).toList();
     final newPlaylist = ConcatenatingAudioSource(children: sources);
@@ -252,13 +252,13 @@ class CinematicAudioHandler extends BaseAudioHandler with QueueHandler, SeekHand
     switch (parentMediaId) {
       case AudioService.recentRootId:
       case 'history':
-        return db.getRecentlyPlayedSongs().map((s) => _songToMediaItem(s)).toList();
+        return db.getRecentlyPlayedSongs().map((s) => songToMediaItem(s)).toList();
 
       case 'favorites':
-        return db.getFavorites().map((s) => _songToMediaItem(s)).toList();
+        return db.getFavorites().map((s) => songToMediaItem(s)).toList();
 
       case 'library':
-        return db.getPlayableSongs().map((s) => _songToMediaItem(s)).toList();
+        return db.getPlayableSongs().map((s) => songToMediaItem(s)).toList();
 
       case 'playlists':
         return db.getAllPlaylists().map((pl) => MediaItem(
@@ -288,8 +288,6 @@ class CinematicAudioHandler extends BaseAudioHandler with QueueHandler, SeekHand
         )).toList();
 
       case AudioService.browsableRootId:
-      case '/':
-      case 'root':
       default:
         // Querying a specific playlist
         if (parentMediaId.startsWith('playlist_')) {
@@ -300,7 +298,7 @@ class CinematicAudioHandler extends BaseAudioHandler with QueueHandler, SeekHand
                 .map((id) => db.getSongById(id))
                 .whereType<SongModel>()
                 .toList();
-            return songs.map((s) => _songToMediaItem(s)).toList();
+            return songs.map((s) => songToMediaItem(s)).toList();
           }
           return [];
         }
@@ -347,10 +345,9 @@ class CinematicAudioHandler extends BaseAudioHandler with QueueHandler, SeekHand
     }
   }
 
-  @override
   Future<MediaItem?> getItem(String mediaId) async {
     final song = DatabaseService.instance.getSongById(mediaId);
-    if (song != null) return _songToMediaItem(song);
+    if (song != null) return songToMediaItem(song);
     return null;
   }
 

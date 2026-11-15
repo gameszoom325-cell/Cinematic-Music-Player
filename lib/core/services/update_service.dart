@@ -10,8 +10,8 @@ import '../theme/glassmorphism.dart';
 
 /// Semantic version specification and comparison utilities
 class AppVersion {
-  static const String current = "1.1.4";
-  static const int buildNumber = 10;
+  static const String current = "1.1.5";
+  static const int buildNumber = 11;
   static const String releaseStage = "Release";
 
   /// Compares two semver strings (e.g. "1.1.3" and "1.1.2")

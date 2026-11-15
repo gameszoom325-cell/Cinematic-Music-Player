@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.5] - 2026-11-15
+
+### Added
+- **Visualizer Performance Settings**:
+  - Added Studio Performance quality selector (`High` 60 FPS, `Balanced` 30 FPS, `Low` 15 FPS, `Off` completely sleeps ticker and GPU draws).
+  - Persisted user preference in `SharedPreferences` (`cinematic_visualizer_quality`).
+  - Implemented dynamic timer intervals in `AudioReactiveAnalyzer` to eliminate CPU/GPU load on integrated graphics.
+- **Spotify-Style Desktop Layout & Workflow**:
+  - Collapsible desktop sidebar with direct navigation to Home, Search, Your Library, Liked Songs, and custom Playlists.
+  - Quick "+ Create Playlist" dialog from sidebar.
+  - Persistent bottom Now Playing bar with track metadata, playback controls, dedicated independent seekbar widget (preventing root frame rebuilds), and master volume slider.
+  - Sliding Desktop Queue Drawer with drag-to-reorder tracks (`ReorderableListView`), track removal, live equalizer badge, and clear queue button.
+  - Rich Library views with tabbed navigation for Songs, Albums, Artists, and Folders.
+  - Full desktop keyboard shortcuts: Space (Play/Pause), Ctrl+Right/Left (Next/Previous), Up/Down (Volume $\pm 5\%$), M (Mute), `/` or Ctrl+K (Quick Search focus).
+- **Persistent Offline Music Library (Free, Zero API Keys Required)**:
+  - Multi-folder library monitoring: users can add any local music directory via native Windows folder picker.
+  - Persisted folder paths across app restarts in `SharedPreferences` and `library_db.json`.
+  - Automatic startup folder rescanning and manual "Rescan Library" button.
+  - Full offline local playback supporting MP3, FLAC, WAV, M4A, OGG, AAC, OPUS, WMA.
+- **High-DPI Per-Monitor V2 Crispness**:
+  - Updated `windows/runner/runner.exe.manifest` with `<dpiAware>true/pm</dpiAware>` and `<dpiAwareness>PerMonitorV2</dpiAwareness>`, fixing fuzzy/soft UI rendering on Windows desktop.
+- **Global Error & Crash Logging**:
+  - Global `CrashLogger` capturing Flutter framework errors, platform dispatcher unhandled exceptions, and background isolate errors.
+  - Writes to `%USERPROFILE%/Documents/CinematicMusicPlayer/logs/app.log` with automatic 5MB log rotation.
+- **Decoupled API Secrets**:
+  - Moved all API keys (YouTube, Jamendo, Supabase) into git-ignored `app_secrets.dart` with fallback template in `app_secrets.example.dart`.
+
+### Changed
+- Downsampled palette extraction artwork to 96x96 via `ResizeImage`, resolving frame drops and stutter on song change.
+- Isolated seekbar into `_IndependentSeekBar` widget, decoupling position ticks from parent view rebuilds.
+- Bumped version to `1.1.5+11`.
+
 ## [1.0.3] - 2026-11-14
 
 ### Added

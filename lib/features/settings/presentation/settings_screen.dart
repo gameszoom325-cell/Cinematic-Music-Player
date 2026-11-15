@@ -113,13 +113,39 @@ class SettingsScreen extends ConsumerWidget {
                       const SizedBox(height: 24),
                     ],
 
-                    // 4. Visualizer Engine
-                    _buildSectionHeader("MINIMAL HORIZONTAL LINE VISUALIZER"),
+                    // 4. Visualizer Engine & Performance
+                    _buildSectionHeader("VISUALIZER & PERFORMANCE"),
                     CinematicGlassCard(
                       padding: const EdgeInsets.all(16),
                       borderRadius: 18,
                       child: Column(
                         children: [
+                          _buildDropdownTile<VisualizerQuality>(
+                            title: "Performance Mode",
+                            value: visualizerState.quality,
+                            items: const [
+                              DropdownMenuItem(
+                                value: VisualizerQuality.balanced,
+                                child: Text("Balanced (30 FPS Cap • Recommended)"),
+                              ),
+                              DropdownMenuItem(
+                                value: VisualizerQuality.high,
+                                child: Text("High (60 FPS • Full Fidelity)"),
+                              ),
+                              DropdownMenuItem(
+                                value: VisualizerQuality.low,
+                                child: Text("Low (Minimal Line • Energy Saver)"),
+                              ),
+                              DropdownMenuItem(
+                                value: VisualizerQuality.off,
+                                child: Text("Off (Disabled • Zero GPU/CPU)"),
+                              ),
+                            ],
+                            onChanged: (val) {
+                              if (val != null) visualizerNotifier.setQuality(val);
+                            },
+                          ),
+                          const Divider(color: Colors.white12, height: 24),
                           _buildDropdownTile<VisualizerPresetType>(
                             title: "Waveform Line Style",
                             value: visualizerState.preset,

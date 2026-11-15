@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/visualizer_preset.dart';
 import '../providers/visualizer_provider.dart';
 import 'cinematic_line_visualizer.dart';
 
@@ -22,23 +23,28 @@ class VisualizerViewport extends ConsumerWidget {
     final visualizerState = ref.watch(visualizerProvider);
     final palette = ref.watch(dynamicPaletteProvider);
 
-    if (!visualizerState.isEnabled) {
+    if (!visualizerState.isEnabled || visualizerState.quality == VisualizerQuality.off) {
       if (centerChild != null) {
         return Center(child: centerChild!);
       }
       return const SizedBox.shrink();
     }
 
+    final isGlow = visualizerState.quality == VisualizerQuality.high ||
+        (visualizerState.quality == VisualizerQuality.balanced && visualizerState.isGlowEnabled);
+
     return Stack(
       fit: StackFit.expand,
       children: [
         // 1. Real-time Minimal Horizontal Waveform Line
         Positioned.fill(
-          child: CinematicLineVisualizer(
-            activeColor: palette.vibrant,
-            verticalAlignment: verticalAlignment,
-            strokeWidth: visualizerState.strokeWidth,
-            isGlowEnabled: visualizerState.isGlowEnabled,
+          child: RepaintBoundary(
+            child: CinematicLineVisualizer(
+              activeColor: palette.vibrant,
+              verticalAlignment: verticalAlignment,
+              strokeWidth: visualizerState.strokeWidth,
+              isGlowEnabled: isGlow,
+            ),
           ),
         ),
 

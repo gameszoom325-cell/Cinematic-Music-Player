@@ -6,6 +6,7 @@ import '../../../core/services/scanner_service.dart';
 
 class LibraryState {
   final List<SongModel> songs;
+  final List<String> folders;
   final bool isScanning;
   final int scanProgress;
   final int scanTotal;
@@ -13,6 +14,7 @@ class LibraryState {
 
   const LibraryState({
     this.songs = const [],
+    this.folders = const [],
     this.isScanning = false,
     this.scanProgress = 0,
     this.scanTotal = 0,
@@ -21,6 +23,7 @@ class LibraryState {
 
   LibraryState copyWith({
     List<SongModel>? songs,
+    List<String>? folders,
     bool? isScanning,
     int? scanProgress,
     int? scanTotal,
@@ -28,6 +31,7 @@ class LibraryState {
   }) {
     return LibraryState(
       songs: songs ?? this.songs,
+      folders: folders ?? this.folders,
       isScanning: isScanning ?? this.isScanning,
       scanProgress: scanProgress ?? this.scanProgress,
       scanTotal: scanTotal ?? this.scanTotal,
@@ -39,11 +43,13 @@ class LibraryState {
 class LibraryNotifier extends StateNotifier<LibraryState> {
   LibraryNotifier() : super(const LibraryState()) {
     refreshLibrary();
+    _autoRescanSavedFoldersOnStartup();
   }
 
   void refreshLibrary() {
     final songs = DatabaseService.instance.searchSongs(state.searchQuery);
-    state = state.copyWith(songs: songs);
+    final folders = DatabaseService.instance.libraryFolders;
+    state = state.copyWith(songs: songs, folders: folders);
   }
 
   void setSearchQuery(String query) {
@@ -51,19 +57,63 @@ class LibraryNotifier extends StateNotifier<LibraryState> {
     refreshLibrary();
   }
 
+  Future<void> addAndScanFolder(String folderPath) async {
+    final clean = folderPath.trim();
+    if (clean.isEmpty) return;
+
+    await DatabaseService.instance.addLibraryFolder(clean);
+    await scanFolder(clean);
+  }
+
+  Future<void> removeFolder(String folderPath) async {
+    await DatabaseService.instance.removeLibraryFolder(folderPath);
+    refreshLibrary();
+  }
+
+  Future<void> removeSong(String songId) async {
+    await DatabaseService.instance.removeSong(songId);
+    refreshLibrary();
+  }
+
+  Future<void> rescanAll() async {
+    state = state.copyWith(isScanning: true, scanProgress: 0, scanTotal: 0);
+
+    try {
+      await DatabaseService.instance.rescanLibrary(
+        onProgress: (current, total) {
+          state = state.copyWith(scanProgress: current, scanTotal: total);
+        },
+      );
+    } catch (_) {}
+
+    state = state.copyWith(isScanning: false);
+    refreshLibrary();
+  }
+
   Future<void> scanFolder(String folderPath) async {
     state = state.copyWith(isScanning: true, scanProgress: 0, scanTotal: 0);
 
     final dir = Directory(folderPath);
-    await ScannerService.scanDirectory(
-      dir,
-      onProgress: (current, total) {
-        state = state.copyWith(scanProgress: current, scanTotal: total);
-      },
-    );
+    if (await dir.exists()) {
+      await ScannerService.scanDirectory(
+        dir,
+        onProgress: (current, total) {
+          state = state.copyWith(scanProgress: current, scanTotal: total);
+        },
+      );
+    }
 
     state = state.copyWith(isScanning: false);
     refreshLibrary();
+  }
+
+  void _autoRescanSavedFoldersOnStartup() {
+    Future.microtask(() async {
+      final folders = DatabaseService.instance.libraryFolders;
+      if (folders.isNotEmpty) {
+        await rescanAll();
+      }
+    });
   }
 }
 

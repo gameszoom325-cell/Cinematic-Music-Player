@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import '../database/database_service.dart';
 import '../database/models/waveform_cache_model.dart';
+import '../../features/visualizer/models/visualizer_preset.dart';
 import 'audio_engine.dart';
 import 'waveform_analyzer.dart';
 
@@ -91,6 +91,18 @@ class AudioReactiveAnalyzer with WidgetsBindingObserver {
   Timer? _analysisTimer;
   bool _isSleeping = true;
   bool _isAppMinimized = false;
+  VisualizerQuality _quality = VisualizerQuality.balanced;
+  VisualizerQuality get quality => _quality;
+
+  void setQuality(VisualizerQuality quality) {
+    _quality = quality;
+    if (_quality == VisualizerQuality.off) {
+      sleep();
+    } else if (!_isSleeping && _analysisTimer != null) {
+      // Re-arm timer with new frame duration
+      wake(forceRestart: true);
+    }
+  }
 
   // Smoothing filters (Asymmetric Attack/Decay)
   double _filteredAmp = 0.0;
@@ -130,12 +142,24 @@ class AudioReactiveAnalyzer with WidgetsBindingObserver {
   }
 
   /// Wakes the analysis loop when music begins playing
-  void wake() {
-    if (!_isSleeping && _analysisTimer != null) return;
+  void wake({bool forceRestart = false}) {
+    if (_quality == VisualizerQuality.off) {
+      sleep();
+      return;
+    }
+    if (!forceRestart && !_isSleeping && _analysisTimer != null) return;
     _isSleeping = false;
     _analysisTimer?.cancel();
-    // 60 FPS analysis loop (~16.6ms)
-    _analysisTimer = Timer.periodic(const Duration(milliseconds: 16), (_) => _tick());
+
+    // Frame interval according to performance quality level:
+    // High: ~16ms (60 FPS)
+    // Balanced: ~33ms (30 FPS cap) - 50% CPU savings
+    // Low: ~66ms (15 FPS cap)
+    final intervalMs = _quality == VisualizerQuality.high
+        ? 16
+        : (_quality == VisualizerQuality.balanced ? 33 : 66);
+
+    _analysisTimer = Timer.periodic(Duration(milliseconds: intervalMs), (_) => _tick());
   }
 
   /// Puts analyzer into sleep mode to conserve CPU/battery

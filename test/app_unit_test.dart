@@ -7,6 +7,7 @@ import 'package:cinematic_music_player/sync/cloud_database.dart';
 import 'package:cinematic_music_player/core/config/supabase_config.dart';
 import 'package:cinematic_music_player/core/services/lyrics_parser.dart';
 import 'package:cinematic_music_player/core/services/update_service.dart';
+import 'package:cinematic_music_player/core/services/crash_logger.dart';
 import 'package:cinematic_music_player/core/services/audio_stream_cache_manager.dart';
 import 'package:cinematic_music_player/core/services/next_track_preload_service.dart';
 import 'package:cinematic_music_player/core/audio_engine/audio_reactive_analyzer.dart';
@@ -814,10 +815,10 @@ void main() {
       expect(resolved.isLocalFileAvailable, isTrue);
     });
 
-    test('Project version reflects v1.1.4 Build 10', () {
-      expect(AppVersion.current, '1.1.4');
-      expect(AppVersion.buildNumber, 10);
-      expect(AppVersion.compare('1.1.4', '1.1.3'), greaterThan(0));
+    test('Project version reflects v1.1.5 Build 11', () {
+      expect(AppVersion.current, '1.1.5');
+      expect(AppVersion.buildNumber, 11);
+      expect(AppVersion.compare('1.1.5', '1.1.4'), greaterThan(0));
     });
   });
 
@@ -1236,6 +1237,54 @@ void main() {
       expect(engine.isInitialized, isTrue);
       await engine.stop();
       expect(engine.isPlaying, isFalse);
+    });
+  });
+
+  group('21. Desktop Performance & Offline Library Tests (v1.1.5)', () {
+    test('VisualizerQuality enum supports high, balanced, low, and off', () {
+      expect(VisualizerQuality.values.length, 4);
+      expect(VisualizerQuality.balanced.name, 'balanced');
+      expect(VisualizerQuality.off.name, 'off');
+      expect(VisualizerQuality.high.name, 'high');
+      expect(VisualizerQuality.low.name, 'low');
+    });
+
+    test('VisualizerState integrates VisualizerQuality defaulting to balanced', () {
+      const state = VisualizerState();
+      expect(state.quality, VisualizerQuality.balanced);
+      final lowState = state.copyWith(quality: VisualizerQuality.low);
+      expect(lowState.quality, VisualizerQuality.low);
+      final offState = state.copyWith(quality: VisualizerQuality.off);
+      expect(offState.quality, VisualizerQuality.off);
+    });
+
+    test('CrashLogger instance initializes and logs without throwing', () async {
+      final logger = CrashLogger.instance;
+      await logger.init();
+      logger.logInfo("v1.1.5 Diagnostic test message");
+      logger.logError("Diagnostic test error", StackTrace.current);
+    });
+
+    test('DatabaseService manages library folders correctly', () async {
+      final db = DatabaseService.instance;
+      await db.init();
+      final initialFolders = db.libraryFolders;
+      expect(initialFolders, isA<List<String>>());
+
+      const testDir = r'C:\MockMusicFolder';
+      await db.addLibraryFolder(testDir);
+      expect(db.libraryFolders, contains(testDir));
+
+      await db.removeLibraryFolder(testDir);
+      expect(db.libraryFolders, isNot(contains(testDir)));
+    });
+
+    test('Windows manifest declares PerMonitorV2 and dpiAware settings', () {
+      final manifestFile = File('windows/runner/runner.exe.manifest');
+      expect(manifestFile.existsSync(), isTrue);
+      final manifest = manifestFile.readAsStringSync();
+      expect(manifest, contains('PerMonitorV2'));
+      expect(manifest, contains('<dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/pm</dpiAware>'));
     });
   });
 }

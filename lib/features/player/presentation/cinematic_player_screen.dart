@@ -10,7 +10,6 @@ import 'widgets/acoustic_art_ring.dart';
 import 'widgets/tilt_album_art.dart';
 import 'widgets/waveform_scrubber.dart';
 import 'widgets/tactile_control_island.dart';
-import '../../lyrics/presentation/lyrics_view.dart';
 import '../../../core/services/lyrics_parser.dart';
 import '../../../core/theme/cinematic_colors.dart';
 import '../../../core/theme/typography.dart';

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:window_manager/window_manager.dart';
 import 'core/config/supabase_config.dart';
+import 'core/services/crash_logger.dart';
 import 'core/services/shader_capability_service.dart';
 import 'core/audio_engine/audio_engine.dart';
 import 'core/database/database_service.dart';
@@ -21,14 +22,21 @@ import 'app_shell.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize Persistent Crash Logger (<Documents>/CinematicMusicPlayer/logs/app.log)
+  await CrashLogger.instance.init();
+
   // Global Flutter Runtime Error Handling
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
-    debugPrint("CRITICAL FLUTTER ERROR: ${details.exceptionAsString()}");
+    CrashLogger.instance.logError(
+      details.exception,
+      details.stack,
+      details.context?.toDescription(),
+    );
   };
 
   PlatformDispatcher.instance.onError = (error, stack) {
-    debugPrint("ASYNC PLATFORM ERROR: $error\n$stack");
+    CrashLogger.instance.logError(error, stack, "PlatformDispatcher");
     return true; // prevent application crash
   };
 

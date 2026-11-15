@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/audio_engine/audio_reactive_analyzer.dart';
 import '../../../core/audio_engine/fft_engine.dart';
 import '../../../core/theme/cinematic_colors.dart';
@@ -31,9 +32,49 @@ final spectrumStreamProvider = StreamProvider.autoDispose<AudioSpectrumFrame>((r
   return fft.spectrumStream;
 });
 
-/// Visualizer State Controller (Preset, Sensitivity, Glow)
+/// Visualizer State Controller (Preset, Quality, Sensitivity, Glow)
 class VisualizerNotifier extends StateNotifier<VisualizerState> {
-  VisualizerNotifier() : super(const VisualizerState());
+  static const String _prefQualityKey = 'cinematic_visualizer_quality';
+
+  VisualizerNotifier() : super(const VisualizerState()) {
+    _loadPersistedQuality();
+  }
+
+  Future<void> _loadPersistedQuality() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedStr = prefs.getString(_prefQualityKey);
+      if (savedStr != null) {
+        VisualizerQuality q;
+        switch (savedStr) {
+          case 'high':
+            q = VisualizerQuality.high;
+            break;
+          case 'low':
+            q = VisualizerQuality.low;
+            break;
+          case 'off':
+            q = VisualizerQuality.off;
+            break;
+          case 'balanced':
+          default:
+            q = VisualizerQuality.balanced;
+            break;
+        }
+        state = state.copyWith(quality: q);
+        AudioReactiveAnalyzer.instance.setQuality(q);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> setQuality(VisualizerQuality quality) async {
+    state = state.copyWith(quality: quality);
+    AudioReactiveAnalyzer.instance.setQuality(quality);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_prefQualityKey, quality.name);
+    } catch (_) {}
+  }
 
   void setPreset(VisualizerPresetType preset) {
     state = state.copyWith(preset: preset);

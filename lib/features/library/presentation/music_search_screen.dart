@@ -90,15 +90,19 @@ class _MusicSearchScreenState extends ConsumerState<MusicSearchScreen> with Sing
   }
 
   Widget _buildSearchHeader() {
+    final canPop = Navigator.of(context).canPop();
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white70),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          const SizedBox(width: 8),
+          if (canPop) ...[
+            IconButton(
+              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white70),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            const SizedBox(width: 8),
+          ],
           Expanded(
             child: Container(
               height: 48,

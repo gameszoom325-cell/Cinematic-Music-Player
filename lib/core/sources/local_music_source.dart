@@ -2,7 +2,6 @@ import 'base_music_source.dart';
 import 'music_source_type.dart';
 import '../database/database_service.dart';
 import '../database/models/song_model.dart';
-import '../services/scanner_service.dart';
 
 class LocalMusicSource implements BaseMusicSource {
   @override

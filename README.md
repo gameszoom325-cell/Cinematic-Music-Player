@@ -10,10 +10,30 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.1.2-blueviolet.svg?style=flat-square" alt="Latest Release"></a>
+  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.1.3-blueviolet.svg?style=flat-square" alt="Latest Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Android-success.svg?style=flat-square" alt="Platforms">
 </p>
+
+---
+
+## What's New in v1.1.3 (Backend Evolution + Smart Update System)
+
+- **Complete Metrolist Ecosystem Architecture Integration**:
+  - Researched and synthesized patterns from all 10 MetrolistGroup projects (`Metrolist`, `innertubex`, `quackjs`, `faraday`, `metroserver`, `metroproto`, `metrolist-coverart-lib`, `MetrolistManager`, `metrosite`, `metrobot`).
+  - **Bounded LRU Audio Stream Cache (`AudioStreamCacheManager`)**: Streams are saved to disk with a 512 MB LRU ceiling, enabling instant zero-latency playback on repeated listens without touching the network.
+  - **Predictive Lookahead Preloading (`NextTrackPreloadService`)**: Continuously monitors playback progress; when remaining duration is $\le 30$ seconds or playback reaches 80%, the next queue track is resolved and primed into cache.
+  - **HTTP 206 Byte-Range Stream Health Probing**: Stream URLs are probed with byte-range headers (`bytes=0-1024`) to eliminate expired tokens and 403 playback failures before dispatch to the audio engine.
+
+- **Smart Application Update System (`UpdateService` & `CinematicUpdateDialog`)**:
+  - Semantic version comparisons (`AppVersion.compare`) supporting `1.0.x`, `1.1.0`, `1.1.1`, `1.1.2`, `1.1.3`, `1.1.4`, `1.2.0`, `2.0.0`, etc.
+  - Automatic prompt on older versions (e.g. 1.0.x, 1.1.0, 1.1.1, 1.1.2) to upgrade to 1.1.3+.
+  - Silenced on current/newer versions (v1.1.3 does not prompt for 1.1.3).
+  - Sleek glassmorphic update dialog with:
+    - **Update Now**: One-click download of the Windows installer or Android APK.
+    - **Remind Me Later**: 24-hour suppression cooldown saved in `SharedPreferences`.
+    - **Skip This Version**: Permanent dismissal for that specific release tag.
+  - Non-blocking background execution with zero interruption to active music streaming.
 
 ---
 

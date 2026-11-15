@@ -3,17 +3,18 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/cinematic_colors.dart';
 import '../theme/glassmorphism.dart';
 
 /// Semantic version specification and comparison utilities
 class AppVersion {
-  static const String current = "1.1.2";
-  static const int buildNumber = 8;
+  static const String current = "1.1.3";
+  static const int buildNumber = 9;
   static const String releaseStage = "Release";
 
-  /// Compares two semver strings (e.g. "1.0.0" and "1.1.0")
+  /// Compares two semver strings (e.g. "1.1.3" and "1.1.2")
   /// Returns > 0 if v1 > v2, < 0 if v1 < v2, and 0 if equal.
   static int compare(String v1, String v2) {
     final clean1 = _clean(v1);
@@ -45,6 +46,10 @@ class AppVersion {
     if (plusIdx != -1) {
       v = v.substring(0, plusIdx);
     }
+    final dashIdx = v.indexOf('-');
+    if (dashIdx != -1) {
+      v = v.substring(0, dashIdx);
+    }
     return v;
   }
 }
@@ -72,9 +77,12 @@ class UpdateInfo {
   });
 }
 
-/// In-app GitHub release update service
+/// In-app GitHub release update service with persistent suppression and smart semver checking
 class UpdateService {
   static String githubRepo = "gameszoom325-cell/Cinematic-Music-Player";
+
+  static const String _prefKeyRemindUntil = "update_remind_later_until";
+  static const String _prefKeySkipVersion = "update_skip_version";
 
   /// Checks GitHub releases API for newer version
   static Future<UpdateInfo?> checkForUpdates() async {
@@ -84,7 +92,7 @@ class UpdateService {
         uri,
         headers: {
           'Accept': 'application/vnd.github.v3+json',
-          'User-Agent': 'CinematicMusicPlayer-App',
+          'User-Agent': 'CinematicMusicPlayer-App/1.1.3',
         },
       ).timeout(const Duration(seconds: 6));
 
@@ -92,7 +100,7 @@ class UpdateService {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final rawTag = data['tag_name'] as String? ?? '1.0.0';
         final releaseName = data['name'] as String? ?? rawTag;
-        final releaseNotes = data['body'] as String? ?? 'Bug fixes and performance improvements.';
+        final releaseNotes = data['body'] as String? ?? 'Backend evolution, stream caching, and smart updates.';
         final htmlUrl = data['html_url'] as String? ?? 'https://github.com/$githubRepo/releases';
         final publishedStr = data['published_at'] as String? ?? '';
         final publishedAt = DateTime.tryParse(publishedStr) ?? DateTime.now();
@@ -135,9 +143,63 @@ class UpdateService {
         );
       }
     } catch (e) {
-      debugPrint("Update check fallback: $e");
+      debugPrint("Update check notice: $e");
     }
     return null;
+  }
+
+  /// Checks whether an update alert for targetVersion is currently suppressed
+  static Future<bool> isSuppressed(String targetVersion) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // 1. Check if user explicitly chose to skip this specific version
+      final skipped = prefs.getString(_prefKeySkipVersion);
+      if (skipped != null && AppVersion._clean(skipped) == AppVersion._clean(targetVersion)) {
+        return true;
+      }
+
+      // 2. Check if user chose "Remind Me Later" and cooldown is still active
+      final remindUntil = prefs.getInt(_prefKeyRemindUntil);
+      if (remindUntil != null && DateTime.now().millisecondsSinceEpoch < remindUntil) {
+        return true;
+      }
+    } catch (e) {
+      debugPrint("UpdateService.isSuppressed warning: $e");
+    }
+    return false;
+  }
+
+  /// Sets a 24-hour reminder cooldown
+  static Future<void> remindLater() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cooldownTime = DateTime.now().add(const Duration(hours: 24)).millisecondsSinceEpoch;
+      await prefs.setInt(_prefKeyRemindUntil, cooldownTime);
+      debugPrint("UpdateService: Reminder cooldown set until ${DateTime.fromMillisecondsSinceEpoch(cooldownTime)}");
+    } catch (e) {
+      debugPrint("UpdateService.remindLater error: $e");
+    }
+  }
+
+  /// Permanently skips update prompt for a specific version tag
+  static Future<void> skipVersion(String version) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_prefKeySkipVersion, AppVersion._clean(version));
+      debugPrint("UpdateService: Version $version marked as skipped.");
+    } catch (e) {
+      debugPrint("UpdateService.skipVersion error: $e");
+    }
+  }
+
+  /// Clears any reminder or skipped version suppressions
+  static Future<void> resetSuppression() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_prefKeyRemindUntil);
+      await prefs.remove(_prefKeySkipVersion);
+    } catch (_) {}
   }
 
   /// Check and prompt update dialog if newer version is available
@@ -147,10 +209,19 @@ class UpdateService {
     if (!context.mounted) return;
 
     if (info != null && info.hasUpdate) {
+      // If automatic check, respect user's suppression preferences
+      if (!isManual) {
+        final suppressed = await isSuppressed(info.latestVersion);
+        if (suppressed) {
+          debugPrint("UpdateService: Update prompt for v${info.latestVersion} suppressed by user preference.");
+          return;
+        }
+      }
+
       showDialog(
         context: context,
         barrierDismissible: true,
-        builder: (_) => _UpdateDialog(info: info),
+        builder: (_) => CinematicUpdateDialog(info: info),
       );
     } else if (isManual) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -176,10 +247,11 @@ class UpdateService {
   }
 }
 
-class _UpdateDialog extends StatelessWidget {
+/// Polished Glassmorphic Update Dialog with Update Now, Remind Me Later, and Skip This Version
+class CinematicUpdateDialog extends StatelessWidget {
   final UpdateInfo info;
 
-  const _UpdateDialog({required this.info});
+  const CinematicUpdateDialog({super.key, required this.info});
 
   @override
   Widget build(BuildContext context) {
@@ -189,7 +261,7 @@ class _UpdateDialog extends StatelessWidget {
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
+        constraints: const BoxConstraints(maxWidth: 440),
         child: CinematicGlassCard(
           padding: const EdgeInsets.all(24),
           borderRadius: 24,
@@ -202,44 +274,45 @@ class _UpdateDialog extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    width: 44,
-                    height: 44,
+                    width: 48,
+                    height: 48,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [CinematicColors.electricViolet, CinematicColors.deepPlum],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: CinematicColors.electricViolet.withOpacity(0.35),
-                          blurRadius: 16,
+                          color: CinematicColors.electricViolet.withOpacity(0.4),
+                          blurRadius: 18,
                           offset: const Offset(0, 4),
                         ),
                       ],
                     ),
                     child: const Center(
-                      child: Text("🚀", style: TextStyle(fontSize: 22)),
+                      child: Text("🚀", style: TextStyle(fontSize: 24)),
                     ),
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 16),
                   const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "New version available",
+                          "New Version Available",
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
+                            letterSpacing: -0.2,
                           ),
                         ),
-                        SizedBox(height: 2),
+                        SizedBox(height: 3),
                         Text(
-                          "A new version of Cinematic Music Player is ready.",
-                          style: TextStyle(color: Colors.white54, fontSize: 11),
+                          "A performance & playback upgrade is ready.",
+                          style: TextStyle(color: Colors.white54, fontSize: 12),
                         ),
                       ],
                     ),
@@ -300,17 +373,18 @@ class _UpdateDialog extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.02),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withOpacity(0.05)),
                 ),
                 child: SingleChildScrollView(
                   child: Text(
                     info.releaseNotes.trim(),
-                    style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 12, height: 1.4),
+                    style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12, height: 1.45),
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-              // Action Buttons
+              // Action Buttons: Update Now, Remind Me Later, Skip This Version
               Row(
                 children: [
                   Expanded(
@@ -321,11 +395,14 @@ class _UpdateDialog extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text("Later", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        await UpdateService.remindLater();
+                      },
+                      child: const Text("Remind Later", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -339,10 +416,36 @@ class _UpdateDialog extends StatelessWidget {
                         Navigator.pop(context);
                         UpdateService.openDownload(targetUrl);
                       },
-                      child: const Text("Download Update", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      child: const Text("Update Now", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 10),
+              Center(
+                child: TextButton(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    await UpdateService.skipVersion(info.latestVersion);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("Version v${info.latestVersion} will be skipped."),
+                          backgroundColor: Colors.grey[850],
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  },
+                  child: Text(
+                    "Skip this version",
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.4),
+                      fontSize: 11,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

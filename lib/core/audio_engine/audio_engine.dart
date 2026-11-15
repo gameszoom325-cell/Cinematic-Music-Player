@@ -5,6 +5,8 @@ import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:just_audio/just_audio.dart';
 import '../database/models/song_model.dart';
+import '../services/audio_stream_cache_manager.dart';
+import '../services/next_track_preload_service.dart';
 import 'audio_service_handler.dart';
 
 enum PlaybackRepeatMode { off, one, all }
@@ -96,6 +98,14 @@ class AudioEngine {
     } else {
       _audioServiceRegistered = false;
       debugPrint("AudioEngine: Desktop mode active; using direct hardware audio pipeline.");
+    }
+
+    // Initialize LRU Audio Stream Cache and Next Track Lookahead Preloading
+    try {
+      await AudioStreamCacheManager.instance.init();
+      NextTrackPreloadService.instance.startListening();
+    } catch (e) {
+      debugPrint("AudioEngine cache/preload init warning: $e");
     }
 
     if (!completer.isCompleted) {

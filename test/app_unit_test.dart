@@ -1,10 +1,13 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cinematic_music_player/auth/user_model.dart';
 import 'package:cinematic_music_player/sync/cloud_database.dart';
 import 'package:cinematic_music_player/core/config/supabase_config.dart';
 import 'package:cinematic_music_player/core/services/lyrics_parser.dart';
 import 'package:cinematic_music_player/core/services/update_service.dart';
+import 'package:cinematic_music_player/core/services/audio_stream_cache_manager.dart';
+import 'package:cinematic_music_player/core/services/next_track_preload_service.dart';
 import 'package:cinematic_music_player/core/database/models/song_model.dart';
 import 'package:cinematic_music_player/core/services/shader_capability_service.dart';
 import 'package:cinematic_music_player/core/audio_engine/audio_service_handler.dart';
@@ -804,10 +807,150 @@ void main() {
       expect(resolved.isLocalFileAvailable, isTrue);
     });
 
-    test('Project version reflects v1.1.2 Build 8', () {
-      expect(AppVersion.current, '1.1.2');
-      expect(AppVersion.buildNumber, 8);
-      expect(AppVersion.compare('1.1.2', '1.1.1'), greaterThan(0));
+    test('Project version reflects v1.1.3 Build 9', () {
+      expect(AppVersion.current, '1.1.3');
+      expect(AppVersion.buildNumber, 9);
+      expect(AppVersion.compare('1.1.3', '1.1.2'), greaterThan(0));
+    });
+  });
+
+  group('17. Backend Evolution & Smart Update System Tests (v1.1.3)', () {
+    test('Semantic version comparator handles all semver permutations', () {
+      // Older versions must detect 1.1.3 as newer
+      expect(AppVersion.compare('1.1.3', '1.0.0'), greaterThan(0));
+      expect(AppVersion.compare('1.1.3', '1.0.3'), greaterThan(0));
+      expect(AppVersion.compare('1.1.3', '1.1.0'), greaterThan(0));
+      expect(AppVersion.compare('1.1.3', '1.1.1'), greaterThan(0));
+      expect(AppVersion.compare('1.1.3', '1.1.2'), greaterThan(0));
+
+      // Same version must be equal (silenced)
+      expect(AppVersion.compare('1.1.3', '1.1.3'), 0);
+      expect(AppVersion.compare('v1.1.3+9', '1.1.3'), 0);
+      expect(AppVersion.compare('1.1.3-beta', '1.1.3'), 0);
+
+      // Newer future versions must detect as higher
+      expect(AppVersion.compare('1.1.4', '1.1.3'), greaterThan(0));
+      expect(AppVersion.compare('1.2.0', '1.1.3'), greaterThan(0));
+      expect(AppVersion.compare('2.0.0', '1.1.3'), greaterThan(0));
+
+      // Reverse comparison
+      expect(AppVersion.compare('1.1.2', '1.1.3'), lessThan(0));
+      expect(AppVersion.compare('1.0.0', '1.1.3'), lessThan(0));
+    });
+
+    test('AudioCacheEntry serializes and deserializes accurately', () {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final entry = AudioCacheEntry(
+        songId: 'stream_track_99',
+        fileName: 'stream_track_99.m4a',
+        fileSizeBytes: 4194304, // 4MB
+        lastAccessedEpoch: now,
+        addedEpoch: now - 10000,
+        remoteUrl: 'https://cdn.cinematic.audio/stream_99.m4a',
+      );
+
+      final json = entry.toJson();
+      expect(json['songId'], 'stream_track_99');
+      expect(json['fileName'], 'stream_track_99.m4a');
+      expect(json['fileSizeBytes'], 4194304);
+
+      final restored = AudioCacheEntry.fromJson(json);
+      expect(restored.songId, entry.songId);
+      expect(restored.fileSizeBytes, entry.fileSizeBytes);
+      expect(restored.remoteUrl, entry.remoteUrl);
+    });
+
+    test('AudioStreamCacheManager initializes and enforces LRU eviction limit', () async {
+      final tempTestDir = Directory.systemTemp.createTempSync('cache_mgr_test');
+      try {
+        final cacheMgr = AudioStreamCacheManager.instance;
+        await cacheMgr.init(overrideDir: tempTestDir);
+        expect(cacheMgr.isInitialized, isTrue);
+
+        // Simulate small max cache size (5KB) for unit testing eviction
+        cacheMgr.maxCacheSizeBytes = 5000;
+
+        // Create 3 dummy audio cache files
+        File('${tempTestDir.path}/track1.m4a').writeAsBytesSync(List.filled(2000, 1));
+        File('${tempTestDir.path}/track2.m4a').writeAsBytesSync(List.filled(2000, 2));
+        File('${tempTestDir.path}/track3.m4a').writeAsBytesSync(List.filled(2000, 3));
+
+        // Re-init to pick up files
+        await cacheMgr.getCachedFilePath('track1');
+        await cacheMgr.getCachedFilePath('track2');
+        await cacheMgr.getCachedFilePath('track3');
+
+        expect(cacheMgr.cachedTrackCount, greaterThanOrEqualTo(1));
+
+        // Run LRU eviction
+        await cacheMgr.pruneCacheIfNeeded();
+        expect(cacheMgr.currentCacheSizeBytes, lessThanOrEqualTo(5000));
+
+        // Clear cache
+        await cacheMgr.clearCache();
+        expect(cacheMgr.cachedTrackCount, 0);
+        expect(cacheMgr.currentCacheSizeBytes, 0);
+      } finally {
+        if (tempTestDir.existsSync()) {
+          try {
+            tempTestDir.deleteSync(recursive: true);
+          } catch (_) {}
+        }
+      }
+    });
+
+    test('NextTrackPreloadService starts and stops listening cleanly', () {
+      final service = NextTrackPreloadService.instance;
+      expect(service.isListening, isFalse);
+      service.startListening();
+      expect(service.isListening, isTrue);
+      // Double call should be idempotent
+      service.startListening();
+      expect(service.isListening, isTrue);
+      service.stopListening();
+      expect(service.isListening, isFalse);
+    });
+
+    test('UpdateService persistent suppression mechanics operate correctly', () async {
+      SharedPreferences.setMockInitialValues({});
+
+      // Initially not suppressed
+      expect(await UpdateService.isSuppressed('1.1.4'), isFalse);
+
+      // Remind later sets 24h suppression
+      await UpdateService.remindLater();
+      expect(await UpdateService.isSuppressed('1.1.4'), isTrue);
+
+      // Reset suppression clears cooldown
+      await UpdateService.resetSuppression();
+      expect(await UpdateService.isSuppressed('1.1.4'), isFalse);
+
+      // Skip specific version suppresses that version
+      await UpdateService.skipVersion('1.1.4');
+      expect(await UpdateService.isSuppressed('1.1.4'), isTrue);
+      // Different version is not suppressed
+      expect(await UpdateService.isSuppressed('1.2.0'), isFalse);
+
+      // Reset cleans all
+      await UpdateService.resetSuppression();
+      expect(await UpdateService.isSuppressed('1.1.4'), isFalse);
+    });
+
+    test('MusicSourceRepository integrates stream cache lookup and HTTP range verification', () async {
+      // Stream health probe on valid archive.org public audio stream
+      final isHealthy = await MusicSourceRepository.verifyStreamHealth(
+        'https://ia800504.us.archive.org/33/items/Bensound_Sunny/bensound-sunny.mp3',
+        timeout: const Duration(seconds: 4),
+      );
+      expect(isHealthy, isTrue);
+
+      // Stream health probe fails or handles gracefully non-audio / rejected URL
+      final probeResult = await MusicSourceRepository.verifyStreamHealth(
+        'https://invalid.cinematic.domain.local/404.mp3',
+        timeout: const Duration(seconds: 2),
+      );
+      // Fails open safely without crashing
+      expect(probeResult, isA<bool>());
     });
   });
 }

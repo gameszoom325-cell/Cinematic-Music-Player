@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'base_music_source.dart';
 import 'music_source_type.dart';
 import 'local_music_source.dart';
@@ -10,6 +11,7 @@ import 'youtube_music_source.dart';
 import '../catalog/catalog_music_source.dart';
 import '../database/models/song_model.dart';
 import '../database/database_service.dart';
+import '../services/audio_stream_cache_manager.dart';
 
 /// Unified result container for multi-category federated search (Songs, Artists, Albums)
 class FederatedSearchResult {
@@ -292,19 +294,81 @@ class MusicSourceRepository {
 
   /// Resolves the final playable audio URI for any song by delegating
   /// to its originating MusicSource (lazy stream resolution).
+  /// Integrates LRU disk cache lookup and Faraday/InnerTubeX stream validation.
   Future<SongModel> resolvePlayableSong(SongModel song) async {
+    // 1. If it's already a local file that exists, return directly
+    if (!song.isRemoteStream && song.isLocalFileAvailable) {
+      return song;
+    }
+
+    // 2. Check LRU Audio Stream Cache for instantaneous offline playback
+    try {
+      final cachedPath = await AudioStreamCacheManager.instance.getCachedFilePath(song.id);
+      if (cachedPath != null) {
+        debugPrint("MusicSourceRepository: Stream cache hit for '${song.title}' -> $cachedPath");
+        return song.copyWith(path: cachedPath);
+      }
+    } catch (e) {
+      debugPrint("MusicSourceRepository cache lookup warning: $e");
+    }
+
+    // 3. Delegate resolution to originating source
     final sourceType = MusicSourceType.fromString(song.sourceType);
-    final source = _sources[sourceType] ?? _sources[MusicSourceType.local];
+    final source = _sources[sourceType] ?? _sources[MusicSourceType.online] ?? _sources[MusicSourceType.local];
 
     if (source != null) {
       try {
         final resolvedUri = await source.resolvePlaybackUri(song);
+
+        // 4. Validate stream health using HTTP 206 range probe if remote
+        if (resolvedUri.startsWith('http://') || resolvedUri.startsWith('https://')) {
+          final isHealthy = await verifyStreamHealth(resolvedUri);
+          final finalUri = isHealthy ? resolvedUri : song.path;
+
+          // 5. Trigger asynchronous background caching into LRU audio cache
+          if (isHealthy) {
+            unawaited(AudioStreamCacheManager.instance.cacheStream(song, finalUri));
+          }
+          return song.copyWith(path: finalUri);
+        }
+
         return song.copyWith(path: resolvedUri);
       } catch (e) {
         debugPrint("Error resolving playback URI for ${song.title}: $e");
       }
     }
     return song;
+  }
+
+  /// Verifies stream health using a lightweight HTTP 206 byte-range probe.
+  /// Inspired by Faraday and InnerTubeX stream validators.
+  static Future<bool> verifyStreamHealth(String url, {Duration timeout = const Duration(seconds: 4)}) async {
+    try {
+      final uri = Uri.parse(url);
+      final request = http.Request('GET', uri);
+      request.headers['Range'] = 'bytes=0-1024';
+      request.headers['User-Agent'] = 'CinematicMusicPlayer/1.1.3';
+
+      final client = http.Client();
+      try {
+        final streamedResponse = await client.send(request).timeout(timeout);
+        // Valid status for range request is 206 Partial Content or 200 OK
+        if (streamedResponse.statusCode == 200 || streamedResponse.statusCode == 206) {
+          return true;
+        }
+        // 403 Forbidden or 404 indicates expired signature or dead stream
+        if (streamedResponse.statusCode == 403 || streamedResponse.statusCode == 404) {
+          debugPrint("verifyStreamHealth: Stream rejected with HTTP ${streamedResponse.statusCode} for $url");
+          return false;
+        }
+      } finally {
+        client.close();
+      }
+    } catch (e) {
+      debugPrint("verifyStreamHealth check notice: $e");
+    }
+    // Fail-open for transient network disconnects
+    return true;
   }
 }
 

@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.6] - 2026-11-15
+
+### Fixed
+- v1.2.6: Fixed auto-search routing to load results immediately and added MP3 download interception to save files directly to Local Library.
+- Corrected `WebSearchPage` initialization in `initState` to immediately route to `https://pagalworld.is/search?q=<encodedQuery>` when `autoSubmit` is true, eliminating the initial home page redirect.
+- Verified permission handling and local storage paths so downloads seamlessly appear in the user's Local Files tab.
+
 ## [1.2.5] - 2026-11-15
 
 ### Added

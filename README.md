@@ -10,12 +10,20 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.2.5-gold.svg?style=flat-square" alt="Latest Release"></a>
+  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.2.6-gold.svg?style=flat-square" alt="Latest Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Android-success.svg?style=flat-square" alt="Platforms">
 </p>
 
 ---
+
+## What's New in v1.2.6 (Auto-Search Immediate Routing & Library Auto-Import)
+
+- **Immediate Search Results Routing**:
+  - Fixed `WebSearchPage` initialization in `initState` so that `autoSubmit` immediately targets `https://pagalworld.is/search?q=<query>`, eliminating intermediate home page loading.
+- **Native MP3 Download Interception**:
+  - Intercepts Pagalworld `.mp3` downloads natively via `onDownloadStartRequest` on `flutter_inappwebview`.
+  - Downloads audio bytes, saves directly to the device Music folder, and rescans the library so the track instantly shows in the Local Files tab.
 
 ## What's New in v1.2.5 (Native Web MP3 Download & Local Library Auto-Import)
 

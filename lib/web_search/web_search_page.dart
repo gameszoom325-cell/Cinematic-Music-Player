@@ -10,6 +10,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../core/database/models/song_model.dart';
 import '../core/theme/cinematic_colors.dart';
 import '../features/player/providers/player_provider.dart';
@@ -20,6 +21,7 @@ import '../core/services/scanner_service.dart';
 ///
 /// Features:
 /// - Loads https://pagalworld.is/ by default with integrated ad-blocking ContentBlockers.
+/// - If autoSubmit is true and initialQuery is provided, loads search results immediately without loading home first.
 /// - Top search bar navigates to https://pagalworld.is/search?q=<encoded_query> on Enter.
 /// - Non-http/https schemes (intent://, market://) are blocked in shouldOverrideUrlLoading to prevent ERR_UNKNOWN_URL_SCHEME.
 /// - Native download interception via onDownloadStartRequest: downloads MP3 bytes, saves to device Music storage,
@@ -38,6 +40,15 @@ class WebSearchPage extends ConsumerStatefulWidget {
 
   static const String homeUrl = 'https://pagalworld.is/';
   static const String searchBaseUrl = 'https://pagalworld.is/search?q=';
+
+  /// Computes the initial URL to load, ensuring search results are loaded immediately when autoSubmit is true.
+  static String computeInitialUrl({String? initialQuery, bool autoSubmit = false}) {
+    final query = initialQuery?.trim();
+    if (autoSubmit && query != null && query.isNotEmpty) {
+      return '${WebSearchPage.searchBaseUrl}${Uri.encodeComponent(query)}';
+    }
+    return WebSearchPage.homeUrl;
+  }
 
   /// Validates that a navigation URL uses an allowed HTTP or HTTPS scheme.
   /// Prevents WebView crashes from Android intent schemes (e.g., intent://, market://).
@@ -100,7 +111,7 @@ class WebSearchPage extends ConsumerStatefulWidget {
     return name.trim();
   }
 
-  /// Resolves the destination directory for saved MP3 audio tracks.
+  /// Resolves the destination directory for saved MP3 audio tracks using path_provider and system paths.
   static Future<Directory> getMusicDownloadDirectory() async {
     if (!kIsWeb && Platform.isAndroid) {
       try {
@@ -239,6 +250,7 @@ class SafeAdBlockerWebviewController implements AdBlockerWebviewController {
 class _WebSearchPageState extends ConsumerState<WebSearchPage> {
   final TextEditingController _searchController = TextEditingController();
   InAppWebViewController? _webViewController;
+  late String _initialUrl;
   String? _currentUrl;
   double _loadingProgress = 0.0;
   bool _isLoading = false;
@@ -263,10 +275,39 @@ class _WebSearchPageState extends ConsumerState<WebSearchPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.initialQuery != null && widget.initialQuery!.trim().isNotEmpty) {
-      _searchController.text = widget.initialQuery!.trim();
+    final query = widget.initialQuery?.trim();
+    if (query != null && query.isNotEmpty) {
+      _searchController.text = query;
     }
+    // Set initial URL immediately to search results when autoSubmit is true
+    _initialUrl = WebSearchPage.computeInitialUrl(
+      initialQuery: widget.initialQuery,
+      autoSubmit: widget.autoSubmit,
+    );
+    _currentUrl = _initialUrl;
     _isSupported = !kIsWeb && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS);
+  }
+
+  @override
+  void didUpdateWidget(WebSearchPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialQuery != oldWidget.initialQuery || widget.autoSubmit != oldWidget.autoSubmit) {
+      final query = widget.initialQuery?.trim();
+      if (query != null && query.isNotEmpty) {
+        _searchController.text = query;
+        if (widget.autoSubmit) {
+          final targetUrl = WebSearchPage.computeInitialUrl(
+            initialQuery: query,
+            autoSubmit: true,
+          );
+          _initialUrl = targetUrl;
+          _currentUrl = targetUrl;
+          if (_isSupported && _webViewController != null) {
+            _webViewController!.loadUrl(urlRequest: URLRequest(url: WebUri(targetUrl)));
+          }
+        }
+      }
+    }
   }
 
   @override
@@ -326,6 +367,23 @@ class _WebSearchPageState extends ConsumerState<WebSearchPage> {
     final filename = WebSearchPage.extractFilename(urlStr, downloadRequest.suggestedFilename);
     final songName = WebSearchPage.extractSongName(filename);
 
+    // 1. Request storage permissions using permission_handler
+    if (!kIsWeb && Platform.isAndroid) {
+      try {
+        final audioStatus = await Permission.audio.status;
+        if (!audioStatus.isGranted) {
+          await Permission.audio.request();
+        }
+        final storageStatus = await Permission.storage.status;
+        if (!storageStatus.isGranted) {
+          await Permission.storage.request();
+        }
+      } catch (e) {
+        debugPrint("WebSearchPage: Permission request notice: $e");
+      }
+    }
+
+    // 2. Show a SnackBar indicating the download has started
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -355,6 +413,7 @@ class _WebSearchPageState extends ConsumerState<WebSearchPage> {
     );
 
     try {
+      // 3. Use http.get to download the file bytes
       final response = await http.get(
         Uri.parse(urlStr),
         headers: {
@@ -368,12 +427,13 @@ class _WebSearchPageState extends ConsumerState<WebSearchPage> {
         throw Exception("Download HTTP status: ${response.statusCode}");
       }
 
+      // 4. Save the file to the Android public Music directory using path_provider
       final targetDir = await WebSearchPage.getMusicDownloadDirectory();
       final targetFile = File(p.join(targetDir.path, filename));
       await targetFile.writeAsBytes(response.bodyBytes);
       debugPrint("WebSearchPage: Successfully saved MP3 to ${targetFile.path} (${response.bodyBytes.length} bytes)");
 
-      // Auto-import via ScannerService and refresh local library
+      // 5. Crucial: Trigger a rescan of the local library so the downloaded song instantly appears in the user's Local Files tab
       await ScannerService.importFiles([targetFile]);
       ref.read(libraryProvider.notifier).refreshLibrary();
 
@@ -486,16 +546,10 @@ class _WebSearchPageState extends ConsumerState<WebSearchPage> {
 
   Widget _buildBody() {
     if (_isSupported) {
-      final initialTarget = widget.autoSubmit &&
-              widget.initialQuery != null &&
-              widget.initialQuery!.trim().isNotEmpty
-          ? '${WebSearchPage.searchBaseUrl}${Uri.encodeComponent(widget.initialQuery!.trim())}'
-          : WebSearchPage.homeUrl;
-
       return Stack(
         children: [
           InAppWebView(
-            initialUrlRequest: URLRequest(url: WebUri(initialTarget)),
+            initialUrlRequest: URLRequest(url: WebUri(_initialUrl)),
             initialSettings: InAppWebViewSettings(
               useShouldOverrideUrlLoading: true,
               useOnDownloadStart: true,
@@ -508,6 +562,16 @@ class _WebSearchPageState extends ConsumerState<WebSearchPage> {
             ),
             onWebViewCreated: (controller) {
               _webViewController = controller;
+              // Ensure the WebView immediately navigates to search results without hitting home
+              if (widget.autoSubmit && widget.initialQuery != null && widget.initialQuery!.trim().isNotEmpty) {
+                final targetUrl = WebSearchPage.computeInitialUrl(
+                  initialQuery: widget.initialQuery,
+                  autoSubmit: true,
+                );
+                if (_currentUrl != targetUrl) {
+                  controller.loadUrl(urlRequest: URLRequest(url: WebUri(targetUrl)));
+                }
+              }
             },
             onLoadStart: (controller, url) {
               if (url != null) _currentUrl = url.toString();

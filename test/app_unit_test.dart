@@ -887,10 +887,10 @@ void main() {
       expect(cachedDirect, contains('googlevideo.com'));
     });
 
-    test('Project version reflects v1.2.5 Build 21', () {
-      expect(AppVersion.current, '1.2.5');
-      expect(AppVersion.buildNumber, 21);
-      expect(AppVersion.compare('1.2.5', '1.2.4'), greaterThan(0));
+    test('Project version reflects v1.2.6 Build 22', () {
+      expect(AppVersion.current, '1.2.6');
+      expect(AppVersion.buildNumber, 22);
+      expect(AppVersion.compare('1.2.6', '1.2.5'), greaterThan(0));
     });
   });
 
@@ -1446,8 +1446,22 @@ void main() {
       expect(WebSearchPage.isAllowedUrlScheme('tel:+123456789'), isFalse);
     });
 
-    test('UpdateService fallback URL points to valid v1.2.5 release tag', () {
-      expect(UpdateService.fallbackReleaseUrl, contains('v1.2.5'));
+    test('UpdateService fallback URL points to valid v1.2.6 release tag', () {
+      expect(UpdateService.fallbackReleaseUrl, contains('v1.2.6'));
+    });
+
+    test('WebSearchPage.computeInitialUrl immediately routes to search results on autoSubmit', () {
+      final autoUrl = WebSearchPage.computeInitialUrl(initialQuery: 'Kesariya', autoSubmit: true);
+      expect(autoUrl, 'https://pagalworld.is/search?q=Kesariya');
+
+      final homeUrl1 = WebSearchPage.computeInitialUrl(initialQuery: 'Kesariya', autoSubmit: false);
+      expect(homeUrl1, WebSearchPage.homeUrl);
+
+      final homeUrl2 = WebSearchPage.computeInitialUrl(initialQuery: null, autoSubmit: true);
+      expect(homeUrl2, WebSearchPage.homeUrl);
+
+      final homeUrl3 = WebSearchPage.computeInitialUrl(initialQuery: '   ', autoSubmit: true);
+      expect(homeUrl3, WebSearchPage.homeUrl);
     });
 
     test('WebSearchPage accepts optional initialQuery and autoSubmit parameters', () {

@@ -10,12 +10,21 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.1.6-blueviolet.svg?style=flat-square" alt="Latest Release"></a>
+  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.1.7-blueviolet.svg?style=flat-square" alt="Latest Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Android-success.svg?style=flat-square" alt="Platforms">
 </p>
 
 ---
+
+## What's New in v1.1.7 (YouTube Audio Stream Extractor Fix)
+
+- **Fixed YouTube Playback with Native Stream Extractor**:
+  - Resolved Android playback bug where raw `youtube.com/watch?v=...` HTML web page URLs caused ExoPlayer `UnrecognizedInputFormatException` errors.
+  - Integrated `youtube_explode_dart: ^3.1.0` to extract direct high-bitrate Opus/AAC audio streams (`googlevideo.com`) on-the-fly.
+  - Added quota-free search and stream extraction fallback, eliminating dependence on Google Cloud YouTube Data API quota.
+  - Added safety guard in `PlayerNotifier` and `AudioEngine` preventing unplayable YouTube web page URLs (`youtube.com/watch`) from reaching ExoPlayer.
+  - Verified and protected JioSaavn 320kbps `.mp4` stream resolution and playback.
 
 ## What's New in v1.1.6 (JioSaavn Bollywood Integration)
 

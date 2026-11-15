@@ -886,10 +886,10 @@ void main() {
       expect(cachedDirect, contains('googlevideo.com'));
     });
 
-    test('Project version reflects v1.1.6 Build 12', () {
-      expect(AppVersion.current, '1.1.6');
-      expect(AppVersion.buildNumber, 12);
-      expect(AppVersion.compare('1.1.6', '1.1.5'), greaterThan(0));
+    test('Project version reflects v1.1.7 Build 13', () {
+      expect(AppVersion.current, '1.1.7');
+      expect(AppVersion.buildNumber, 13);
+      expect(AppVersion.compare('1.1.7', '1.1.6'), greaterThan(0));
     });
   });
 

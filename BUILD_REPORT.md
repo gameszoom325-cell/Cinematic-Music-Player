@@ -1,7 +1,7 @@
 # CINEMATIC MUSIC PLAYER - PRODUCTION BUILD REPORT
 
 **Project Location:** `C:\MY PROJECTS`  
-**Application Version:** `1.1.6+12`  
+**Application Version:** `1.1.7+13`  
 **Release Date:** 2026-11-15  
 **Target Platforms:** Windows Desktop (x64), Android Mobile (API 21 - 36, ARM64/v7/x86_64)  
 
@@ -13,11 +13,20 @@
 | :--- | :--- | :--- | :--- | :--- |
 | **`CinematicMusicPlayerSetup.exe`** | Windows Desktop (x64) | **28.0 MB** (29,376,768 bytes) | [CinematicMusicPlayerSetup.exe](file:///C:/MY%20PROJECTS/dist/windows/CinematicMusicPlayerSetup.exe) | **SUCCESS (Compiled & Packaged with Inno Setup 6)** |
 | **`CinematicMusicPlayer-Windows.zip`** | Windows Desktop (x64) | **38.5 MB** (40,417,821 bytes) | [CinematicMusicPlayer-Windows.zip](file:///C:/MY%20PROJECTS/dist/windows/CinematicMusicPlayer-Windows.zip) | **SUCCESS (Portable Distribution Archive)** |
-| **`app-release.apk`** | Android (API 21 - 36) | **64.0 MB** (67,063,112 bytes) | [app-release.apk](file:///C:/MY%20PROJECTS/build/app/outputs/flutter-apk/app-release.apk) | **SUCCESS (Universal Multi-ABI Release)** |
+| **`CinematicMusicPlayer-v1.1.7.apk`** | Android (API 21 - 36) | **66.7 MB** | [CinematicMusicPlayer-v1.1.7.apk](file:///C:/MY%20PROJECTS/dist/android/CinematicMusicPlayer-v1.1.7.apk) | **SUCCESS (Universal Multi-ABI Release)** |
 
 ---
 
-## 2. Release v1.1.6 Architectural Enhancements
+## 2. Release v1.1.7 Architectural Enhancements
+
+### YouTube Playback Fix & Native Stream Resolution
+- Resolved Android playback bug where raw `youtube.com/watch?v=...` HTML web page URLs caused ExoPlayer `UnrecognizedInputFormatException` errors.
+- Integrated `youtube_explode_dart: ^3.1.0` to extract direct high-bitrate Opus/AAC audio streams (`googlevideo.com`) on-the-fly.
+- Added quota-free search and stream extraction fallback, eliminating dependence on Google Cloud YouTube Data API quota.
+- Added safety guard in `PlayerNotifier` and `AudioEngine` preventing unplayable YouTube web page URLs (`youtube.com/watch`) from reaching ExoPlayer.
+- Verified and protected JioSaavn 320kbps `.mp4` stream resolution and playback.
+
+## 3. Release v1.1.6 Architectural Enhancements
 
 ### JioSaavn Bollywood Search & High-Bitrate Audio Streaming
 - Integrated unofficial JioSaavn API wrapper via `jiosaavn_dart: ^1.0.0` with `just_audio` / `just_audio_windows`.

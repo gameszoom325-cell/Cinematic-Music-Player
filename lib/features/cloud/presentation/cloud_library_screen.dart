@@ -350,7 +350,7 @@ class _CloudLibraryScreenState extends ConsumerState<CloudLibraryScreen> {
                               elevation: 0,
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(6),
                                 side: BorderSide(color: CinematicColors.primary.withOpacity(0.5)),
                               ),
                             ),
@@ -393,15 +393,15 @@ class _CloudLibraryScreenState extends ConsumerState<CloudLibraryScreen> {
                       fillColor: CinematicColors.surfaceContainerLow,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(6),
                         borderSide: BorderSide(color: Colors.white.withOpacity(0.06)),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(6),
                         borderSide: BorderSide(color: Colors.white.withOpacity(0.06)),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(6),
                         borderSide: const BorderSide(color: CinematicColors.primary),
                       ),
                     ),
@@ -440,7 +440,7 @@ class _CloudLibraryScreenState extends ConsumerState<CloudLibraryScreen> {
                         selectedColor: CinematicColors.primary,
                         backgroundColor: CinematicColors.surfaceContainerLow,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(6),
                           side: BorderSide(
                             color: isSelected ? CinematicColors.primary : Colors.white.withOpacity(0.06),
                           ),
@@ -829,7 +829,7 @@ class _CloudLibraryScreenState extends ConsumerState<CloudLibraryScreen> {
         width: 140,
         decoration: BoxDecoration(
           color: CinematicColors.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isCurrent ? CinematicColors.primary : Colors.white.withOpacity(0.06),
           ),
@@ -841,7 +841,7 @@ class _CloudLibraryScreenState extends ConsumerState<CloudLibraryScreen> {
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
                   child: song.coverImage.startsWith('http')
                       ? Image.network(
                           song.coverImage,
@@ -966,14 +966,14 @@ class _CloudLibraryScreenState extends ConsumerState<CloudLibraryScreen> {
           children: [
             Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(6),
                 border: Border.all(
                   color: isSelected ? CinematicColors.primary : Colors.white.withOpacity(0.08),
                   width: 1.5,
                 ),
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(11),
+                borderRadius: BorderRadius.circular(6),
                 child: album.artwork.startsWith('http')
                     ? Image.network(
                         album.artwork,

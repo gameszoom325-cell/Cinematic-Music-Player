@@ -84,7 +84,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                             elevation: 0,
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(6),
                             ),
                           ),
                           onPressed: () {

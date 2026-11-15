@@ -16,6 +16,8 @@ import '../../../core/services/update_service.dart';
 import '../../../core/config/supabase_config.dart';
 import '../../../core/services/supabase_backend_client.dart';
 import '../../cloud/presentation/admin_upload_screen.dart';
+import '../../legal/privacy_policy_page.dart';
+import '../../legal/terms_condition_page.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -36,7 +38,7 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: CinematicColors.obsidianCard,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         title: Text(
           isThisDevice ? "Disconnect This Device?" : "Remove Device?",
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -56,7 +58,7 @@ class SettingsScreen extends ConsumerWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.redAccent,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
             ),
             onPressed: () async {
               Navigator.pop(ctx);
@@ -245,20 +247,20 @@ class SettingsScreen extends ConsumerWidget {
     if (!isLoggedIn) {
       return CinematicGlassCard(
         padding: const EdgeInsets.all(18),
-        borderRadius: 20,
+        borderRadius: 8,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  width: 46,
-                  height: 46,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(14),
+                    color: Colors.white.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Icon(Icons.person_outline_rounded, color: Colors.white70, size: 24),
+                  child: const Icon(Icons.person_outline_rounded, color: Colors.white70, size: 22),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -266,12 +268,12 @@ class SettingsScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        "Offline Vault Mode",
+                        "Local Mode",
                         style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        "Running locally. Sign in to sync across Windows & Android.",
+                        "Running locally. Sign in to sync across devices.",
                         style: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 12),
                       ),
                     ],
@@ -285,11 +287,11 @@ class SettingsScreen extends ConsumerWidget {
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: CinematicColors.electricViolet,
-                      foregroundColor: Colors.white,
+                      backgroundColor: CinematicColors.primary,
+                      foregroundColor: Colors.black,
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                     ),
                     onPressed: () {
                       Navigator.push(
@@ -297,7 +299,7 @@ class SettingsScreen extends ConsumerWidget {
                         MaterialPageRoute(builder: (_) => const WelcomeScreen()),
                       );
                     },
-                    child: const Text("Sign In or Create Account", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    child: const Text("Sign In or Register", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                   ),
                 ),
               ],
@@ -309,8 +311,8 @@ class SettingsScreen extends ConsumerWidget {
 
     return CinematicGlassCard(
       padding: const EdgeInsets.all(18),
-      borderRadius: 20,
-      borderColor: CinematicColors.electricViolet.withOpacity(0.35),
+      borderRadius: 8,
+      borderColor: CinematicColors.primary.withOpacity(0.35),
       child: Column(
         children: [
           Row(
@@ -321,17 +323,13 @@ class SettingsScreen extends ConsumerWidget {
                 height: 52,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [CinematicColors.electricViolet, CinematicColors.deepPlum],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  border: Border.all(color: CinematicColors.electricViolet, width: 2),
+                  color: CinematicColors.primary,
+                  border: Border.all(color: CinematicColors.primary, width: 2),
                 ),
                 child: Center(
                   child: Text(
                     user!.username.substring(0, 1).toUpperCase(),
-                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+                    style: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.w900),
                   ),
                 ),
               ),
@@ -407,7 +405,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget _buildSyncCard(BuildContext context, SyncManager syncMgr) {
     return CinematicGlassCard(
       padding: const EdgeInsets.all(18),
-      borderRadius: 20,
+      borderRadius: 8,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -431,7 +429,7 @@ class SettingsScreen extends ConsumerWidget {
                       const SizedBox(width: 8),
                       Text(
                         syncMgr.isSyncing
-                            ? "Syncing Vault..."
+                            ? "Syncing Library..."
                             : (syncMgr.status == SyncStatus.error ? "Sync Error" : "Cloud Synchronized"),
                         style: TextStyle(
                           color: syncMgr.status == SyncStatus.error ? Colors.redAccent : Colors.white,
@@ -450,11 +448,11 @@ class SettingsScreen extends ConsumerWidget {
               ),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: CinematicColors.electricViolet,
-                  foregroundColor: Colors.white,
+                  backgroundColor: CinematicColors.primary,
+                  foregroundColor: Colors.black,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                 ),
                 onPressed: syncMgr.isSyncing ? null : () => syncMgr.syncAll(force: true),
                 icon: syncMgr.isSyncing
@@ -624,8 +622,8 @@ class SettingsScreen extends ConsumerWidget {
                                   SnackBar(
                                     content: Text(
                                       healthy
-                                          ? "✓ Supabase backend is reachable and responsive!"
-                                          : "⚠ Could not connect to Supabase backend. Check URL and network.",
+                                          ? "Supabase backend is reachable and responsive."
+                                          : "Could not connect to Supabase backend. Check URL and network.",
                                     ),
                                     backgroundColor: healthy ? Colors.green.shade800 : Colors.red.shade800,
                                   ),
@@ -930,12 +928,12 @@ class SettingsScreen extends ConsumerWidget {
                 children: [
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: CinematicColors.electricViolet.withOpacity(0.25),
-                      foregroundColor: Colors.white,
+                      backgroundColor: CinematicColors.primary.withOpacity(0.18),
+                      foregroundColor: CinematicColors.primary,
                       elevation: 0,
-                      side: BorderSide(color: CinematicColors.electricViolet.withOpacity(0.5)),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      side: BorderSide(color: CinematicColors.primary.withOpacity(0.5)),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                     ),
                     onPressed: () => UpdateService.checkAndShowDialog(context, isManual: true),
                     icon: const Icon(Icons.system_update_rounded, size: 14),
@@ -946,8 +944,8 @@ class SettingsScreen extends ConsumerWidget {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white70,
                       side: BorderSide(color: Colors.white.withOpacity(0.2)),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                     ),
                     onPressed: () {
                       showAboutDialog(
@@ -955,13 +953,13 @@ class SettingsScreen extends ConsumerWidget {
                         applicationName: "Cinematic Music Player",
                         applicationVersion: "v${AppVersion.current}",
                         applicationIcon: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.asset('assets/icons/app_icon.png', width: 48, height: 48),
+                          borderRadius: BorderRadius.circular(6),
+                          child: Image.asset('assets/icons/app_icon.png', width: 44, height: 44),
                         ),
                         children: [
                           const SizedBox(height: 12),
                           const Text(
-                            "A private cross-platform cinematic music player built with Flutter, just_audio, audio_service, and custom GLSL 460 fragment shaders.\n\nEnjoy pure local audio playback across Windows and Android.",
+                            "A private cross-platform music player built for offline and streaming audio playback across Windows and Android.",
                             style: TextStyle(fontSize: 13, height: 1.4),
                           ),
                         ],
@@ -970,6 +968,56 @@ class SettingsScreen extends ConsumerWidget {
                     child: const Text("Licenses", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                   ),
                 ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          const Divider(color: Colors.white12, height: 1),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              InkWell(
+                borderRadius: BorderRadius.circular(4),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  child: Text(
+                    "Privacy Policy",
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.6),
+                      fontSize: 12,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text("•", style: TextStyle(color: Colors.white24, fontSize: 12)),
+              const SizedBox(width: 12),
+              InkWell(
+                borderRadius: BorderRadius.circular(4),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const TermsConditionPage()),
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  child: Text(
+                    "Terms & Conditions",
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.6),
+                      fontSize: 12,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

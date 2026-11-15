@@ -113,23 +113,12 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> with SingleTicker
                           width: 84,
                           height: 84,
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [CinematicColors.electricViolet, CinematicColors.deepPlum],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(26),
-                            boxShadow: [
-                              BoxShadow(
-                                color: CinematicColors.electricViolet.withOpacity(0.4),
-                                blurRadius: 30,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
+                            color: CinematicColors.primary,
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
                             Icons.graphic_eq_rounded,
-                            color: Colors.white,
+                            color: Colors.black,
                             size: 44,
                           ),
                         ),
@@ -171,7 +160,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> with SingleTicker
                         // Cross-Device Capabilities Card
                         CinematicGlassCard(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                          borderRadius: 20,
+                          borderRadius: 8,
                           child: Column(
                             children: [
                               _buildFeatureRow(
@@ -199,16 +188,15 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> with SingleTicker
                         // Action 1: Create Account
                         SizedBox(
                           width: double.infinity,
-                          height: 52,
+                          height: 48,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: CinematicColors.electricViolet,
-                              foregroundColor: Colors.white,
+                              foregroundColor: Colors.black,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(6),
                               ),
-                              shadowColor: CinematicColors.electricViolet.withOpacity(0.5),
                             ),
                             onPressed: () {
                               Navigator.of(context).push(
@@ -233,13 +221,13 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> with SingleTicker
                         // Action 2: Login
                         SizedBox(
                           width: double.infinity,
-                          height: 52,
+                          height: 48,
                           child: OutlinedButton(
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.white,
                               side: BorderSide(color: Colors.white.withOpacity(0.2)),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(6),
                               ),
                             ),
                             onPressed: () {

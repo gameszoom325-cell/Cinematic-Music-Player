@@ -17,11 +17,11 @@ class CinematicGlassCard extends StatelessWidget {
   const CinematicGlassCard({
     super.key,
     required this.child,
-    this.blur = 28.0,
-    this.borderRadius = 20.0,
+    this.blur = 16.0,
+    this.borderRadius = 8.0,
     this.tintColor = Colors.white,
-    this.tintOpacity = 0.05,
-    this.borderOpacity = 0.16,
+    this.tintOpacity = 0.04,
+    this.borderOpacity = 0.08,
     this.borderColor,
     this.padding,
     this.margin,
@@ -37,9 +37,9 @@ class CinematicGlassCard extends StatelessWidget {
         boxShadow: shadows ??
             [
               BoxShadow(
-                color: Colors.black.withOpacity(0.45),
-                blurRadius: 36.0,
-                offset: const Offset(0, 14),
+                color: Colors.black.withOpacity(0.35),
+                blurRadius: 16.0,
+                offset: const Offset(0, 4),
               ),
             ],
       ),

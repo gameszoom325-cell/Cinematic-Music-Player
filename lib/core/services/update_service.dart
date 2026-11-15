@@ -322,25 +322,15 @@ class CinematicUpdateDialog extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    width: 48,
-                    height: 48,
+                    width: 44,
+                    height: 44,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [CinematicColors.electricViolet, CinematicColors.deepPlum],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: CinematicColors.electricViolet.withOpacity(0.4),
-                          blurRadius: 18,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      color: CinematicColors.primary.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: CinematicColors.primary.withOpacity(0.3)),
                     ),
                     child: const Center(
-                      child: Text("🚀", style: TextStyle(fontSize: 24)),
+                      child: Icon(Icons.system_update_rounded, color: CinematicColors.primary, size: 22),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -349,17 +339,17 @@ class CinematicUpdateDialog extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "New Version Available",
+                          "Update Available",
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 18,
+                            fontSize: 17,
                             fontWeight: FontWeight.bold,
                             letterSpacing: -0.2,
                           ),
                         ),
                         SizedBox(height: 3),
                         Text(
-                          "A performance & playback upgrade is ready.",
+                          "A new version is ready for installation.",
                           style: TextStyle(color: Colors.white54, fontSize: 12),
                         ),
                       ],
@@ -374,7 +364,7 @@ class CinematicUpdateDialog extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.04),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: Colors.white.withOpacity(0.08)),
                 ),
                 child: Row(
@@ -391,15 +381,15 @@ class CinematicUpdateDialog extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const Icon(Icons.arrow_forward_rounded, color: CinematicColors.electricViolet, size: 20),
+                    const Icon(Icons.arrow_forward_rounded, color: CinematicColors.primary, size: 18),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        const Text("LATEST", style: TextStyle(color: CinematicColors.neonCyan, fontSize: 10, fontWeight: FontWeight.bold)),
+                        const Text("LATEST", style: TextStyle(color: CinematicColors.primary, fontSize: 10, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 2),
                         Text(
                           "v${info.latestVersion}",
-                          style: const TextStyle(color: CinematicColors.neonCyan, fontSize: 15, fontWeight: FontWeight.bold),
+                          style: const TextStyle(color: CinematicColors.primary, fontSize: 14, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -441,7 +431,7 @@ class CinematicUpdateDialog extends StatelessWidget {
                         foregroundColor: Colors.white70,
                         side: BorderSide(color: Colors.white.withOpacity(0.18)),
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                       ),
                       onPressed: () async {
                         Navigator.pop(context);
@@ -454,11 +444,11 @@ class CinematicUpdateDialog extends StatelessWidget {
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: CinematicColors.electricViolet,
-                        foregroundColor: Colors.white,
+                        backgroundColor: CinematicColors.primary,
+                        foregroundColor: Colors.black,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                       ),
                       onPressed: () async {
                         final messenger = ScaffoldMessenger.of(context);

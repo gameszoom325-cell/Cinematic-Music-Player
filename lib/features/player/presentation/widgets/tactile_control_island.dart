@@ -59,7 +59,7 @@ class _TactileControlIslandState extends State<TactileControlIsland> {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           decoration: BoxDecoration(
             color: CinematicColors.surfaceContainerLow.withOpacity(0.92),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: Colors.white.withOpacity(0.08),
               width: 1.0,
@@ -123,7 +123,7 @@ class _TactileControlIslandState extends State<TactileControlIsland> {
           height: 34,
           decoration: BoxDecoration(
             color: CinematicColors.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(6),
           ),
           child: Icon(
             Icons.water_drop_rounded,

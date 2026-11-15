@@ -144,7 +144,7 @@ class _JioSaavnPageState extends State<JioSaavnPage> {
       backgroundColor: const Color(0xFF1E1E24),
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
       ),
       builder: (ctx) {
         return DraggableScrollableSheet(
@@ -171,7 +171,7 @@ class _JioSaavnPageState extends State<JioSaavnPage> {
                 Row(
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(6),
                       child: Image.network(
                         detailedTrack.imageUrl,
                         width: 72,
@@ -239,7 +239,7 @@ class _JioSaavnPageState extends State<JioSaavnPage> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.04),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: SelectableText(
                       detailedTrack.lyrics!,
@@ -258,6 +258,7 @@ class _JioSaavnPageState extends State<JioSaavnPage> {
                     backgroundColor: Colors.amberAccent,
                     foregroundColor: Colors.black87,
                     padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                   ),
                   icon: const Icon(Icons.play_arrow_rounded),
                   label: const Text('Play Fresh Stream', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -308,7 +309,7 @@ class _JioSaavnPageState extends State<JioSaavnPage> {
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.08),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(6),
                       borderSide: BorderSide.none,
                     ),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
@@ -329,6 +330,7 @@ class _JioSaavnPageState extends State<JioSaavnPage> {
                     final term = _quickSuggestions[idx];
                     return ActionChip(
                       backgroundColor: Colors.white.withOpacity(0.06),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                       label: Text(term, style: const TextStyle(color: Colors.white70, fontSize: 11)),
                       onPressed: () {
                         _searchCtrl.text = term;
@@ -378,7 +380,11 @@ class _JioSaavnPageState extends State<JioSaavnPage> {
               ),
               const SizedBox(height: 16),
               ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.amberAccent, foregroundColor: Colors.black87),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amberAccent,
+                  foregroundColor: Colors.black87,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                ),
                 icon: const Icon(Icons.refresh_rounded),
                 label: const Text('Retry Search'),
                 onPressed: () => _executeSearch(_searchCtrl.text),
@@ -400,7 +406,7 @@ class _JioSaavnPageState extends State<JioSaavnPage> {
           color: isSelected ? Colors.amberAccent.withOpacity(0.12) : const Color(0xFF1E1E24),
           margin: const EdgeInsets.symmetric(vertical: 4),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(6),
             side: BorderSide(
               color: isSelected ? Colors.amberAccent : Colors.white.withOpacity(0.04),
               width: 1,

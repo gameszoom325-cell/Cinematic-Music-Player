@@ -19,7 +19,7 @@ class PlaylistScreen extends ConsumerWidget {
         return AlertDialog(
           backgroundColor: CinematicColors.surfaceContainerLow,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(8),
             side: BorderSide(color: Colors.white.withOpacity(0.1)),
           ),
           title: const Text("New Playlist", style: TextStyle(color: Colors.white)),
@@ -33,7 +33,7 @@ class PlaylistScreen extends ConsumerWidget {
               filled: true,
               fillColor: Colors.white.withOpacity(0.06),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(6),
                 borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
               ),
             ),
@@ -50,7 +50,7 @@ class PlaylistScreen extends ConsumerWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: CinematicColors.primary,
                 foregroundColor: Colors.black87,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
               ),
               onPressed: () {
                 final name = textCtrl.text.trim();
@@ -177,7 +177,7 @@ class _PlaylistCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: CinematicGlassCard(
-        borderRadius: 20,
+        borderRadius: 8,
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -187,7 +187,7 @@ class _PlaylistCard extends StatelessWidget {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(6),
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,

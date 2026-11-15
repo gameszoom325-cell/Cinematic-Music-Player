@@ -167,7 +167,7 @@ class _WebSearchPageState extends State<WebSearchPage> {
             height: 40,
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(6),
               border: Border.all(color: Colors.white.withOpacity(0.12)),
             ),
             child: TextField(
@@ -269,21 +269,21 @@ class _WebSearchPageState extends State<WebSearchPage> {
           padding: const EdgeInsets.all(28),
           decoration: BoxDecoration(
             color: const Color(0xFF18181D),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.white.withOpacity(0.08)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: CinematicColors.primary.withOpacity(0.12),
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.travel_explore_rounded,
-                  size: 48,
+                  size: 40,
                   color: CinematicColors.primary,
                 ),
               ),
@@ -321,7 +321,7 @@ class _WebSearchPageState extends State<WebSearchPage> {
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.05),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(6),
                           borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
                         ),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -334,7 +334,7 @@ class _WebSearchPageState extends State<WebSearchPage> {
                       backgroundColor: CinematicColors.primary,
                       foregroundColor: Colors.black,
                       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                     ),
                     onPressed: () => _handleSearch(_searchController.text),
                     icon: const Icon(Icons.search_rounded, size: 18),
@@ -348,7 +348,7 @@ class _WebSearchPageState extends State<WebSearchPage> {
                   foregroundColor: Colors.white,
                   side: BorderSide(color: Colors.white.withOpacity(0.2)),
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                 ),
                 onPressed: _goHome,
                 icon: const Icon(Icons.open_in_browser_rounded, size: 18),

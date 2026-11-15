@@ -210,13 +210,13 @@ class _CinematicPlayerScreenState extends ConsumerState<CinematicPlayerScreen> {
           Material(
             color: Colors.transparent,
             child: InkWell(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(6),
               onTap: () => Navigator.of(context).maybePop(),
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.06),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: Colors.white.withOpacity(0.1)),
                 ),
                 child: const Icon(Icons.keyboard_arrow_down_rounded, size: 24, color: Colors.white),
@@ -231,7 +231,7 @@ class _CinematicPlayerScreenState extends ConsumerState<CinematicPlayerScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
                 color: CinematicColors.surfaceContainerLow.withOpacity(0.8),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(6),
                 border: Border.all(color: palette.vibrant.withOpacity(0.3)),
               ),
               child: Row(
@@ -252,8 +252,8 @@ class _CinematicPlayerScreenState extends ConsumerState<CinematicPlayerScreen> {
                   Flexible(
                     child: Text(
                       (song != null && song.technicalSpecs.trim().isNotEmpty)
-                          ? "Listening Chamber • ${song.technicalSpecs}"
-                          : "Listening Chamber • Studio Master",
+                          ? "Now Playing • ${song.technicalSpecs}"
+                          : "Now Playing • Studio Master",
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: CinematicTypography.technicalBadge.copyWith(
@@ -280,7 +280,7 @@ class _CinematicPlayerScreenState extends ConsumerState<CinematicPlayerScreen> {
                     color: playerState.rainModeActive
                         ? CinematicColors.primary.withOpacity(0.2)
                         : Colors.white.withOpacity(0.06),
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(6),
                     border: Border.all(
                       color: playerState.rainModeActive
                           ? CinematicColors.primary.withOpacity(0.6)
@@ -829,7 +829,7 @@ class _CinematicPlayerScreenState extends ConsumerState<CinematicPlayerScreen> {
         return Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(6),
             onTap: () => playerNotifier.playTrack(queue, index),
             child: Container(
               margin: const EdgeInsets.symmetric(vertical: 3),
@@ -838,7 +838,7 @@ class _CinematicPlayerScreenState extends ConsumerState<CinematicPlayerScreen> {
                 color: isCurrent
                     ? CinematicColors.surfaceContainerHigh
                     : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(6),
                 border: isCurrent
                     ? Border.all(color: accentColor.withOpacity(0.5), width: 1)
                     : null,
@@ -983,14 +983,14 @@ class _CinematicPlayerScreenState extends ConsumerState<CinematicPlayerScreen> {
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(color: Colors.white.withOpacity(0.1)),
         ),
         child: const Icon(Icons.waves_rounded, size: 18, color: Colors.white),
       ),
       color: CinematicColors.surfaceContainerHigh,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(8),
         side: BorderSide(color: Colors.white.withOpacity(0.15)),
       ),
       onSelected: (preset) => notifier.setPreset(preset),

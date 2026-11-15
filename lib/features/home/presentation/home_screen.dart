@@ -49,20 +49,20 @@ class HomeScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          allSongs.isEmpty ? "OFFLINE ACOUSTIC VAULT" : "${allSongs.length} MASTER TRACKS",
+                          allSongs.isEmpty ? "LIBRARY" : "${allSongs.length} SONGS",
                           style: const TextStyle(
                             color: CinematicColors.primary,
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            letterSpacing: 2.0,
+                            letterSpacing: 1.5,
                           ),
                         ),
                         const SizedBox(height: 4),
                         const Text(
-                          "Daily Flow",
+                          "Your Music",
                           style: TextStyle(
-                            color: CinematicColors.onSurface,
-                            fontSize: 26,
+                            color: Colors.white,
+                            fontSize: 24,
                             fontWeight: FontWeight.bold,
                             letterSpacing: -0.5,
                           ),
@@ -76,7 +76,7 @@ class HomeScreen extends ConsumerWidget {
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(6),
                           side: BorderSide(color: CinematicColors.primary.withOpacity(0.5)),
                         ),
                       ),
@@ -95,41 +95,41 @@ class HomeScreen extends ConsumerWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: Container(
-                    padding: const EdgeInsets.all(26),
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: CinematicColors.surfaceContainerLow,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: Colors.white.withOpacity(0.08)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          width: 52,
-                          height: 52,
+                          width: 44,
+                          height: 44,
                           decoration: BoxDecoration(
-                            color: CinematicColors.primary.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(14),
+                            color: CinematicColors.primary.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Icon(Icons.library_music_rounded, color: CinematicColors.primary, size: 28),
+                          child: const Icon(Icons.library_music_rounded, color: CinematicColors.primary, size: 24),
                         ),
                         const SizedBox(height: 16),
                         const Text(
-                          "Your Acoustic Vault is Empty",
-                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                          "No Local Music Added",
+                          style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 6),
                         const Text(
-                          "Import your local FLAC, WAV, MP3, M4A, or OGG tracks to listen offline with full GPU audio visualizers, synchronized lyrics, and bitperfect playback.",
+                          "Add a local music folder or import audio files to begin offline playback.",
                           style: TextStyle(color: CinematicColors.onSurfaceVariant, fontSize: 13, height: 1.5),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 18),
                         ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: CinematicColors.primary,
-                            foregroundColor: Colors.black87,
+                            foregroundColor: Colors.black,
                             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                           ),
                           onPressed: () => _openAddMusic(context),
                           icon: const Icon(Icons.folder_open_rounded, size: 18),
@@ -166,10 +166,10 @@ class HomeScreen extends ConsumerWidget {
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
             ],
 
-            // 2. Most Played / Heavy Rotation
+            // 2. Most Played
             if (mostPlayed.isNotEmpty) ...[
               SliverToBoxAdapter(
-                child: _buildSectionHeader("MOST PLAYED • HEAVY ROTATION"),
+                child: _buildSectionHeader("MOST PLAYED"),
               ),
               SliverToBoxAdapter(
                 child: SizedBox(
@@ -194,7 +194,7 @@ class HomeScreen extends ConsumerWidget {
             // 3. Recently Added
             if (recentlyAdded.isNotEmpty) ...[
               SliverToBoxAdapter(
-                child: _buildSectionHeader("RECENTLY ADDED TO VAULT"),
+                child: _buildSectionHeader("RECENTLY ADDED"),
               ),
               SliverToBoxAdapter(
                 child: SizedBox(
@@ -341,7 +341,7 @@ class HomeScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(6),
               child: AspectRatio(
                 aspectRatio: 1.0,
                 child: _buildThumb(song.artworkPath, song.title),
@@ -376,7 +376,7 @@ class HomeScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(6),
               child: AspectRatio(
                 aspectRatio: 1.0,
                 child: _buildThumb(album.artworkPath, album.name),
@@ -435,7 +435,7 @@ class HomeScreen extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: CinematicColors.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(color: Colors.white.withOpacity(0.06)),
         ),
         child: Row(
@@ -444,8 +444,8 @@ class HomeScreen extends ConsumerWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: CinematicColors.primary.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(6),
+                color: CinematicColors.primary.withOpacity(0.15),
               ),
               child: Icon(
                 playlist.id == 'favorites' ? Icons.favorite_rounded : Icons.queue_music_rounded,

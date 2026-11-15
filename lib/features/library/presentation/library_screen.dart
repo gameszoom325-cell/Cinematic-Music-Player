@@ -68,7 +68,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       context: context,
       backgroundColor: const Color(0xFF1E1E24),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
       ),
       builder: (ctx) => SafeArea(
         child: Padding(
@@ -215,7 +215,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFF141418),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(8))),
       builder: (ctx) => DraggableScrollableSheet(
         initialChildSize: 0.85,
         maxChildSize: 0.95,
@@ -238,7 +238,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 child: Row(
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(6),
                       child: SizedBox(
                         width: 90,
                         height: 90,
@@ -260,7 +260,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: CinematicColors.primary,
                                   foregroundColor: Colors.black87,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                 ),
                                 onPressed: () {
@@ -277,7 +277,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: Colors.white,
                                   side: BorderSide(color: Colors.white.withOpacity(0.2)),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                 ),
                                 onPressed: () {
@@ -380,7 +380,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.white,
                           side: BorderSide(color: Colors.white.withOpacity(0.2)),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         ),
                         onPressed: libraryState.isScanning ? null : () => libraryNotifier.rescanAll(),
@@ -394,7 +394,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: CinematicColors.primary,
                           foregroundColor: Colors.black87,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                         ),
                         onPressed: _handleAddFolder,
@@ -414,7 +414,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
                     color: CinematicColors.primary.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(6),
                     border: Border.all(color: CinematicColors.primary.withOpacity(0.3)),
                   ),
                   child: Row(
@@ -458,7 +458,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.06),
                         contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide.none),
                       ),
                     ),
                   ),
@@ -487,13 +487,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   Widget _buildTabChip(String label, LibraryTab tab) {
     final isSelected = _activeTab == tab;
     return InkWell(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(6),
       onTap: () => setState(() => _activeTab = tab),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected ? Colors.white : Colors.white.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(6),
         ),
         child: Text(
           label,
@@ -695,20 +695,20 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       itemBuilder: (context, idx) {
         final album = albums[idx];
         return InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(6),
           onTap: () => _openAlbumDetail(album),
           child: Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.04),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(6),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(6),
                     child: SizedBox(
                       width: double.infinity,
                       child: _buildThumb(album.artworkPath, CinematicColors.primary),
@@ -747,21 +747,22 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       itemBuilder: (context, idx) {
         final artist = artists[idx];
         return InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(6),
           onTap: () => _openArtistDetail(artist),
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.04),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(6),
             ),
             child: Column(
               children: [
-                ClipOval(
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
                   child: SizedBox(
                     width: 88,
                     height: 88,
-                    child: _buildThumb(artist.sampleArtworkPath, CinematicColors.neonCyan),
+                    child: _buildThumb(artist.sampleArtworkPath, CinematicColors.primary),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -821,7 +822,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.04),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(6),
                     border: Border.all(color: exists ? Colors.white10 : Colors.redAccent.withOpacity(0.3)),
                   ),
                   child: Row(

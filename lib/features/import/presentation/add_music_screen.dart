@@ -197,7 +197,7 @@ class _AddMusicScreenState extends ConsumerState<AddMusicScreen> {
               ),
               const SizedBox(height: 8),
               const Text(
-                "Import your private audio collection into your offline vault.",
+                "Import your audio collection into your local music library.",
                 style: TextStyle(color: Colors.white60, fontSize: 13),
               ),
               const SizedBox(height: 28),
@@ -235,7 +235,7 @@ class _AddMusicScreenState extends ConsumerState<AddMusicScreen> {
               // Live Status / Progress Panel
               if (_isImporting || _statusText.isNotEmpty)
                 CinematicGlassCard(
-                  borderRadius: 18,
+                  borderRadius: 8,
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -290,7 +290,7 @@ class _AddMusicScreenState extends ConsumerState<AddMusicScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.04),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(6),
                     border: Border.all(color: Colors.white.withOpacity(0.08)),
                   ),
                   child: const Text(
@@ -321,7 +321,7 @@ class _AddMusicScreenState extends ConsumerState<AddMusicScreen> {
     return GestureDetector(
       onTap: onTap,
       child: CinematicGlassCard(
-        borderRadius: 20,
+        borderRadius: 8,
         padding: const EdgeInsets.all(18),
         child: Row(
           children: [
@@ -329,7 +329,7 @@ class _AddMusicScreenState extends ConsumerState<AddMusicScreen> {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(6),
                 color: accentColor.withOpacity(0.18),
                 border: Border.all(color: accentColor.withOpacity(0.4), width: 1.2),
               ),

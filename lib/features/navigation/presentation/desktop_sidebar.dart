@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/cinematic_colors.dart';
 import '../../../core/database/database_service.dart';
 import '../../playlists/providers/playlist_provider.dart';
+import '../../legal/privacy_policy_page.dart';
+import '../../legal/terms_condition_page.dart';
 
 /// Spotify-style Desktop Navigation Sidebar.
 /// Supports collapsible icon-only mode for narrower screens.
@@ -27,7 +29,7 @@ class DesktopSidebar extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         title: const Text("New Playlist", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: TextField(
           controller: controller,
@@ -38,7 +40,7 @@ class DesktopSidebar extends ConsumerWidget {
             hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
             filled: true,
             fillColor: Colors.white.withOpacity(0.06),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide.none),
           ),
         ),
         actions: [
@@ -50,7 +52,7 @@ class DesktopSidebar extends ConsumerWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: CinematicColors.primary,
               foregroundColor: Colors.black87,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
             ),
             onPressed: () async {
               final name = controller.text.trim();
@@ -96,10 +98,8 @@ class DesktopSidebar extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [CinematicColors.primary, CinematicColors.neonCyan],
-                          ),
-                          borderRadius: BorderRadius.circular(8),
+                          color: CinematicColors.primary,
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Icon(Icons.music_note_rounded, color: Colors.black, size: 16),
                       ),
@@ -266,6 +266,52 @@ class DesktopSidebar extends ConsumerWidget {
             index: 5,
             tooltip: "Settings",
           ),
+          if (!isCollapsed) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Row(
+                children: [
+                  InkWell(
+                    borderRadius: BorderRadius.circular(4),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      child: Text(
+                        "Privacy",
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.4),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Text(" • ", style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 11)),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(4),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const TermsConditionPage()),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      child: Text(
+                        "Terms",
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.4),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
         ],
       ),
@@ -286,7 +332,7 @@ class DesktopSidebar extends ConsumerWidget {
       child: Tooltip(
         message: isCollapsed ? tooltip : "",
         child: InkWell(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(6),
           onTap: () => onItemSelected(index),
           child: Container(
             padding: EdgeInsets.symmetric(
@@ -295,7 +341,7 @@ class DesktopSidebar extends ConsumerWidget {
             ),
             decoration: BoxDecoration(
               color: isSelected ? Colors.white.withOpacity(0.08) : Colors.transparent,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(6),
             ),
             child: Row(
               mainAxisAlignment: isCollapsed ? MainAxisAlignment.center : MainAxisAlignment.start,

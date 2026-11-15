@@ -127,17 +127,16 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                                   shape: BoxShape.circle,
                                   gradient: SweepGradient(
                                     colors: [
-                                      CinematicColors.electricViolet,
-                                      CinematicColors.cyberCyan,
-                                      CinematicColors.hotPink,
-                                      CinematicColors.electricViolet,
+                                      CinematicColors.primary,
+                                      CinematicColors.primary.withOpacity(0.3),
+                                      CinematicColors.primary,
                                     ],
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: CinematicColors.electricViolet.withOpacity(_glowAnimation.value),
-                                      blurRadius: 36,
-                                      spreadRadius: 4,
+                                      color: CinematicColors.primary.withOpacity(_glowAnimation.value * 0.4),
+                                      blurRadius: 20,
+                                      spreadRadius: 2,
                                     ),
                                   ],
                                 ),
@@ -210,8 +209,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                                 width: 4,
                                 height: barHeight,
                                 decoration: BoxDecoration(
-                                  color: index.isEven ? CinematicColors.electricViolet : CinematicColors.cyberCyan,
-                                  borderRadius: BorderRadius.circular(4),
+                                  color: CinematicColors.primary,
+                                  borderRadius: BorderRadius.circular(2),
                                 ),
                               );
                             }),
@@ -220,7 +219,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         const SizedBox(height: 16),
 
                         Text(
-                          "Initializing Audio Vault...",
+                          "Initializing Audio Engine...",
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.4),
                             fontSize: 12,

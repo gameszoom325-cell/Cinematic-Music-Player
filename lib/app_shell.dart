@@ -16,6 +16,8 @@ import 'features/settings/presentation/settings_screen.dart';
 import 'jamendo/jamendo_page.dart';
 import 'jiosaavn/jiosaavn_page.dart';
 import 'web_search/web_search_page.dart';
+import 'features/legal/privacy_policy_page.dart';
+import 'features/legal/terms_condition_page.dart';
 import 'features/player/presentation/widgets/spotify_now_playing_bar.dart';
 import 'features/player/presentation/widgets/queue_panel.dart';
 import 'features/player/presentation/cinematic_player_screen.dart';
@@ -275,10 +277,8 @@ class _AppShellState extends ConsumerState<AppShell> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [CinematicColors.primary, CinematicColors.neonCyan],
-                      ),
-                      borderRadius: BorderRadius.circular(10),
+                      color: CinematicColors.primary,
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: const Icon(Icons.music_note_rounded, color: Colors.black, size: 20),
                   ),
@@ -296,7 +296,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                         ),
                       ),
                       Text(
-                        "Audio Sanctuary v1.1.8",
+                        "Music Player",
                         style: TextStyle(color: Colors.white54, fontSize: 11),
                       ),
                     ],
@@ -334,6 +334,41 @@ class _AppShellState extends ConsumerState<AppShell> {
                     child: Divider(color: Colors.white12, height: 1),
                   ),
                   _buildDrawerItem(Icons.settings_rounded, "Settings", 5),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Divider(color: Colors.white12, height: 1),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                    child: Text(
+                      "LEGAL",
+                      style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.privacy_tip_outlined, color: Colors.white60, size: 22),
+                    title: const Text("Privacy Policy", style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.description_outlined, color: Colors.white60, size: 22),
+                    title: const Text("Terms & Conditions", style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const TermsConditionPage()),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -361,7 +396,7 @@ class _AppShellState extends ConsumerState<AppShell> {
       ),
       selected: isSelected,
       selectedTileColor: Colors.white.withOpacity(0.06),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
       onTap: () {
         setState(() => _selectedIndex = index);

@@ -65,7 +65,7 @@ class JioSaavnTrack {
 ///
 /// NOTE:
 /// - This uses an unofficial JioSaavn wrapper. It may break without notice and may violate JioSaavn's terms of service. Use for personal/testing only.
-/// - Media URLs are never cached or hardcoded — they are generated fresh on demand because tokens expire.
+/// - Media URLs are never cached or hardcoded - they are generated fresh on demand because tokens expire.
 class JioSaavnService {
   final JioSaavnApi _api = JioSaavnApi();
 

@@ -76,7 +76,7 @@ class QueuePanel extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         "${queue.length}",
@@ -150,13 +150,13 @@ class QueuePanel extends ConsumerWidget {
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
                             color: palette.vibrant.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(6),
                             border: Border.all(color: palette.vibrant.withOpacity(0.35)),
                           ),
                           child: Row(
                             children: [
                               ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(6),
                                 child: SizedBox(
                                   width: 44,
                                   height: 44,
@@ -256,7 +256,7 @@ class QueuePanel extends ConsumerWidget {
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                               decoration: BoxDecoration(
                                 color: Colors.white.withOpacity(0.03),
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(6),
                               ),
                               child: Row(
                                 children: [

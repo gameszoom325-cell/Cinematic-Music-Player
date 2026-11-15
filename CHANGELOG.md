@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.1] - 2026-11-15
 
 ### Added
+- v1.2.1: Added ad-blocking to the Web MP3 feature.
 - v1.2.1: Complete UI Revamp, Ad-blocking WebView, Favicon, Privacy Policy, Terms & Conditions.
 - Integrated `adblocker_webview: ^2.3.0` into `WebSearchPage` to block Pagalworld ads using EasyList and AdGuard filters without breaking intent:// or navigation protection.
 - Created `PrivacyPolicyPage` and `TermsConditionPage` under `lib/features/legal/`, linked in Mobile Drawer, Desktop Sidebar, and Settings.

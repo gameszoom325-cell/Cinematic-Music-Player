@@ -10,12 +10,19 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.2.1-gold.svg?style=flat-square" alt="Latest Release"></a>
+  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.2.2-gold.svg?style=flat-square" alt="Latest Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Android-success.svg?style=flat-square" alt="Platforms">
 </p>
 
 ---
+
+## What's New in v1.2.2 (Release Stabilization & Ad-Blocking Lock-in)
+
+- **Locked-in Web MP3 Ad-Blocking & Navigation Security**:
+  - Full production stabilization of the `adblocker_webview` integration with EasyList & AdGuard filters.
+  - Strict preservation of the `intent://` scheme blocking to prevent `ERR_UNKNOWN_URL_SCHEME` errors.
+  - Retained executive obsidian dark UI aesthetics and full test suite coverage.
 
 ## What's New in v1.2.1 (Complete UI Overhaul & Ad-Blocking Web MP3)
 

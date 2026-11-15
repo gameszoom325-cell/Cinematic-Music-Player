@@ -11,8 +11,8 @@ import '../theme/glassmorphism.dart';
 
 /// Semantic version specification and comparison utilities
 class AppVersion {
-  static const String current = "1.2.1";
-  static const int buildNumber = 17;
+  static const String current = "1.2.2";
+  static const int buildNumber = 18;
   static const String releaseStage = "Release";
 
   /// Compares two semver strings (e.g. "1.1.3" and "1.1.2")
@@ -235,7 +235,7 @@ class UpdateService {
     }
   }
 
-  static const String fallbackReleaseUrl = "https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/tag/v1.2.1";
+  static const String fallbackReleaseUrl = "https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/tag/v1.2.2";
 
   /// Launch GitHub release URL in external browser using LaunchMode.externalApplication.
   /// If launch fails, displays a floating SnackBar containing the URL with a COPY action.

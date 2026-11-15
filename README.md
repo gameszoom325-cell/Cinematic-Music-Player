@@ -10,12 +10,22 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.1.7-blueviolet.svg?style=flat-square" alt="Latest Release"></a>
+  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.1.8-blueviolet.svg?style=flat-square" alt="Latest Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Android-success.svg?style=flat-square" alt="Platforms">
 </p>
 
 ---
+
+## What's New in v1.1.8 (WebView MP3 Search & Download - Pagalworld)
+
+- **Added WebView-Based MP3 Search and Download (Pagalworld)**:
+  - Integrated `webview_flutter: ^4.14.1` with native Android WebView backing.
+  - Dedicated `WebSearchPage` loading `https://pagalworld.is/` with search bar navigating to `https://pagalworld.is/search?q=<encoded_query>` on Enter.
+  - Configured `WebViewController` with `JavaScriptMode.unrestricted`, dark theme background (`#0F0F12`), and unrestricted navigation/redirects.
+  - Dedicated Home button in the AppBar returning to `https://pagalworld.is/`.
+  - Handled Android back button navigation in WebView history via `PopScope`.
+  - Linked `WebSearchPage` to Desktop Sidebar (index 9) and Mobile Navigation / App Drawer.
 
 ## What's New in v1.1.7 (YouTube Audio Stream Extractor Fix)
 

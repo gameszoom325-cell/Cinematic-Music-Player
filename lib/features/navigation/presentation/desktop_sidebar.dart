@@ -160,6 +160,12 @@ class DesktopSidebar extends ConsumerWidget {
             index: 8,
             tooltip: "Bollywood Streaming (JioSaavn Unofficial)",
           ),
+          _buildNavItem(
+            icon: Icons.travel_explore_rounded,
+            label: "Web MP3 (Pagalworld)",
+            index: 9,
+            tooltip: "WebView MP3 Search & Download (Pagalworld)",
+          ),
 
           const SizedBox(height: 16),
           Padding(

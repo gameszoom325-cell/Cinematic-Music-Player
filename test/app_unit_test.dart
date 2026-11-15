@@ -43,6 +43,7 @@ import 'package:cinematic_music_player/core/sources/youtube_music_source.dart';
 import 'package:cinematic_music_player/core/config/jamendo_config.dart';
 import 'package:cinematic_music_player/core/services/jamendo_api_service.dart';
 import 'package:cinematic_music_player/core/sources/jamendo_music_source.dart';
+import 'package:cinematic_music_player/web_search/web_search_page.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -886,10 +887,10 @@ void main() {
       expect(cachedDirect, contains('googlevideo.com'));
     });
 
-    test('Project version reflects v1.1.7 Build 13', () {
-      expect(AppVersion.current, '1.1.7');
-      expect(AppVersion.buildNumber, 13);
-      expect(AppVersion.compare('1.1.7', '1.1.6'), greaterThan(0));
+    test('Project version reflects v1.1.8 Build 14', () {
+      expect(AppVersion.current, '1.1.8');
+      expect(AppVersion.buildNumber, 14);
+      expect(AppVersion.compare('1.1.8', '1.1.7'), greaterThan(0));
     });
   });
 
@@ -1420,6 +1421,20 @@ void main() {
 
     test('JioSaavnPage instantiates with const constructor', () {
       const page = JioSaavnPage();
+      expect(page, isNotNull);
+    });
+  });
+
+  group('24. WebView MP3 Search & Download (Pagalworld) Tests', () {
+    test('WebSearchPage defines valid home and search base URLs', () {
+      expect(WebSearchPage.homeUrl, 'https://pagalworld.is/');
+      expect(WebSearchPage.searchBaseUrl, 'https://pagalworld.is/search?q=');
+      final queryUrl = '${WebSearchPage.searchBaseUrl}${Uri.encodeComponent('Arijit Singh')}';
+      expect(queryUrl, 'https://pagalworld.is/search?q=Arijit%20Singh');
+    });
+
+    test('WebSearchPage instantiates with const constructor', () {
+      const page = WebSearchPage();
       expect(page, isNotNull);
     });
   });

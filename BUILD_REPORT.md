@@ -1,7 +1,7 @@
 # CINEMATIC MUSIC PLAYER - PRODUCTION BUILD REPORT
 
 **Project Location:** `C:\MY PROJECTS`  
-**Application Version:** `1.1.7+13`  
+**Application Version:** `1.1.8+14`  
 **Release Date:** 2026-11-15  
 **Target Platforms:** Windows Desktop (x64), Android Mobile (API 21 - 36, ARM64/v7/x86_64)  
 
@@ -11,13 +11,24 @@
 
 | Artifact Name | Platform | File Size | Location | Build Status |
 | :--- | :--- | :--- | :--- | :--- |
+| **`CinematicMusicPlayer-v1.1.8.apk`** | Android (API 21 - 36) | **67.6 MB** (70,865,990 bytes) | [CinematicMusicPlayer-v1.1.8.apk](file:///C:/MY%20PROJECTS/dist/android/CinematicMusicPlayer-v1.1.8.apk) | **SUCCESS (Signed Release Build, V2 Scheme, SHA256: `61cf68412b...`)** |
+| **`CinematicMusicPlayer-v1.1.7.apk`** | Android (API 21 - 36) | **66.7 MB** | [CinematicMusicPlayer-v1.1.7.apk](file:///C:/MY%20PROJECTS/dist/android/CinematicMusicPlayer-v1.1.7.apk) | **SUCCESS (Universal Multi-ABI Release)** |
 | **`CinematicMusicPlayerSetup.exe`** | Windows Desktop (x64) | **28.0 MB** (29,376,768 bytes) | [CinematicMusicPlayerSetup.exe](file:///C:/MY%20PROJECTS/dist/windows/CinematicMusicPlayerSetup.exe) | **SUCCESS (Compiled & Packaged with Inno Setup 6)** |
 | **`CinematicMusicPlayer-Windows.zip`** | Windows Desktop (x64) | **38.5 MB** (40,417,821 bytes) | [CinematicMusicPlayer-Windows.zip](file:///C:/MY%20PROJECTS/dist/windows/CinematicMusicPlayer-Windows.zip) | **SUCCESS (Portable Distribution Archive)** |
-| **`CinematicMusicPlayer-v1.1.7.apk`** | Android (API 21 - 36) | **66.7 MB** | [CinematicMusicPlayer-v1.1.7.apk](file:///C:/MY%20PROJECTS/dist/android/CinematicMusicPlayer-v1.1.7.apk) | **SUCCESS (Universal Multi-ABI Release)** |
 
 ---
 
-## 2. Release v1.1.7 Architectural Enhancements
+## 2. Release v1.1.8 Architectural Enhancements
+
+### WebView MP3 Search & Download Feature (Pagalworld)
+- Integrated `webview_flutter: ^4.14.1` with native Android WebView backing.
+- Implemented `WebSearchPage` loading `https://pagalworld.is/` with search bar navigating to `https://pagalworld.is/search?q=<encoded_query>` on Enter.
+- Configured `WebViewController` with `JavaScriptMode.unrestricted`, dark theme background (`#0F0F12`), and unrestricted navigation/redirects.
+- Added dedicated Home button in the AppBar returning to `https://pagalworld.is/`.
+- Handled Android back button navigation in WebView history via `PopScope`.
+- Linked `WebSearchPage` to Desktop Sidebar (index 9) and Mobile Navigation / App Drawer.
+
+## 3. Release v1.1.7 Architectural Enhancements
 
 ### YouTube Playback Fix & Native Stream Resolution
 - Resolved Android playback bug where raw `youtube.com/watch?v=...` HTML web page URLs caused ExoPlayer `UnrecognizedInputFormatException` errors.

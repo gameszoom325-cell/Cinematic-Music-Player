@@ -55,4 +55,10 @@ CMakeSettings.json
 
 # Private secrets
 lib/core/config/app_secrets.dart
+key.properties
+**/android/key.properties
+*.jks
+*.keystore
+**/android/*.jks
+**/android/*.keystore
 

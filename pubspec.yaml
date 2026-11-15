@@ -37,6 +37,7 @@ dependencies:
   window_manager: ^0.3.8
   url_launcher: ^6.3.0
   win32: ^5.15.0
+  jiosaavn_dart: ^1.0.0
 
 dev_dependencies:
   flutter_test:

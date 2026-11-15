@@ -14,6 +14,7 @@ import 'features/favorites/presentation/favorites_screen.dart';
 import 'features/playlists/presentation/playlist_screen.dart';
 import 'features/settings/presentation/settings_screen.dart';
 import 'jamendo/jamendo_page.dart';
+import 'jiosaavn/jiosaavn_page.dart';
 import 'features/player/presentation/widgets/spotify_now_playing_bar.dart';
 import 'features/player/presentation/widgets/queue_panel.dart';
 import 'features/player/presentation/cinematic_player_screen.dart';
@@ -42,6 +43,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     SettingsScreen(),       // 5: Settings
     CloudLibraryScreen(),   // 6: Cloud Library
     JamendoPage(),          // 7: Online (Jamendo)
+    JioSaavnPage(),         // 8: Bollywood (JioSaavn)
   ];
 
   @override

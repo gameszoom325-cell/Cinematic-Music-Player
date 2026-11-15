@@ -154,6 +154,12 @@ class DesktopSidebar extends ConsumerWidget {
             index: 7,
             tooltip: "Online Music (Jamendo)",
           ),
+          _buildNavItem(
+            icon: Icons.music_video_rounded,
+            label: "Bollywood (Saavn)",
+            index: 8,
+            tooltip: "Bollywood Streaming (JioSaavn Unofficial)",
+          ),
 
           const SizedBox(height: 16),
           Padding(

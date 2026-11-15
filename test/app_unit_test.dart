@@ -35,6 +35,8 @@ import 'package:cinematic_music_player/core/catalog/models/catalog_album.dart';
 import 'package:cinematic_music_player/core/catalog/catalog_database_service.dart';
 import 'package:cinematic_music_player/jamendo/jamendo_service.dart';
 import 'package:cinematic_music_player/jamendo/jamendo_page.dart';
+import 'package:cinematic_music_player/jiosaavn/jiosaavn_service.dart';
+import 'package:cinematic_music_player/jiosaavn/jiosaavn_page.dart';
 import 'package:cinematic_music_player/core/config/youtube_config.dart';
 import 'package:cinematic_music_player/core/services/youtube_api_service.dart';
 import 'package:cinematic_music_player/core/config/jamendo_config.dart';
@@ -1318,6 +1320,39 @@ void main() {
 
     test('JamendoPage instantiates with const constructor', () {
       const page = JamendoPage();
+      expect(page, isNotNull);
+    });
+  });
+
+  group('23. JioSaavn Unofficial API & Bollywood Streaming Tests', () {
+    test('JioSaavnTrack instantiates and formats duration correctly', () {
+      const track = JioSaavnTrack(
+        id: 'rjkrTnma',
+        title: 'Kesariya',
+        primaryArtists: 'Pritam, Arijit Singh, Amitabh Bhattacharya',
+        album: 'Brahmastra',
+        durationSeconds: 268,
+        mediaUrl: 'https://aac.saavncdn.com/871/c2febd353f3a076a406fa37510f31f9f_320.mp4',
+        imageUrl: 'https://c.saavncdn.com/871/Brahmastra-500x500.jpg',
+        hasLyrics: true,
+        lyrics: 'Kesar ki chaashni...',
+        year: '2022',
+      );
+
+      expect(track.id, 'rjkrTnma');
+      expect(track.title, 'Kesariya');
+      expect(track.formattedDuration, '4:28');
+      expect(track.mediaUrl, contains('320.mp4'));
+      expect(track.hasLyrics, isTrue);
+    });
+
+    test('JioSaavnService instantiates and exposes searchSongs and getSongById', () {
+      final service = JioSaavnService();
+      expect(service, isNotNull);
+    });
+
+    test('JioSaavnPage instantiates with const constructor', () {
+      const page = JioSaavnPage();
       expect(page, isNotNull);
     });
   });

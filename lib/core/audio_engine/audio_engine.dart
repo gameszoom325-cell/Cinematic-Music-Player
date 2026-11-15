@@ -85,10 +85,13 @@ class AudioEngine {
           config: const AudioServiceConfig(
             androidNotificationChannelId: 'com.cinematic.music.player.channel.audio',
             androidNotificationChannelName: 'Cinematic Music Playback',
-            androidNotificationOngoing: true,
-            androidStopForegroundOnPause: true,
+            androidNotificationChannelDescription: 'Cinematic Music Player background playback controls and notification',
+            androidNotificationOngoing: false,
+            androidStopForegroundOnPause: false, // Critical: keeps playback service alive when paused in background
             androidNotificationIcon: 'mipmap/ic_launcher',
             androidShowNotificationBadge: true,
+            androidNotificationClickStartsActivity: true,
+            androidResumeOnClick: true,
           ),
         );
         _audioServiceRegistered = true;
@@ -131,10 +134,25 @@ class AudioEngine {
   Future<void> play() async {
     await ensureInitialized();
     try {
+      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+        await _audioSession?.setActive(true);
+      }
       await _handler.play();
       AudioReactiveAnalyzer.instance.wake();
     } catch (e) {
       debugPrint("AudioEngine.play error: $e");
+    }
+  }
+
+  Future<void> stop() async {
+    try {
+      await _handler.stop();
+      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+        await _audioSession?.setActive(false);
+      }
+      AudioReactiveAnalyzer.instance.sleep();
+    } catch (e) {
+      debugPrint("AudioEngine.stop error: $e");
     }
   }
 
@@ -190,6 +208,9 @@ class AudioEngine {
       _currentSong = queue[index];
     }
     try {
+      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+        await _audioSession?.setActive(true);
+      }
       await _handler.setQueue(queue, initialIndex: index);
       await _handler.play();
       AudioReactiveAnalyzer.instance.wake();

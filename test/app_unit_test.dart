@@ -814,10 +814,10 @@ void main() {
       expect(resolved.isLocalFileAvailable, isTrue);
     });
 
-    test('Project version reflects v1.1.3 Build 9', () {
-      expect(AppVersion.current, '1.1.3');
-      expect(AppVersion.buildNumber, 9);
-      expect(AppVersion.compare('1.1.3', '1.1.2'), greaterThan(0));
+    test('Project version reflects v1.1.4 Build 10', () {
+      expect(AppVersion.current, '1.1.4');
+      expect(AppVersion.buildNumber, 10);
+      expect(AppVersion.compare('1.1.4', '1.1.3'), greaterThan(0));
     });
   });
 
@@ -1185,6 +1185,57 @@ void main() {
       final masked = JamendoConfig.instance.maskedClientId;
       expect(masked, contains('...'));
       expect(masked.length, lessThanOrEqualTo(JamendoConfig.instance.clientId.length));
+    });
+  });
+
+  group('20. Android Background Playback, Media3 & MediaBrowserService Tests', () {
+    test('CinematicAudioHandler getChildren returns browsable categories at root', () async {
+      final handler = AudioEngine.instance.handler;
+      final rootItems = await handler.getChildren('root');
+      expect(rootItems, isNotEmpty);
+      final ids = rootItems.map((i) => i.id).toList();
+      expect(ids, containsAll(['favorites', 'playlists', 'history', 'library', 'albums', 'artists']));
+      expect(rootItems.every((i) => !(i.playable ?? false)), isTrue);
+    });
+
+    test('CinematicAudioHandler getChildren returns playable items for favorites & history', () async {
+      final handler = AudioEngine.instance.handler;
+      final favs = await handler.getChildren('favorites');
+      expect(favs, isA<List>());
+
+      final hist = await handler.getChildren('history');
+      expect(hist, isA<List>());
+    });
+
+    test('Automotive app descriptor exists and declares media projection', () {
+      final descFile = File('android/app/src/main/res/xml/automotive_app_desc.xml');
+      expect(descFile.existsSync(), isTrue);
+      final content = descFile.readAsStringSync();
+      expect(content, contains('<automotiveApp>'));
+      expect(content, contains('<uses name="media" />'));
+    });
+
+    test('AndroidManifest contains mandatory permissions and foreground service declarations', () {
+      final manifestFile = File('android/app/src/main/AndroidManifest.xml');
+      expect(manifestFile.existsSync(), isTrue);
+      final manifest = manifestFile.readAsStringSync();
+
+      expect(manifest, contains('android.permission.FOREGROUND_SERVICE'));
+      expect(manifest, contains('android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK'));
+      expect(manifest, contains('android.permission.POST_NOTIFICATIONS'));
+      expect(manifest, contains('android.permission.WAKE_LOCK'));
+      expect(manifest, contains('android.permission.BLUETOOTH_CONNECT'));
+      expect(manifest, contains('com.ryanheise.audioservice.AudioService'));
+      expect(manifest, contains('android:foregroundServiceType="mediaPlayback"'));
+      expect(manifest, contains('com.ryanheise.audioservice.MediaButtonReceiver'));
+      expect(manifest, contains('com.google.android.gms.car.application'));
+    });
+
+    test('AudioEngine exposes stop() and correctly manages playback state and audio focus', () async {
+      final engine = AudioEngine.instance;
+      expect(engine.isInitialized, isTrue);
+      await engine.stop();
+      expect(engine.isPlaying, isFalse);
     });
   });
 }

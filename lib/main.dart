@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:window_manager/window_manager.dart';
 import 'core/config/supabase_config.dart';
 import 'core/services/shader_capability_service.dart';
@@ -90,6 +91,18 @@ void main() async {
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
+
+  // Request notification permission on Android 13+ (API 33+) for foreground media service
+  if (Platform.isAndroid) {
+    try {
+      final status = await Permission.notification.status;
+      if (status.isDenied) {
+        await Permission.notification.request();
+      }
+    } catch (e) {
+      debugPrint("Notification permission check notice: $e");
+    }
+  }
 
   // Desktop Window Management (Windows)
   if (Platform.isWindows) {

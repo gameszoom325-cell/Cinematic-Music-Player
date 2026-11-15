@@ -13,6 +13,7 @@ import 'features/cloud/presentation/cloud_library_screen.dart';
 import 'features/favorites/presentation/favorites_screen.dart';
 import 'features/playlists/presentation/playlist_screen.dart';
 import 'features/settings/presentation/settings_screen.dart';
+import 'jamendo/jamendo_page.dart';
 import 'features/player/presentation/widgets/spotify_now_playing_bar.dart';
 import 'features/player/presentation/widgets/queue_panel.dart';
 import 'features/player/presentation/cinematic_player_screen.dart';
@@ -40,6 +41,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     PlaylistScreen(),       // 4: Playlists
     SettingsScreen(),       // 5: Settings
     CloudLibraryScreen(),   // 6: Cloud Library
+    JamendoPage(),          // 7: Online (Jamendo)
   ];
 
   @override
@@ -267,6 +269,7 @@ class _AppShellState extends ConsumerState<AppShell> {
           _buildMobileNavIcon(Icons.home_filled, "Home", 0),
           _buildMobileNavIcon(Icons.search_rounded, "Search", 1),
           _buildMobileNavIcon(Icons.library_music_rounded, "Library", 2),
+          _buildMobileNavIcon(Icons.language_rounded, "Online", 7),
           _buildMobileNavIcon(Icons.favorite_rounded, "Liked", 3),
           _buildMobileNavIcon(Icons.tune_rounded, "Settings", 5),
         ],

@@ -148,6 +148,12 @@ class DesktopSidebar extends ConsumerWidget {
             index: 2,
             tooltip: "Your Library",
           ),
+          _buildNavItem(
+            icon: Icons.language_rounded,
+            label: "Online (Jamendo)",
+            index: 7,
+            tooltip: "Online Music (Jamendo)",
+          ),
 
           const SizedBox(height: 16),
           Padding(

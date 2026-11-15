@@ -33,6 +33,8 @@ import 'package:cinematic_music_player/core/catalog/models/catalog_song.dart';
 import 'package:cinematic_music_player/core/catalog/models/catalog_artist.dart';
 import 'package:cinematic_music_player/core/catalog/models/catalog_album.dart';
 import 'package:cinematic_music_player/core/catalog/catalog_database_service.dart';
+import 'package:cinematic_music_player/jamendo/jamendo_service.dart';
+import 'package:cinematic_music_player/jamendo/jamendo_page.dart';
 import 'package:cinematic_music_player/core/config/youtube_config.dart';
 import 'package:cinematic_music_player/core/services/youtube_api_service.dart';
 import 'package:cinematic_music_player/core/config/jamendo_config.dart';
@@ -1285,6 +1287,38 @@ void main() {
       final manifest = manifestFile.readAsStringSync();
       expect(manifest, contains('PerMonitorV2'));
       expect(manifest, contains('<dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/pm</dpiAware>'));
+    });
+  });
+
+  group('22. Jamendo Standalone Service & Page Tests', () {
+    test('JamendoTrack.fromJson parses fields accurately', () {
+      final json = {
+        'id': '12345',
+        'name': 'Ambient Waves',
+        'artist_name': 'Chillout Artist',
+        'album_name': 'Skyline Dreams',
+        'audio': 'https://prod-1.storage.jamendo.com/?trackid=12345&format=mp32',
+        'image': 'https://usercontent.jamendo.com?type=album&id=123&width=300',
+        'duration': '210',
+      };
+      final track = JamendoTrack.fromJson(json);
+      expect(track.id, '12345');
+      expect(track.name, 'Ambient Waves');
+      expect(track.artist, 'Chillout Artist');
+      expect(track.album, 'Skyline Dreams');
+      expect(track.audioUrl, contains('12345'));
+      expect(track.imageUrl, contains('width=300'));
+      expect(track.duration, 210);
+    });
+
+    test('JamendoService instantiates with client ID', () {
+      final service = JamendoService('fd914c0b');
+      expect(service.clientId, 'fd914c0b');
+    });
+
+    test('JamendoPage instantiates with const constructor', () {
+      const page = JamendoPage();
+      expect(page, isNotNull);
     });
   });
 }

@@ -1,0 +1,23 @@
+{
+  "name": "Cinematic Music Player",
+  "short_name": "Cinematic",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0F0F12",
+  "theme_color": "#0F0F12",
+  "description": "A premium cross-platform cinematic music player built with Flutter.",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,18 +1,19 @@
+import 'dart:collection';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:adblocker_webview/adblocker_webview.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../core/theme/cinematic_colors.dart';
 
-/// WebView-based MP3 search and download screen (Pagalworld).
+/// WebView-based MP3 search and download screen (Pagalworld) with integrated ad-blocking.
 ///
 /// Features:
-/// - Loads https://pagalworld.is/ by default.
+/// - Loads https://pagalworld.is/ by default with EasyList & AdGuard ad filtering.
 /// - Integrated top search bar: navigates to https://pagalworld.is/search?q=<encoded_query> on Enter.
-/// - Configured WebViewController with JavaScriptMode.unrestricted, dark background,
-///   and full redirect allowance.
+/// - Safe AdBlockerWebviewController blocking non-http/https schemes (intent://, market://) to prevent ERR_UNKNOWN_URL_SCHEME.
 /// - Home button in AppBar returning to https://pagalworld.is/.
 /// - System Android back button navigation in WebView history.
 /// - Desktop/Windows graceful fallback with direct external browser launch.
@@ -33,12 +34,109 @@ class WebSearchPage extends StatefulWidget {
   State<WebSearchPage> createState() => _WebSearchPageState();
 }
 
+/// Custom wrapper around AdBlockerWebviewController that strictly enforces
+/// allowed HTTP/HTTPS URL schemes, preventing crashes on intent:// or market:// links.
+class SafeAdBlockerWebviewController implements AdBlockerWebviewController {
+  final AdBlockerWebviewController _delegate = AdBlockerWebviewController.instance;
+
+  @override
+  Future<void> initialize(FilterConfig filterConfig) => _delegate.initialize(filterConfig);
+
+  @override
+  bool shouldBlockResource(String url) {
+    // Intercept non-http/https navigation schemes to prevent ERR_UNKNOWN_URL_SCHEME
+    if (!WebSearchPage.isAllowedUrlScheme(url)) {
+      debugPrint("WebSearchPage: Blocked non-http navigation scheme: $url");
+      return true;
+    }
+    return _delegate.shouldBlockResource(url);
+  }
+
+  @override
+  Future<bool> canGoBack() => _delegate.canGoBack();
+
+  @override
+  Future<bool> canGoForward() => _delegate.canGoForward();
+
+  @override
+  Future<void> clearCache() => _delegate.clearCache();
+
+  @override
+  UnmodifiableListView<ResourceRule> get allResourceRules => _delegate.allResourceRules;
+
+  @override
+  Future<String?> getTitle() => _delegate.getTitle();
+
+  @override
+  Future<void> loadUrl(String url) => _delegate.loadUrl(url);
+
+  @override
+  Future<void> loadData(String data, {String? baseUrl}) => _delegate.loadData(data, baseUrl: baseUrl);
+
+  @override
+  List<String> getCssRulesForWebsite(String url) => _delegate.getCssRulesForWebsite(url);
+
+  @override
+  Future<void> goBack() => _delegate.goBack();
+
+  @override
+  Future<void> goForward() => _delegate.goForward();
+
+  @override
+  Future<void> reload() => _delegate.reload();
+
+  @override
+  Future<void> stopLoading() => _delegate.stopLoading();
+
+  @override
+  Future<void> runScript(String script) => _delegate.runScript(script);
+
+  @override
+  Set<String> get allowedDomains => _delegate.allowedDomains;
+
+  @override
+  void addAllowedDomain(String domain) => _delegate.addAllowedDomain(domain);
+
+  @override
+  bool removeAllowedDomain(String domain) => _delegate.removeAllowedDomain(domain);
+
+  @override
+  bool isAllowedDomain(String urlOrDomain) => _delegate.isAllowedDomain(urlOrDomain);
+
+  @override
+  Set<String> get blockedDomains => _delegate.blockedDomains;
+
+  @override
+  void addBlockedDomain(String domain) => _delegate.addBlockedDomain(domain);
+
+  @override
+  bool removeBlockedDomain(String domain) => _delegate.removeBlockedDomain(domain);
+
+  @override
+  bool isBlockedDomain(String urlOrDomain) => _delegate.isBlockedDomain(urlOrDomain);
+
+  @override
+  BlockingStatistics get statistics => _delegate.statistics;
+
+  @override
+  void resetStatistics() => _delegate.resetStatistics();
+
+  @override
+  void setInternalController(WebViewController controller) {
+    try {
+      controller.setBackgroundColor(const Color(0xFF0F0F12));
+    } catch (_) {}
+    _delegate.setInternalController(controller);
+  }
+}
+
 class _WebSearchPageState extends State<WebSearchPage> {
   final TextEditingController _searchController = TextEditingController();
-  WebViewController? _controller;
+  final SafeAdBlockerWebviewController _adBlockerController = SafeAdBlockerWebviewController();
   double _loadingProgress = 0.0;
   bool _isLoading = false;
   bool _isSupported = false;
+  bool _isAdBlockerInitialized = false;
 
   @override
   void initState() {
@@ -46,58 +144,24 @@ class _WebSearchPageState extends State<WebSearchPage> {
     _checkAndInitWebView();
   }
 
-  void _checkAndInitWebView() {
-    // webview_flutter natively supports Android, iOS, and macOS
+  Future<void> _checkAndInitWebView() async {
     final supported = !kIsWeb && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS);
     _isSupported = supported;
 
     if (supported) {
       try {
-        final controller = WebViewController()
-          ..setJavaScriptMode(JavaScriptMode.unrestricted)
-          ..setBackgroundColor(const Color(0xFF0F0F12))
-          ..setNavigationDelegate(
-            NavigationDelegate(
-              onNavigationRequest: (NavigationRequest request) {
-                if (WebSearchPage.isAllowedUrlScheme(request.url)) {
-                  return NavigationDecision.navigate;
-                }
-                debugPrint("WebSearchPage: Blocked non-http navigation scheme: ${request.url}");
-                return NavigationDecision.prevent;
-              },
-              onProgress: (int progress) {
-                if (mounted) {
-                  setState(() {
-                    _loadingProgress = progress / 100.0;
-                  });
-                }
-              },
-              onPageStarted: (String url) {
-                if (mounted) {
-                  setState(() {
-                    _isLoading = true;
-                  });
-                }
-              },
-              onPageFinished: (String url) {
-                if (mounted) {
-                  setState(() {
-                    _isLoading = false;
-                    _loadingProgress = 1.0;
-                  });
-                }
-              },
-              onWebResourceError: (WebResourceError error) {
-                debugPrint("WebSearchPage WebView Resource Error: ${error.description}");
-              },
-            ),
-          )
-          ..loadRequest(Uri.parse(WebSearchPage.homeUrl));
-
-        _controller = controller;
+        await _adBlockerController.initialize(
+          FilterConfig(filterTypes: [FilterType.easyList, FilterType.adGuard]),
+        );
+        if (mounted) {
+          setState(() {
+            _isAdBlockerInitialized = true;
+          });
+        }
       } catch (e) {
         debugPrint("WebSearchPage initialization error: $e");
         _isSupported = false;
+        if (mounted) setState(() {});
       }
     }
   }
@@ -113,8 +177,8 @@ class _WebSearchPageState extends State<WebSearchPage> {
     if (cleanQuery.isEmpty) return;
 
     final targetUrl = '${WebSearchPage.searchBaseUrl}${Uri.encodeComponent(cleanQuery)}';
-    if (_controller != null) {
-      _controller!.loadRequest(Uri.parse(targetUrl));
+    if (_isSupported && _isAdBlockerInitialized) {
+      _adBlockerController.loadUrl(targetUrl);
     } else {
       launchUrl(Uri.parse(targetUrl), mode: LaunchMode.externalApplication);
     }
@@ -122,17 +186,16 @@ class _WebSearchPageState extends State<WebSearchPage> {
 
   void _goHome() {
     _searchController.clear();
-    if (_controller != null) {
-      _controller!.loadRequest(Uri.parse(WebSearchPage.homeUrl));
+    if (_isSupported && _isAdBlockerInitialized) {
+      _adBlockerController.loadUrl(WebSearchPage.homeUrl);
     } else {
       launchUrl(Uri.parse(WebSearchPage.homeUrl), mode: LaunchMode.externalApplication);
     }
   }
 
   Future<void> _handleBackNavigation() async {
-    final controller = _controller;
-    if (controller != null && await controller.canGoBack()) {
-      await controller.goBack();
+    if (_isSupported && _isAdBlockerInitialized && await _adBlockerController.canGoBack()) {
+      await _adBlockerController.goBack();
       return;
     }
 
@@ -194,11 +257,11 @@ class _WebSearchPageState extends State<WebSearchPage> {
             ),
           ),
           actions: [
-            if (_controller != null)
+            if (_isSupported && _isAdBlockerInitialized)
               IconButton(
                 icon: const Icon(Icons.refresh_rounded, color: Colors.white70),
                 tooltip: "Reload Page",
-                onPressed: () => _controller!.reload(),
+                onPressed: () => _adBlockerController.reload(),
               ),
             IconButton(
               icon: const Icon(Icons.open_in_browser_rounded, color: Colors.white70),
@@ -230,10 +293,55 @@ class _WebSearchPageState extends State<WebSearchPage> {
   }
 
   Widget _buildBody() {
-    if (_isSupported && _controller != null) {
+    if (_isSupported) {
+      if (!_isAdBlockerInitialized) {
+        return Container(
+          color: const Color(0xFF0F0F12),
+          child: const Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(
+                  color: CinematicColors.primary,
+                  strokeWidth: 2.5,
+                ),
+                SizedBox(height: 16),
+                Text(
+                  "Initializing Ad-Blocker...",
+                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
       return Stack(
         children: [
-          WebViewWidget(controller: _controller!),
+          AdBlockerWebview(
+            url: Uri.parse(WebSearchPage.homeUrl),
+            adBlockerWebviewController: _adBlockerController,
+            shouldBlockAds: true,
+            onLoadStart: (url) {
+              if (mounted) setState(() => _isLoading = true);
+            },
+            onLoadFinished: (url) {
+              if (mounted) {
+                setState(() {
+                  _isLoading = false;
+                  _loadingProgress = 1.0;
+                });
+              }
+            },
+            onProgress: (progress) {
+              if (mounted) {
+                setState(() => _loadingProgress = progress / 100.0);
+              }
+            },
+            onLoadError: (url, code) {
+              debugPrint("WebSearchPage AdBlocker error ($code): $url");
+            },
+          ),
           if (_isLoading && _loadingProgress < 0.3)
             Container(
               color: const Color(0xFF0F0F12),

@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-11-15
+
+### Added
+- v1.2.1: Complete UI Revamp, Ad-blocking WebView, Favicon, Privacy Policy, Terms & Conditions.
+- Integrated `adblocker_webview: ^2.3.0` into `WebSearchPage` to block Pagalworld ads using EasyList and AdGuard filters without breaking intent:// or navigation protection.
+- Created `PrivacyPolicyPage` and `TermsConditionPage` under `lib/features/legal/`, linked in Mobile Drawer, Desktop Sidebar, and Settings.
+- Added clean web favicon to `web/favicon.png` with `web/index.html` and configured Windows runner icon in `windows/runner/Runner.rc`.
+- Completely revamped UI across all screens: eliminated all purple/neon gradients, normalized buttons to 4px-8px subtle rectangular geometry, removed all emojis, and replaced vague marketing hero copy with direct, functional headers.
+- Bumped version to `1.2.1+17`.
+
 ## [1.1.9] - 2026-11-15
 
 ### Fixed

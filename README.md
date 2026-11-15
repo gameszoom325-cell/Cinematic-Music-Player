@@ -10,12 +10,25 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.1.9-blueviolet.svg?style=flat-square" alt="Latest Release"></a>
+  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.2.1-gold.svg?style=flat-square" alt="Latest Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Android-success.svg?style=flat-square" alt="Platforms">
 </p>
 
 ---
+
+## What's New in v1.2.1 (Complete UI Overhaul & Ad-Blocking Web MP3)
+
+- **Executive UI Overhaul**:
+  - Eliminated purple and neon gradients across the entire app; established a solid obsidian dark architecture (`#0F0F12`) with high-contrast typography and a muted gold accent (`#D4AF37`).
+  - Standardized all buttons, cards, and modal sheets to 4px–8px subtle rectangular geometry (no pill buttons).
+  - Stripped all emojis, em dashes, and generic AI marketing copy in favor of direct, functional headings.
+- **Integrated Ad-Blocker for Web MP3 (Pagalworld)**:
+  - Integrated `adblocker_webview: ^2.3.0` using EasyList and AdGuard filters to block intrusive ads on Pagalworld.
+  - Implemented `SafeAdBlockerWebviewController` to enforce strict HTTP/HTTPS scheme validation, blocking `intent://` and `market://` redirects and preventing `ERR_UNKNOWN_URL_SCHEME` errors.
+- **Legal Pages & Web Favicon**:
+  - Added official Privacy Policy (`PrivacyPolicyPage`) and Terms and Conditions (`TermsConditionPage`).
+  - Added clean web favicon in `web/` and configured Windows runner `.ico` resources.
 
 ## What's New in v1.1.9 (WebView Intent Fix & In-App Update Link Repair)
 

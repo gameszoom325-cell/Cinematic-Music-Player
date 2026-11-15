@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.6] - 2026-11-15
+
+### Added
+- Added JioSaavn Bollywood search & streaming (unofficial wrapper):
+  - Integrated `jiosaavn_dart` package for high-fidelity 320kbps Bollywood music streaming.
+  - Implemented `JioSaavnService` with `searchSongs` and `getSongById` (retrieving media stream URL, high-resolution album artwork, and synced/plain lyrics).
+  - Built dedicated `JioSaavnPage` with trending quick-chips (Arijit Singh, Shreya Ghoshal, Diljit Dosanjh, Sidhu Moose Wala, Pritam, Rahman, Bollywood Hits 2024), real-time search debouncing, and direct integration with `AudioEngine`.
+  - Added unit test suite covering `JioSaavnTrack` instantiation, formatted duration conversion, service instantiation, and page widget rendering.
+- Bumped version to `1.1.6+12`.
+
 ## [1.1.5] - 2026-11-15
 
 ### Added

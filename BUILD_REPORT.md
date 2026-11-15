@@ -1,7 +1,7 @@
 # CINEMATIC MUSIC PLAYER - PRODUCTION BUILD REPORT
 
 **Project Location:** `C:\MY PROJECTS`  
-**Application Version:** `1.1.5+11`  
+**Application Version:** `1.1.6+12`  
 **Release Date:** 2026-11-15  
 **Target Platforms:** Windows Desktop (x64), Android Mobile (API 21 - 36, ARM64/v7/x86_64)  
 
@@ -11,13 +11,22 @@
 
 | Artifact Name | Platform | File Size | Location | Build Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **`CinematicMusicPlayerSetup.exe`** | Windows Desktop (x64) | **29.7 MB** (31,207,424 bytes) | [CinematicMusicPlayerSetup.exe](file:///C:/MY%20PROJECTS/dist/release/Windows/CinematicMusicPlayerSetup.exe) | **SUCCESS (Compiled & Packaged with Inno Setup 6)** |
-| **`CinematicMusicPlayer-Windows.zip`** | Windows Desktop (x64) | **40.8 MB** (42,822,656 bytes) | [CinematicMusicPlayer.zip](file:///C:/MY%20PROJECTS/dist/release/Windows/CinematicMusicPlayer.zip) | **SUCCESS (Portable Distribution Archive)** |
-| **`CinematicMusicPlayer.apk`** | Android (API 21 - 36) | **63.4 MB** (66,478,080 bytes) | [CinematicMusicPlayer.apk](file:///C:/MY%20PROJECTS/dist/release/Android/CinematicMusicPlayer.apk) | **SUCCESS (Universal Multi-ABI Release)** |
+| **`CinematicMusicPlayerSetup.exe`** | Windows Desktop (x64) | **28.0 MB** (29,376,768 bytes) | [CinematicMusicPlayerSetup.exe](file:///C:/MY%20PROJECTS/dist/windows/CinematicMusicPlayerSetup.exe) | **SUCCESS (Compiled & Packaged with Inno Setup 6)** |
+| **`CinematicMusicPlayer-Windows.zip`** | Windows Desktop (x64) | **38.5 MB** (40,417,821 bytes) | [CinematicMusicPlayer-Windows.zip](file:///C:/MY%20PROJECTS/dist/windows/CinematicMusicPlayer-Windows.zip) | **SUCCESS (Portable Distribution Archive)** |
+| **`app-release.apk`** | Android (API 21 - 36) | **64.0 MB** (67,063,112 bytes) | [app-release.apk](file:///C:/MY%20PROJECTS/build/app/outputs/flutter-apk/app-release.apk) | **SUCCESS (Universal Multi-ABI Release)** |
 
 ---
 
-## 2. Release v1.1.5 Architectural Enhancements
+## 2. Release v1.1.6 Architectural Enhancements
+
+### JioSaavn Bollywood Search & High-Bitrate Audio Streaming
+- Integrated unofficial JioSaavn API wrapper via `jiosaavn_dart: ^1.0.0` with `just_audio` / `just_audio_windows`.
+- Stream URL extraction: 320kbps AAC media stream decryption with real-time stream caching and playback.
+- Synchronized / Plain Lyrics resolution and high-resolution album cover artwork.
+- Dedicated `JioSaavnPage` with quick-filter chips for trending artists and songs.
+- Pre-build verification: `lyrics:` and `fetchLyrics:` parameters verified against pub cache source.
+
+## 3. Release v1.1.5 Architectural Enhancements
 
 ### Task 1: Fix Lag and Frame Drops
 - **Studio Performance Modes**: Added Performance setting under Studio Settings with 4 selectable levels:

@@ -819,10 +819,10 @@ void main() {
       expect(resolved.isLocalFileAvailable, isTrue);
     });
 
-    test('Project version reflects v1.1.5 Build 11', () {
-      expect(AppVersion.current, '1.1.5');
-      expect(AppVersion.buildNumber, 11);
-      expect(AppVersion.compare('1.1.5', '1.1.4'), greaterThan(0));
+    test('Project version reflects v1.1.6 Build 12', () {
+      expect(AppVersion.current, '1.1.6');
+      expect(AppVersion.buildNumber, 12);
+      expect(AppVersion.compare('1.1.6', '1.1.5'), greaterThan(0));
     });
   });
 

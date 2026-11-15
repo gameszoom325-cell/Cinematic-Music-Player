@@ -10,12 +10,20 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.1.5-blueviolet.svg?style=flat-square" alt="Latest Release"></a>
+  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.1.6-blueviolet.svg?style=flat-square" alt="Latest Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Android-success.svg?style=flat-square" alt="Platforms">
 </p>
 
 ---
+
+## What's New in v1.1.6 (JioSaavn Bollywood Integration)
+
+- **Added JioSaavn Bollywood Search & Streaming (Unofficial Wrapper)**:
+  - High-fidelity 320kbps Bollywood music streaming powered by `jiosaavn_dart`.
+  - Comprehensive song search with metadata extraction: song title, primary artists, album name, duration, media stream URL, and high-res album art.
+  - Dedicated JioSaavn Bollywood Explorer page with quick trending search chips and instant playback into `AudioEngine`.
+  - Full fallback and error handling for network hiccups or rate limits.
 
 ## What's New in v1.1.5 (Desktop Performance Overhaul & Spotify-Style Experience)
 

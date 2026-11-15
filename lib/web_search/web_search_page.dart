@@ -23,9 +23,14 @@ import '../features/player/providers/player_provider.dart';
 /// - System Android back button navigation in WebView history.
 /// - Desktop/Windows graceful fallback with direct external browser launch.
 class WebSearchPage extends ConsumerStatefulWidget {
-  const WebSearchPage({super.key, this.initialQuery});
+  const WebSearchPage({
+    super.key,
+    this.initialQuery,
+    this.autoSubmit = false,
+  });
 
   final String? initialQuery;
+  final bool autoSubmit;
 
   static const String homeUrl = 'https://pagalworld.is/';
   static const String searchBaseUrl = 'https://pagalworld.is/search?q=';
@@ -336,7 +341,11 @@ class _WebSearchPageState extends ConsumerState<WebSearchPage> {
       return Stack(
         children: [
           AdBlockerWebview(
-            url: Uri.parse(WebSearchPage.homeUrl),
+            url: Uri.parse(
+              widget.autoSubmit && widget.initialQuery != null && widget.initialQuery!.trim().isNotEmpty
+                  ? '${WebSearchPage.searchBaseUrl}${Uri.encodeComponent(widget.initialQuery!.trim())}'
+                  : WebSearchPage.homeUrl,
+            ),
             adBlockerWebviewController: _adBlockerController,
             shouldBlockAds: true,
             onUrlChanged: (url) {

@@ -579,6 +579,17 @@ class _MusicSearchScreenState extends ConsumerState<MusicSearchScreen> with Sing
           ],
         ),
         onTap: () {
+          if (song.isYouTube || song.sourceType.toLowerCase() == 'youtube') {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => WebSearchPage(
+                  initialQuery: song.title,
+                  autoSubmit: true,
+                ),
+              ),
+            );
+            return;
+          }
           final index = contextList.indexWhere((s) => s.id == song.id);
           ref.read(playerProvider.notifier).playTrack(contextList, index >= 0 ? index : 0);
         },

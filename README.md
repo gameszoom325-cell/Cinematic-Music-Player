@@ -10,12 +10,20 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.2.3-gold.svg?style=flat-square" alt="Latest Release"></a>
+  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.2.4-gold.svg?style=flat-square" alt="Latest Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Android-success.svg?style=flat-square" alt="Platforms">
 </p>
 
 ---
+
+## What's New in v1.2.4 (YouTube Results Redirect to Web MP3 Auto-Search)
+
+- **Automated YouTube to Pagalworld Navigation**:
+  - Tapping a YouTube result in the main search screen immediately navigates to `WebSearchPage` and auto-submits the search for that song title on Pagalworld.
+  - Users land directly on the search results page without re-typing.
+- **Preserved JioSaavn Playback**:
+  - Tapping JioSaavn catalog results continues to play instantly through `just_audio`.
 
 ## What's New in v1.2.3 (Search Handoff & One-Tap Web MP3 Capture)
 

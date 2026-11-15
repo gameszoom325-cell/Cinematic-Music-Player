@@ -325,10 +325,13 @@ class MusicSourceRepository {
         // 4. Validate stream health using HTTP 206 range probe if remote
         if (resolvedUri.startsWith('http://') || resolvedUri.startsWith('https://')) {
           final isHealthy = await verifyStreamHealth(resolvedUri);
-          final finalUri = isHealthy ? resolvedUri : song.path;
+          // Never fall back to an unplayable YouTube webpage URL if range probe fails or times out
+          final finalUri = (isHealthy || resolvedUri.contains('googlevideo.com') || resolvedUri.contains('saavncdn.com'))
+              ? resolvedUri
+              : (song.path.contains('youtube.com') ? resolvedUri : song.path);
 
           // 5. Trigger asynchronous background caching into LRU audio cache
-          if (isHealthy) {
+          if (isHealthy && !finalUri.contains('youtube.com')) {
             unawaited(AudioStreamCacheManager.instance.cacheStream(song, finalUri));
           }
           return song.copyWith(path: finalUri);

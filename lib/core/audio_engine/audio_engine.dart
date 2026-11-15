@@ -211,6 +211,10 @@ class AudioEngine {
       if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
         await _audioSession?.setActive(true);
       }
+      if (queue.isNotEmpty && index >= 0 && index < queue.length) {
+        final target = queue[index];
+        debugPrint(">>> AudioEngine.playTrack [just_audio setQueue]: title='${target.title}', sourceType='${target.sourceType}', url='${target.path}'");
+      }
       await _handler.setQueue(queue, initialIndex: index);
       await _handler.play();
       AudioReactiveAnalyzer.instance.wake();
@@ -221,6 +225,7 @@ class AudioEngine {
       try {
         if (queue.isNotEmpty && index >= 0 && index < queue.length) {
           final target = queue[index];
+          debugPrint(">>> AudioEngine.playTrack fallback [just_audio setAudioSource]: title='${target.title}', sourceType='${target.sourceType}', url='${target.path}'");
           await _handler.player.setAudioSource(
             AudioSource.uri(CinematicAudioHandler.parseAudioUri(target.path)),
           );

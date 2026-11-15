@@ -39,6 +39,7 @@ import 'package:cinematic_music_player/jiosaavn/jiosaavn_service.dart';
 import 'package:cinematic_music_player/jiosaavn/jiosaavn_page.dart';
 import 'package:cinematic_music_player/core/config/youtube_config.dart';
 import 'package:cinematic_music_player/core/services/youtube_api_service.dart';
+import 'package:cinematic_music_player/core/sources/youtube_music_source.dart';
 import 'package:cinematic_music_player/core/config/jamendo_config.dart';
 import 'package:cinematic_music_player/core/services/jamendo_api_service.dart';
 import 'package:cinematic_music_player/core/sources/jamendo_music_source.dart';
@@ -817,6 +818,72 @@ void main() {
       expect(resolved.isYouTube, isTrue);
       expect(resolved.path.startsWith('http'), isTrue);
       expect(resolved.isLocalFileAvailable, isTrue);
+    });
+
+    test('YouTubeMusicSource extractVideoId extracts canonical IDs accurately', () {
+      final s1 = SongModel(
+        id: 'yt_8WKwJfYge7Q',
+        path: 'https://ia800504.us.archive.org/33/items/Bensound_Sunny/bensound-sunny.mp3',
+        title: 'Track 1',
+        artist: 'Artist',
+        album: 'Album',
+        durationMs: 120000,
+        dateAdded: DateTime.now(),
+        sourceType: 'youtube',
+        sourceId: '8WKwJfYge7Q',
+      );
+      expect(YouTubeMusicSource.extractVideoId(s1), '8WKwJfYge7Q');
+
+      final s2 = SongModel(
+        id: 'some_random_id',
+        path: 'https://www.youtube.com/watch?v=zYhBJoBUSYA',
+        title: 'Track 2',
+        artist: 'Artist',
+        album: 'Album',
+        durationMs: 120000,
+        dateAdded: DateTime.now(),
+        sourceType: 'youtube',
+      );
+      expect(YouTubeMusicSource.extractVideoId(s2), 'zYhBJoBUSYA');
+
+      final s3 = SongModel(
+        id: 'yt_abc123',
+        path: 'https://youtu.be/dQw4w9WgXcQ',
+        title: 'Track 3',
+        artist: 'Artist',
+        album: 'Album',
+        durationMs: 120000,
+        dateAdded: DateTime.now(),
+        sourceType: 'youtube',
+      );
+      expect(YouTubeMusicSource.extractVideoId(s3), 'abc123');
+    });
+
+    test('YouTubeMusicSource resolves direct audio streams without returning web pages', () async {
+      final ytSource = YouTubeMusicSource();
+      final song = SongModel(
+        id: 'yt_dQw4w9WgXcQ',
+        path: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        title: 'Never Gonna Give You Up',
+        artist: 'Rick Astley',
+        album: 'Whenever You Need Somebody',
+        durationMs: 213000,
+        dateAdded: DateTime.now(),
+        sourceType: 'youtube',
+        sourceId: 'dQw4w9WgXcQ',
+        externalUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      );
+
+      // In unit test environment without real network, verify that raw web page URL is never returned
+      final directUri = await ytSource.resolvePlaybackUri(song);
+      expect(directUri.contains('youtube.com/watch'), isFalse);
+
+      // Verify that if a direct stream was cached or provided, it returns the direct audio stream
+      final directSong = song.copyWith(
+        path: 'https://rr4---sn-5jucgv5qc5oq-h55e7.googlevideo.com/videoplayback?expire=123',
+      );
+      final cachedDirect = await ytSource.resolvePlaybackUri(directSong);
+      expect(cachedDirect, contains('googlevideo.com'));
     });
 
     test('Project version reflects v1.1.6 Build 12', () {

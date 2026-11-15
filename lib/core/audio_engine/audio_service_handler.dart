@@ -159,11 +159,18 @@ class CinematicAudioHandler extends BaseAudioHandler with QueueHandler, SeekHand
 
     queue.add(validSongs.map((s) => songToMediaItem(s)).toList());
 
+    for (int i = 0; i < validSongs.length; i++) {
+      final s = validSongs[i];
+      debugPrint(">>> CinematicAudioHandler.setQueue [just_audio item $i]: title='${s.title}', sourceType='${s.sourceType}', path='${s.path}'");
+    }
+
     final sources = validSongs.map((s) => AudioSource.uri(parseAudioUri(s.path))).toList();
     final newPlaylist = ConcatenatingAudioSource(children: sources);
     
     _currentIndex = initialIndex.clamp(0, validSongs.length - 1);
     try {
+      final currentTarget = validSongs[_currentIndex];
+      debugPrint(">>> CinematicAudioHandler [just_audio setAudioSource]: index=$_currentIndex, title='${currentTarget.title}', sourceType='${currentTarget.sourceType}', url='${currentTarget.path}'");
       await _player.setAudioSource(
         newPlaylist,
         initialIndex: _currentIndex,

@@ -133,7 +133,18 @@ class PlayerNotifier extends StateNotifier<CinematicPlayerState> {
 
     // Resolve playable URI through MusicSource abstraction layer
     final rawTarget = queue[index];
+    debugPrint("PlayerNotifier.playTrack: Initiating resolution for '${rawTarget.title}' [${rawTarget.sourceType}] with initial path: '${rawTarget.path}'");
     final targetSong = await MusicSourceRepository.instance.resolvePlayableSong(rawTarget);
+    debugPrint("PlayerNotifier.playTrack: Resolved '${targetSong.title}' [${targetSong.sourceType}] to playable URL: '${targetSong.path}'");
+
+    // Clean handling for unresolvable YouTube tracks (Option B fallback)
+    if (targetSong.isYouTube &&
+        (targetSong.path.isEmpty || targetSong.path.contains('youtube.com/watch') || targetSong.path.contains('youtu.be'))) {
+      const msg = "YouTube playback is currently disabled or stream unavailable. Switch to JioSaavn or Jamendo.";
+      debugPrint("Blocked playTrack: YouTube direct stream unavailable for '${targetSong.title}'");
+      state = state.copyWith(errorMessage: msg, isPlaying: false, isLoading: false);
+      return false;
+    }
 
     if (!targetSong.isLocalFileAvailable) {
       const msg = "Audio file unavailable. Please import this song again.";
@@ -159,8 +170,11 @@ class PlayerNotifier extends StateNotifier<CinematicPlayerState> {
       );
       final success = await AudioEngine.instance.playTrack(validQueue, validIndex >= 0 ? validIndex : 0);
       if (!success) {
+        final isYt = targetSong.isYouTube;
         state = state.copyWith(
-          errorMessage: "Unable to start playback for '${targetSong.title}'. Please verify the audio file.",
+          errorMessage: isYt
+              ? "Unable to start YouTube playback for '${targetSong.title}'. Try switching to JioSaavn or Jamendo."
+              : "Unable to start playback for '${targetSong.title}'. Please verify the audio file.",
           isPlaying: false,
           isLoading: false,
         );

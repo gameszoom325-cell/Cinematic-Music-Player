@@ -98,7 +98,7 @@ class _JioSaavnPageState extends State<JioSaavnPage> {
         setState(() => _currentTrack = fresh);
       }
 
-      debugPrint('[JioSaavnPage] Feeding media_url into audio player: ${track.mediaUrl}');
+      debugPrint('>>> JioSaavnPage [just_audio setUrl]: song="${track.title}", mediaUrl="${track.mediaUrl}"');
 
       // Set URL and play via just_audio
       await _player.setUrl(track.mediaUrl);

@@ -141,7 +141,7 @@ class YouTubeApiService {
 
         songs.add(SongModel(
           id: 'yt_$videoId',
-          path: 'https://ia800504.us.archive.org/33/items/Bensound_AcousticBreeze/bensound-acousticbreeze.mp3', // resilient fallback audio stream
+          path: 'https://www.youtube.com/watch?v=$videoId',
           title: cleanedTitle,
           artist: cleanedArtist,
           album: 'YouTube Music',
@@ -355,7 +355,7 @@ class YouTubeApiService {
 
           songs.add(SongModel(
             id: 'yt_$videoId',
-            path: 'https://ia800504.us.archive.org/33/items/Bensound_Sunny/bensound-sunny.mp3',
+            path: 'https://www.youtube.com/watch?v=$videoId',
             title: decodeHtmlEntities(rawTitle),
             artist: decodeHtmlEntities(channelTitle),
             album: 'Trending on YouTube',

@@ -1,7 +1,7 @@
 name: cinematic_music_player
 description: "A premium cross-platform cinematic music player built with Flutter for Android and Windows."
 publish_to: 'none'
-version: 1.2.4+20
+version: 1.2.5+21
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -41,6 +41,7 @@ dependencies:
   youtube_explode_dart: ^3.1.0
   webview_flutter: ^4.14.1
   adblocker_webview: ^2.3.0
+  flutter_inappwebview: ^6.1.5
 
 dev_dependencies:
   flutter_test:

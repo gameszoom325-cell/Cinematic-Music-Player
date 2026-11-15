@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.5] - 2026-11-15
+
+### Added
+- v1.2.5: Swapped WebSearchPage engine to `flutter_inappwebview` with native download interception.
+- Implemented `onDownloadStartRequest` to intercept Pagalworld MP3 download links on tap.
+- Added automatic background download and storage to device Music folder (`/storage/emulated/0/Music` with fallback).
+- Integrated immediate local indexing via `ScannerService.importFiles` and `libraryProvider.refreshLibrary()` so newly downloaded MP3s appear in Local Library right away.
+- Preserved ad-blocking filters and `intent://` scheme blocking to prevent navigation crashes.
+
 ## [1.2.4] - 2026-11-15
 
 ### Added

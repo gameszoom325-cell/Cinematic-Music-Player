@@ -887,10 +887,10 @@ void main() {
       expect(cachedDirect, contains('googlevideo.com'));
     });
 
-    test('Project version reflects v1.2.4 Build 20', () {
-      expect(AppVersion.current, '1.2.4');
-      expect(AppVersion.buildNumber, 20);
-      expect(AppVersion.compare('1.2.4', '1.2.3'), greaterThan(0));
+    test('Project version reflects v1.2.5 Build 21', () {
+      expect(AppVersion.current, '1.2.5');
+      expect(AppVersion.buildNumber, 21);
+      expect(AppVersion.compare('1.2.5', '1.2.4'), greaterThan(0));
     });
   });
 
@@ -1446,8 +1446,8 @@ void main() {
       expect(WebSearchPage.isAllowedUrlScheme('tel:+123456789'), isFalse);
     });
 
-    test('UpdateService fallback URL points to valid v1.2.4 release tag', () {
-      expect(UpdateService.fallbackReleaseUrl, contains('v1.2.4'));
+    test('UpdateService fallback URL points to valid v1.2.5 release tag', () {
+      expect(UpdateService.fallbackReleaseUrl, contains('v1.2.5'));
     });
 
     test('WebSearchPage accepts optional initialQuery and autoSubmit parameters', () {
@@ -1460,6 +1460,32 @@ void main() {
       final controller = SafeAdBlockerWebviewController();
       expect(controller.shouldBlockResource('intent://play.google.com/store#Intent;scheme=package;end'), isTrue);
       expect(controller.shouldBlockResource('market://details?id=com.app'), isTrue);
+    });
+
+    test('WebSearchPage.extractFilename sanitizes filenames and extracts from URL/headers', () {
+      final name1 = WebSearchPage.extractFilename('https://pagalworld.is/song.mp3', 'Kesariya - Brahmastra.mp3');
+      expect(name1, 'Kesariya - Brahmastra.mp3');
+
+      final name2 = WebSearchPage.extractFilename('https://pagalworld.is/song.mp3', 'Channa Mereya');
+      expect(name2, 'Channa Mereya.mp3');
+
+      final name3 = WebSearchPage.extractFilename('https://pagalworld.is/files/download/id/123/Tum%20Hi%20Ho.mp3');
+      expect(name3, 'Tum Hi Ho.mp3');
+
+      final name4 = WebSearchPage.extractFilename('https://pagalworld.is/song.mp3', 'Arijit/Singh:Track*Audio?.mp3');
+      expect(name4, 'Arijit_Singh_Track_Audio_.mp3');
+    });
+
+    test('WebSearchPage.extractSongName strips .mp3 cleanly', () {
+      expect(WebSearchPage.extractSongName('Kesariya.mp3'), 'Kesariya');
+      expect(WebSearchPage.extractSongName('Tum Hi Ho - Arijit.mp3'), 'Tum Hi Ho - Arijit');
+    });
+
+    test('WebSearchPage.isAdUrl correctly detects intrusive ad domains', () {
+      expect(WebSearchPage.isAdUrl('https://pagead2.googlesyndication.com/ad'), isTrue);
+      expect(WebSearchPage.isAdUrl('https://adsterra.com/popunder'), isTrue);
+      expect(WebSearchPage.isAdUrl('https://doubleclick.net/tracker'), isTrue);
+      expect(WebSearchPage.isAdUrl('https://pagalworld.is/files/download/id/123/song.mp3'), isFalse);
     });
   });
 }

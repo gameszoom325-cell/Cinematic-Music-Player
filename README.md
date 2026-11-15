@@ -10,12 +10,23 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.2.4-gold.svg?style=flat-square" alt="Latest Release"></a>
+  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.2.5-gold.svg?style=flat-square" alt="Latest Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Android-success.svg?style=flat-square" alt="Platforms">
 </p>
 
 ---
+
+## What's New in v1.2.5 (Native Web MP3 Download & Local Library Auto-Import)
+
+- **Native Download Interception**:
+  - Replaced WebView engine with `flutter_inappwebview` to intercept Pagalworld download links natively via `onDownloadStartRequest`.
+- **Automatic Storage & Local Library Sync**:
+  - Downloaded MP3 bytes are saved to device Music storage (`/storage/emulated/0/Music` with fallback).
+  - Automatically indexes newly downloaded songs into the SQLite database and triggers `libraryProvider.refreshLibrary()` immediately.
+  - Active downloading SnackBar indicator and success notification upon import.
+- **Intrusive Ad & Scheme Protection**:
+  - Maintained `ContentBlockers` for intrusive ad networks and scheme filtering to block `intent://` and `market://` crash schemes.
 
 ## What's New in v1.2.4 (YouTube Results Redirect to Web MP3 Auto-Search)
 

@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.9] - 2026-11-15
+
+### Fixed
+- Fixed WebView intent:// crash and repaired in-app update link:
+  - Blocked non-HTTP URL schemes (`intent://`, `market://`, etc.) in `WebSearchPage.NavigationDelegate.onNavigationRequest` to prevent `net::ERR_UNKNOWN_URL_SCHEME` crashes.
+  - Added debug logging when non-HTTP navigation schemes are blocked.
+  - Repaired in-app update dialog action to launch external GitHub release link with `LaunchMode.externalApplication`.
+  - Added robust fallback with floating SnackBar and one-tap clipboard copy if browser launching fails.
+  - Declared `<queries>` package visibility intent filters in `AndroidManifest.xml` for browser URL launching on Android 11+.
+- Bumped version to `1.1.9+15`.
+
 ## [1.1.8] - 2026-11-15
 
 ### Added

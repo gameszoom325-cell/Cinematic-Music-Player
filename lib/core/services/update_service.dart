@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -10,8 +11,8 @@ import '../theme/glassmorphism.dart';
 
 /// Semantic version specification and comparison utilities
 class AppVersion {
-  static const String current = "1.1.8";
-  static const int buildNumber = 14;
+  static const String current = "1.1.9";
+  static const int buildNumber = 15;
   static const String releaseStage = "Release";
 
   /// Compares two semver strings (e.g. "1.1.3" and "1.1.2")
@@ -234,16 +235,58 @@ class UpdateService {
     }
   }
 
-  /// Launch download URL in external browser
-  static Future<void> openDownload(String url) async {
-    final uri = Uri.parse(url);
+  static const String fallbackReleaseUrl = "https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/tag/v1.1.9";
+
+  /// Launch GitHub release URL in external browser using LaunchMode.externalApplication.
+  /// If launch fails, displays a floating SnackBar containing the URL with a COPY action.
+  static Future<bool> openReleaseUrl(
+    String url, {
+    BuildContext? context,
+    ScaffoldMessengerState? messenger,
+  }) async {
+    final cleanUrl = url.trim().isNotEmpty ? url.trim() : fallbackReleaseUrl;
+    final uri = Uri.parse(cleanUrl);
+    bool launched = false;
     try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
+      launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (e) {
-      debugPrint("Could not launch update URL: $e");
+      debugPrint("UpdateService: Could not launch update URL ($cleanUrl): $e");
+      launched = false;
     }
+
+    if (!launched) {
+      final msg = messenger ?? (context != null && context.mounted ? ScaffoldMessenger.maybeOf(context) : null);
+      if (msg != null) {
+        msg.showSnackBar(
+          SnackBar(
+            content: SelectableText(
+              "Unable to open link in browser. Copy URL:\n$cleanUrl",
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+            ),
+            backgroundColor: Colors.redAccent.shade700,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 8),
+            action: SnackBarAction(
+              label: "COPY",
+              textColor: Colors.amberAccent,
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: cleanUrl));
+              },
+            ),
+          ),
+        );
+      }
+    }
+    return launched;
+  }
+
+  /// Launch download or release URL in external browser
+  static Future<void> openDownload(
+    String url, {
+    BuildContext? context,
+    ScaffoldMessengerState? messenger,
+  }) async {
+    await openReleaseUrl(url, context: context, messenger: messenger);
   }
 }
 
@@ -255,7 +298,12 @@ class CinematicUpdateDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final targetUrl = info.directDownloadUrl ?? info.htmlUrl;
+    // Resolve target release URL: ensure it points to the GitHub release page
+    String targetUrl = info.htmlUrl;
+    if (targetUrl.isEmpty || !targetUrl.contains('github.com')) {
+      final tag = info.latestVersion.isNotEmpty ? 'v${info.latestVersion}' : 'v1.1.9';
+      targetUrl = 'https://github.com/${UpdateService.githubRepo}/releases/tag/$tag';
+    }
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -412,9 +460,13 @@ class CinematicUpdateDialog extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
-                      onPressed: () {
+                      onPressed: () async {
+                        final messenger = ScaffoldMessenger.of(context);
                         Navigator.pop(context);
-                        UpdateService.openDownload(targetUrl);
+                        await UpdateService.openReleaseUrl(
+                          targetUrl,
+                          messenger: messenger,
+                        );
                       },
                       child: const Text("Update Now", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                     ),

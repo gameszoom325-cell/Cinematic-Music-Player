@@ -2,7 +2,7 @@
 ; Defines installer creation for Windows Desktop (x64)
 
 #define MyAppName "Cinematic Music Player"
-#define MyAppVersion "1.1.8"
+#define MyAppVersion "1.1.9"
 #define MyAppPublisher "Cinematic Audio Works"
 #define MyAppExeName "cinematic_music_player.exe"
 #define MyAppSourceDir "..\..\build\windows\x64\runner\Release"

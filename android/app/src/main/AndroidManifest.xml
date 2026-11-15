@@ -16,6 +16,18 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" /> <!-- Required for Visualizer API -->
 
+    <!-- Intent queries for external browser URLs (url_launcher package visibility on Android 11+) -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+    </queries>
+
     <application
         android:label="Cinematic Music Player"
         android:name="${applicationName}"

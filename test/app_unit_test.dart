@@ -887,10 +887,10 @@ void main() {
       expect(cachedDirect, contains('googlevideo.com'));
     });
 
-    test('Project version reflects v1.1.8 Build 14', () {
-      expect(AppVersion.current, '1.1.8');
-      expect(AppVersion.buildNumber, 14);
-      expect(AppVersion.compare('1.1.8', '1.1.7'), greaterThan(0));
+    test('Project version reflects v1.1.9 Build 15', () {
+      expect(AppVersion.current, '1.1.9');
+      expect(AppVersion.buildNumber, 15);
+      expect(AppVersion.compare('1.1.9', '1.1.8'), greaterThan(0));
     });
   });
 
@@ -1436,6 +1436,18 @@ void main() {
     test('WebSearchPage instantiates with const constructor', () {
       const page = WebSearchPage();
       expect(page, isNotNull);
+    });
+
+    test('WebSearchPage.isAllowedUrlScheme allows http/https and blocks intent schemes', () {
+      expect(WebSearchPage.isAllowedUrlScheme('https://pagalworld.is/song/123'), isTrue);
+      expect(WebSearchPage.isAllowedUrlScheme('http://pagalworld.is/song/123'), isTrue);
+      expect(WebSearchPage.isAllowedUrlScheme('intent://scan/#Intent;scheme=zxing;end'), isFalse);
+      expect(WebSearchPage.isAllowedUrlScheme('market://details?id=com.app'), isFalse);
+      expect(WebSearchPage.isAllowedUrlScheme('tel:+123456789'), isFalse);
+    });
+
+    test('UpdateService fallback URL points to valid v1.1.9 release tag', () {
+      expect(UpdateService.fallbackReleaseUrl, contains('v1.1.9'));
     });
   });
 }

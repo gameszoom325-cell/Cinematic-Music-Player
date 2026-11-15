@@ -10,12 +10,22 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.1.8-blueviolet.svg?style=flat-square" alt="Latest Release"></a>
+  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.1.9-blueviolet.svg?style=flat-square" alt="Latest Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Android-success.svg?style=flat-square" alt="Platforms">
 </p>
 
 ---
+
+## What's New in v1.1.9 (WebView Intent Fix & In-App Update Link Repair)
+
+- **Fixed WebView `intent://` Navigation Crash**:
+  - Filtered non-HTTP/HTTPS navigation schemes (`intent://`, `market://`, etc.) in `WebSearchPage.NavigationDelegate` to prevent `net::ERR_UNKNOWN_URL_SCHEME` errors when browsing third-party web content.
+  - Added logging diagnostics when unhandled schemes are prevented.
+- **Repaired In-App Update Link Launching**:
+  - Updated update popup action to reliably launch GitHub releases in external browsers via `LaunchMode.externalApplication`.
+  - Added package visibility `<queries>` declaration in `AndroidManifest.xml` for browser intents on Android 11+.
+  - Added automatic fallback with floating SnackBar and one-tap clipboard copy action if the browser fails to open.
 
 ## What's New in v1.1.8 (WebView MP3 Search & Download - Pagalworld)
 

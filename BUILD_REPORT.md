@@ -1,7 +1,7 @@
 # CINEMATIC MUSIC PLAYER - PRODUCTION BUILD REPORT
 
 **Project Location:** `C:\MY PROJECTS`  
-**Application Version:** `1.1.8+14`  
+**Application Version:** `1.1.9+15`  
 **Release Date:** 2026-11-15  
 **Target Platforms:** Windows Desktop (x64), Android Mobile (API 21 - 36, ARM64/v7/x86_64)  
 
@@ -11,6 +11,7 @@
 
 | Artifact Name | Platform | File Size | Location | Build Status |
 | :--- | :--- | :--- | :--- | :--- |
+| **`CinematicMusicPlayer-v1.1.9.apk`** | Android (API 21 - 36) | **67.6 MB** (70,866,065 bytes) | [CinematicMusicPlayer-v1.1.9.apk](file:///C:/MY%20PROJECTS/dist/android/CinematicMusicPlayer-v1.1.9.apk) | **SUCCESS (Signed Release Build, V2 Scheme, SHA256: `8236e1b457...`)** |
 | **`CinematicMusicPlayer-v1.1.8.apk`** | Android (API 21 - 36) | **67.6 MB** (70,865,990 bytes) | [CinematicMusicPlayer-v1.1.8.apk](file:///C:/MY%20PROJECTS/dist/android/CinematicMusicPlayer-v1.1.8.apk) | **SUCCESS (Signed Release Build, V2 Scheme, SHA256: `61cf68412b...`)** |
 | **`CinematicMusicPlayer-v1.1.7.apk`** | Android (API 21 - 36) | **66.7 MB** | [CinematicMusicPlayer-v1.1.7.apk](file:///C:/MY%20PROJECTS/dist/android/CinematicMusicPlayer-v1.1.7.apk) | **SUCCESS (Universal Multi-ABI Release)** |
 | **`CinematicMusicPlayerSetup.exe`** | Windows Desktop (x64) | **28.0 MB** (29,376,768 bytes) | [CinematicMusicPlayerSetup.exe](file:///C:/MY%20PROJECTS/dist/windows/CinematicMusicPlayerSetup.exe) | **SUCCESS (Compiled & Packaged with Inno Setup 6)** |
@@ -18,7 +19,14 @@
 
 ---
 
-## 2. Release v1.1.8 Architectural Enhancements
+## 2. Release v1.1.9 Architectural Enhancements
+
+### WebView Intent Scheme Protection & In-App Update Repair
+- Filtered non-HTTP/HTTPS navigation schemes (`intent://`, `market://`, etc.) in `WebSearchPage.NavigationDelegate` to prevent `net::ERR_UNKNOWN_URL_SCHEME` errors.
+- Added package visibility `<queries>` declaration in `AndroidManifest.xml` for external browser launch on Android 11+.
+- Repaired update dialog to launch GitHub releases in external browser (`LaunchMode.externalApplication`) with copy-to-clipboard fallback SnackBar.
+
+## 3. Release v1.1.8 Architectural Enhancements
 
 ### WebView MP3 Search & Download Feature (Pagalworld)
 - Integrated `webview_flutter: ^4.14.1` with native Android WebView backing.

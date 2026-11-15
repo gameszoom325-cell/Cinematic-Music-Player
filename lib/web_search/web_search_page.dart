@@ -22,6 +22,13 @@ class WebSearchPage extends StatefulWidget {
   static const String homeUrl = 'https://pagalworld.is/';
   static const String searchBaseUrl = 'https://pagalworld.is/search?q=';
 
+  /// Validates that a navigation URL uses an allowed HTTP or HTTPS scheme.
+  /// Prevents WebView crashes from Android intent schemes (e.g., intent://, market://).
+  static bool isAllowedUrlScheme(String url) {
+    final lower = url.trim().toLowerCase();
+    return lower.startsWith('http://') || lower.startsWith('https://');
+  }
+
   @override
   State<WebSearchPage> createState() => _WebSearchPageState();
 }
@@ -52,8 +59,11 @@ class _WebSearchPageState extends State<WebSearchPage> {
           ..setNavigationDelegate(
             NavigationDelegate(
               onNavigationRequest: (NavigationRequest request) {
-                // Allow all navigation & redirects
-                return NavigationDecision.navigate;
+                if (WebSearchPage.isAllowedUrlScheme(request.url)) {
+                  return NavigationDecision.navigate;
+                }
+                debugPrint("WebSearchPage: Blocked non-http navigation scheme: ${request.url}");
+                return NavigationDecision.prevent;
               },
               onProgress: (int progress) {
                 if (mounted) {

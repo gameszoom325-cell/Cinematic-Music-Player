@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.3] - 2026-11-15
+
+### Added
+- Integrated user-assisted search handoff from main search screen to `WebSearchPage` with pre-filled query and manual search initiation.
+- Added floating "Use this MP3" button in `WebSearchPage` to capture audio URLs and start playback automatically in the player.
+- Tagged captured web audio with `WEB MP3` source badge.
+
 ## [1.2.2] - 2026-11-15
 
 ### Changed

@@ -887,10 +887,10 @@ void main() {
       expect(cachedDirect, contains('googlevideo.com'));
     });
 
-    test('Project version reflects v1.2.2 Build 18', () {
-      expect(AppVersion.current, '1.2.2');
-      expect(AppVersion.buildNumber, 18);
-      expect(AppVersion.compare('1.2.2', '1.2.1'), greaterThan(0));
+    test('Project version reflects v1.2.3 Build 19', () {
+      expect(AppVersion.current, '1.2.3');
+      expect(AppVersion.buildNumber, 19);
+      expect(AppVersion.compare('1.2.3', '1.2.2'), greaterThan(0));
     });
   });
 
@@ -1446,8 +1446,13 @@ void main() {
       expect(WebSearchPage.isAllowedUrlScheme('tel:+123456789'), isFalse);
     });
 
-    test('UpdateService fallback URL points to valid v1.2.2 release tag', () {
-      expect(UpdateService.fallbackReleaseUrl, contains('v1.2.2'));
+    test('UpdateService fallback URL points to valid v1.2.3 release tag', () {
+      expect(UpdateService.fallbackReleaseUrl, contains('v1.2.3'));
+    });
+
+    test('WebSearchPage accepts optional initialQuery parameter', () {
+      const page = WebSearchPage(initialQuery: 'Kesariya');
+      expect(page.initialQuery, 'Kesariya');
     });
 
     test('SafeAdBlockerWebviewController blocks intent schemes and allows https', () {

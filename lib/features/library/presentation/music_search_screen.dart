@@ -6,6 +6,7 @@ import '../../../core/sources/music_source_type.dart';
 import '../../../core/sources/music_source_repository.dart';
 import '../../../core/database/models/song_model.dart';
 import '../../../core/database/database_service.dart';
+import '../../../web_search/web_search_page.dart';
 import '../../player/providers/player_provider.dart';
 import '../providers/music_source_provider.dart';
 
@@ -20,6 +21,7 @@ class MusicSearchScreen extends ConsumerStatefulWidget {
 
 class _MusicSearchScreenState extends ConsumerState<MusicSearchScreen> with SingleTickerProviderStateMixin {
   final TextEditingController _searchCtrl = TextEditingController();
+  final List<SongModel> _webPrefetchedSongs = [];
   late TabController _tabController;
   String _query = "";
   MusicSourceType? _selectedSource; // null = all sources
@@ -89,6 +91,19 @@ class _MusicSearchScreenState extends ConsumerState<MusicSearchScreen> with Sing
     );
   }
 
+  Future<void> _navigateToWebSearch(String query) async {
+    final capturedSong = await Navigator.of(context).push<SongModel>(
+      MaterialPageRoute(
+        builder: (context) => WebSearchPage(initialQuery: query.trim()),
+      ),
+    );
+    if (capturedSong != null && mounted) {
+      setState(() {
+        _webPrefetchedSongs.insert(0, capturedSong);
+      });
+    }
+  }
+
   Widget _buildSearchHeader() {
     final canPop = Navigator.of(context).canPop();
 
@@ -108,7 +123,7 @@ class _MusicSearchScreenState extends ConsumerState<MusicSearchScreen> with Sing
               height: 48,
               decoration: BoxDecoration(
                 color: CinematicColors.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.white.withOpacity(0.08)),
               ),
               child: TextField(
@@ -138,6 +153,22 @@ class _MusicSearchScreenState extends ConsumerState<MusicSearchScreen> with Sing
               ),
             ),
           ),
+          if (_query.trim().isNotEmpty) ...[
+            const SizedBox(width: 8),
+            Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: CinematicColors.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: CinematicColors.primary.withOpacity(0.3)),
+              ),
+              child: IconButton(
+                tooltip: "Search Web for '$_query'",
+                icon: const Icon(Icons.travel_explore_rounded, color: CinematicColors.primary, size: 20),
+                onPressed: () => _navigateToWebSearch(_query),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -149,6 +180,24 @@ class _MusicSearchScreenState extends ConsumerState<MusicSearchScreen> with Sing
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Row(
         children: [
+          if (_query.trim().isNotEmpty) ...[
+            ActionChip(
+              avatar: const Icon(Icons.travel_explore_rounded, size: 16, color: CinematicColors.primary),
+              label: Text(
+                "Search Web for '$_query'",
+                style: const TextStyle(
+                  color: CinematicColors.primary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              backgroundColor: CinematicColors.primary.withOpacity(0.12),
+              side: const BorderSide(color: CinematicColors.primary),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+              onPressed: () => _navigateToWebSearch(_query),
+            ),
+            const SizedBox(width: 8),
+          ],
           _buildFilterChip("All Sources", null),
           const SizedBox(width: 8),
           _buildFilterChip("YouTube Music", MusicSourceType.youtube),
@@ -268,7 +317,15 @@ class _MusicSearchScreenState extends ConsumerState<MusicSearchScreen> with Sing
   }
 
   Widget _buildSearchResultsView(FederatedSearchResult result) {
-    if (result.isEmpty) {
+    final effectiveSongs = [..._webPrefetchedSongs, ...result.songs];
+    final effectiveResult = FederatedSearchResult(
+      query: result.query,
+      songs: effectiveSongs,
+      artists: result.artists,
+      albums: result.albums,
+    );
+
+    if (effectiveResult.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -279,6 +336,18 @@ class _MusicSearchScreenState extends ConsumerState<MusicSearchScreen> with Sing
               "No results found for '$_query'",
               style: const TextStyle(color: Colors.white70, fontSize: 14),
             ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: CinematicColors.primary,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              ),
+              icon: const Icon(Icons.travel_explore_rounded, size: 18),
+              label: Text("Search Web for '$_query'", style: const TextStyle(fontWeight: FontWeight.bold)),
+              onPressed: () => _navigateToWebSearch(_query),
+            ),
           ],
         ),
       );
@@ -288,16 +357,16 @@ class _MusicSearchScreenState extends ConsumerState<MusicSearchScreen> with Sing
       controller: _tabController,
       children: [
         // Tab 0: Top Results (All)
-        _buildTopResultsTab(result),
+        _buildTopResultsTab(effectiveResult),
 
         // Tab 1: Songs
-        _buildSongsTab(result.songs),
+        _buildSongsTab(effectiveSongs),
 
         // Tab 2: Artists
-        _buildArtistsTab(result.artists),
+        _buildArtistsTab(effectiveResult.artists),
 
         // Tab 3: Albums
-        _buildAlbumsTab(result.albums),
+        _buildAlbumsTab(effectiveResult.albums),
       ],
     );
   }
@@ -561,6 +630,12 @@ class _MusicSearchScreenState extends ConsumerState<MusicSearchScreen> with Sing
       case 'catalog':
         badgeColor = const Color(0xFFF59E0B); // Amber / Gold
         label = "CATALOG";
+        break;
+      case 'web_prefetch':
+      case 'pagalworld':
+      case 'web':
+        badgeColor = const Color(0xFFEAB308); // Warm Gold
+        label = "WEB MP3";
         break;
       case 'local':
       default:

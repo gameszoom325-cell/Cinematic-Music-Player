@@ -3,10 +3,13 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:adblocker_webview/adblocker_webview.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import '../core/database/models/song_model.dart';
 import '../core/theme/cinematic_colors.dart';
+import '../features/player/providers/player_provider.dart';
 
 /// WebView-based MP3 search and download screen (Pagalworld) with integrated ad-blocking.
 ///
@@ -14,11 +17,15 @@ import '../core/theme/cinematic_colors.dart';
 /// - Loads https://pagalworld.is/ by default with EasyList & AdGuard ad filtering.
 /// - Integrated top search bar: navigates to https://pagalworld.is/search?q=<encoded_query> on Enter.
 /// - Safe AdBlockerWebviewController blocking non-http/https schemes (intent://, market://) to prevent ERR_UNKNOWN_URL_SCHEME.
+/// - Pre-fills search query when navigated from main search screen (handoff flow).
+/// - Floating "Use this MP3" button to extract current page / download audio link into the player.
 /// - Home button in AppBar returning to https://pagalworld.is/.
 /// - System Android back button navigation in WebView history.
 /// - Desktop/Windows graceful fallback with direct external browser launch.
-class WebSearchPage extends StatefulWidget {
-  const WebSearchPage({super.key});
+class WebSearchPage extends ConsumerStatefulWidget {
+  const WebSearchPage({super.key, this.initialQuery});
+
+  final String? initialQuery;
 
   static const String homeUrl = 'https://pagalworld.is/';
   static const String searchBaseUrl = 'https://pagalworld.is/search?q=';
@@ -31,13 +38,16 @@ class WebSearchPage extends StatefulWidget {
   }
 
   @override
-  State<WebSearchPage> createState() => _WebSearchPageState();
+  ConsumerState<WebSearchPage> createState() => _WebSearchPageState();
 }
 
 /// Custom wrapper around AdBlockerWebviewController that strictly enforces
 /// allowed HTTP/HTTPS URL schemes, preventing crashes on intent:// or market:// links.
 class SafeAdBlockerWebviewController implements AdBlockerWebviewController {
   final AdBlockerWebviewController _delegate = AdBlockerWebviewController.instance;
+  WebViewController? _internalController;
+
+  WebViewController? get internalController => _internalController;
 
   @override
   Future<void> initialize(FilterConfig filterConfig) => _delegate.initialize(filterConfig);
@@ -123,6 +133,7 @@ class SafeAdBlockerWebviewController implements AdBlockerWebviewController {
 
   @override
   void setInternalController(WebViewController controller) {
+    _internalController = controller;
     try {
       controller.setBackgroundColor(const Color(0xFF0F0F12));
     } catch (_) {}
@@ -130,9 +141,10 @@ class SafeAdBlockerWebviewController implements AdBlockerWebviewController {
   }
 }
 
-class _WebSearchPageState extends State<WebSearchPage> {
+class _WebSearchPageState extends ConsumerState<WebSearchPage> {
   final TextEditingController _searchController = TextEditingController();
   final SafeAdBlockerWebviewController _adBlockerController = SafeAdBlockerWebviewController();
+  String? _currentUrl;
   double _loadingProgress = 0.0;
   bool _isLoading = false;
   bool _isSupported = false;
@@ -141,6 +153,9 @@ class _WebSearchPageState extends State<WebSearchPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialQuery != null && widget.initialQuery!.trim().isNotEmpty) {
+      _searchController.text = widget.initialQuery!.trim();
+    }
     _checkAndInitWebView();
   }
 
@@ -288,6 +303,8 @@ class _WebSearchPageState extends State<WebSearchPage> {
               : null,
         ),
         body: _buildBody(),
+        floatingActionButton: _isSupported ? _buildUseMp3Button() : null,
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       ),
     );
   }
@@ -322,10 +339,15 @@ class _WebSearchPageState extends State<WebSearchPage> {
             url: Uri.parse(WebSearchPage.homeUrl),
             adBlockerWebviewController: _adBlockerController,
             shouldBlockAds: true,
+            onUrlChanged: (url) {
+              if (url != null) _currentUrl = url;
+            },
             onLoadStart: (url) {
+              if (url != null) _currentUrl = url;
               if (mounted) setState(() => _isLoading = true);
             },
             onLoadFinished: (url) {
+              if (url != null) _currentUrl = url;
               if (mounted) {
                 setState(() {
                   _isLoading = false;
@@ -467,5 +489,128 @@ class _WebSearchPageState extends State<WebSearchPage> {
         ),
       ),
     );
+  }
+
+  Widget _buildUseMp3Button() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: CinematicColors.primary,
+        borderRadius: BorderRadius.circular(6),
+        elevation: 6,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(6),
+          onTap: _captureAndPlayMp3,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.play_circle_fill_rounded, color: Colors.black, size: 20),
+                SizedBox(width: 8),
+                Text(
+                  "Use this MP3",
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _captureAndPlayMp3() async {
+    String? targetUrl = _currentUrl;
+    try {
+      final ctrl = _adBlockerController.internalController;
+      if (ctrl != null) {
+        final activeUrl = await ctrl.currentUrl();
+        if (activeUrl != null && activeUrl.isNotEmpty) {
+          targetUrl = activeUrl;
+        }
+
+        final extracted = await ctrl.runJavaScriptReturningResult('''
+          (function() {
+            var loc = window.location.href || '';
+            if (loc.indexOf('.mp3') !== -1) return loc;
+            var audio = document.querySelector('audio source, audio');
+            if (audio && (audio.src || audio.currentSrc)) return audio.src || audio.currentSrc;
+            var dwn = document.querySelector('a[href*=".mp3"], a.dwn-btn, a[download*=".mp3"]');
+            if (dwn && dwn.href) return dwn.href;
+            return loc;
+          })()
+        ''');
+
+        final clean = extracted.toString().replaceAll('"', '').trim();
+        if (clean.startsWith('http://') || clean.startsWith('https://')) {
+          targetUrl = clean;
+        }
+      }
+    } catch (e) {
+      debugPrint("WebSearchPage: Error extracting MP3 link: $e");
+    }
+
+    if (targetUrl == null || targetUrl.isEmpty || targetUrl == WebSearchPage.homeUrl) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please navigate to a song page or tap a download button first."),
+          backgroundColor: Color(0xFF222228),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    String title = "Web MP3 Song";
+    try {
+      final pageTitle = await _adBlockerController.internalController?.getTitle();
+      if (pageTitle != null && pageTitle.isNotEmpty) {
+        title = pageTitle
+            .replaceAll(RegExp(r'\s*-\s*Pagalworld.*', caseSensitive: false), '')
+            .replaceAll(RegExp(r'Mp3 Song Download.*', caseSensitive: false), '')
+            .trim();
+        if (title.isEmpty) title = "Web MP3 Track";
+      }
+    } catch (_) {}
+
+    final capturedSong = SongModel(
+      id: 'web_${DateTime.now().millisecondsSinceEpoch}',
+      title: title,
+      artist: 'Pagalworld Web',
+      album: 'Web MP3',
+      durationMs: 0,
+      path: targetUrl,
+      sourceType: 'web_prefetch',
+      externalUrl: targetUrl,
+      dateAdded: DateTime.now(),
+      isFavorite: false,
+    );
+
+    debugPrint("WebSearchPage: Captured MP3 URL: $targetUrl for song '${capturedSong.title}'");
+
+    try {
+      await ref.read(playerProvider.notifier).playTrack([capturedSong], 0);
+    } catch (e) {
+      debugPrint("WebSearchPage: Playback error: $e");
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Playing '$title' in Cinematic Player"),
+        backgroundColor: CinematicColors.primary,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop(capturedSong);
+    }
   }
 }

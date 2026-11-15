@@ -10,12 +10,21 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.2.2-gold.svg?style=flat-square" alt="Latest Release"></a>
+  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.2.3-gold.svg?style=flat-square" alt="Latest Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Android-success.svg?style=flat-square" alt="Platforms">
 </p>
 
 ---
+
+## What's New in v1.2.3 (Search Handoff & One-Tap Web MP3 Capture)
+
+- **Search Handoff Flow**:
+  - Seamlessly hand off queries from the main search bar to `WebSearchPage`, pre-filling the search query without auto-submitting.
+  - Allows users to view and interact with web pages legitimately through the visible ad-blocking browser.
+- **One-Tap "Use this MP3" Action**:
+  - Added floating "Use this MP3" action in `WebSearchPage` to capture audio URLs and trigger playback immediately in the player.
+  - Tagged with a gold `WEB MP3` badge in search results.
 
 ## What's New in v1.2.2 (Release Stabilization & Ad-Blocking Lock-in)
 

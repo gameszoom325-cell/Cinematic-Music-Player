@@ -4,6 +4,7 @@ enum MusicSourceType {
   online,
   catalog,
   youtube,
+  jamendo,
   externalProvider;
 
   String get id {
@@ -18,6 +19,8 @@ enum MusicSourceType {
         return 'catalog';
       case MusicSourceType.youtube:
         return 'youtube';
+      case MusicSourceType.jamendo:
+        return 'jamendo';
       case MusicSourceType.externalProvider:
         return 'external';
     }
@@ -35,6 +38,8 @@ enum MusicSourceType {
         return 'Bollywood & Global Catalog';
       case MusicSourceType.youtube:
         return 'YouTube Music';
+      case MusicSourceType.jamendo:
+        return 'Jamendo Music (Creative Commons)';
       case MusicSourceType.externalProvider:
         return 'External Stream Provider';
     }
@@ -55,6 +60,8 @@ enum MusicSourceType {
       case 'youtube':
       case 'yt':
         return MusicSourceType.youtube;
+      case 'jamendo':
+        return MusicSourceType.jamendo;
       case 'external':
       case 'externalprovider':
         return MusicSourceType.externalProvider;

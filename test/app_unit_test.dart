@@ -34,6 +34,9 @@ import 'package:cinematic_music_player/core/catalog/models/catalog_album.dart';
 import 'package:cinematic_music_player/core/catalog/catalog_database_service.dart';
 import 'package:cinematic_music_player/core/config/youtube_config.dart';
 import 'package:cinematic_music_player/core/services/youtube_api_service.dart';
+import 'package:cinematic_music_player/core/config/jamendo_config.dart';
+import 'package:cinematic_music_player/core/services/jamendo_api_service.dart';
+import 'package:cinematic_music_player/core/sources/jamendo_music_source.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -399,13 +402,14 @@ void main() {
 
     test('MusicSourceRepository initializes default sources and executes federated search', () async {
       final repo = MusicSourceRepository.instance;
-      expect(repo.allSources, hasLength(6));
+      expect(repo.allSources, hasLength(7));
 
       expect(repo.getSource(MusicSourceType.local), isNotNull);
       expect(repo.getSource(MusicSourceType.cloud), isNotNull);
       expect(repo.getSource(MusicSourceType.online), isNotNull);
       expect(repo.getSource(MusicSourceType.catalog), isNotNull);
       expect(repo.getSource(MusicSourceType.youtube), isNotNull);
+      expect(repo.getSource(MusicSourceType.jamendo), isNotNull);
       expect(repo.getSource(MusicSourceType.externalProvider), isNotNull);
 
       // Search all sources
@@ -1069,6 +1073,118 @@ void main() {
       expect(updated.preset, VisualizerPresetType.neonHorizon);
       expect(updated.sensitivity, 1.8);
       expect(updated.isGlowEnabled, isFalse);
+    });
+  });
+
+  group('19. Jamendo Music API & JamendoMusicSource Tests', () {
+    test('JamendoConfig loads Client ID correctly, supports masking and validation', () {
+      final config = JamendoConfig.instance;
+      expect(config.hasClientId, isTrue);
+      expect(config.clientId, equals('fd914c0b'));
+      expect(config.maskedClientId.startsWith('fd'), isTrue);
+      expect(config.maskedClientId.endsWith('0b'), isTrue);
+      expect(config.validate().isValid, isTrue);
+    });
+
+    test('SongModel supports Jamendo sourceType, sourceId, audioUrl, and isJamendo', () {
+      final song = SongModel(
+        id: 'jamendo_1348697',
+        path: 'https://prod-1.storage.jamendo.com/?trackid=1348697&format=mp31',
+        title: 'Valley fog',
+        artist: 'Alexander Morozov',
+        album: 'Planet Bubus',
+        durationMs: 162000,
+        hasArtwork: true,
+        artworkPath: 'https://usercontent.jamendo.com?type=album&id=159132',
+        dateAdded: DateTime.now(),
+        sourceType: 'jamendo',
+        sourceId: '1348697',
+        externalUrl: 'https://www.jamendo.com/track/1348697',
+      );
+
+      expect(song.isJamendo, isTrue);
+      expect(song.isRemoteStream, isTrue);
+      expect(song.isLocalFileAvailable, isTrue);
+      expect(song.audioUrl, equals('https://prod-1.storage.jamendo.com/?trackid=1348697&format=mp31'));
+      expect(song.externalUrl, equals('https://www.jamendo.com/track/1348697'));
+      expect(song.sourceId, equals('1348697'));
+
+      // Verify serialization preserves Jamendo fields
+      final map = song.toMap();
+      expect(map['sourceType'], equals('jamendo'));
+      expect(map['sourceId'], equals('1348697'));
+      expect(map['externalUrl'], equals('https://www.jamendo.com/track/1348697'));
+
+      final reconstructed = SongModel.fromMap(map);
+      expect(reconstructed.isJamendo, isTrue);
+      expect(reconstructed.sourceId, equals('1348697'));
+      expect(reconstructed.audioUrl, equals(song.path));
+    });
+
+    test('JamendoMusicSource satisfies MusicSource interface and reports availability', () async {
+      final source = JamendoMusicSource();
+      expect(source.id, equals('jamendo'));
+      expect(source.type, equals(MusicSourceType.jamendo));
+      expect(source.isAvailable, isTrue);
+
+      final testSong = SongModel(
+        id: 'jamendo_1348697',
+        path: 'https://prod-1.storage.jamendo.com/?trackid=1348697&format=mp31',
+        title: 'Valley fog',
+        artist: 'Alexander Morozov',
+        album: 'Planet Bubus',
+        durationMs: 162000,
+        dateAdded: DateTime.now(),
+        sourceType: 'jamendo',
+        sourceId: '1348697',
+      );
+
+      final uri = await source.resolvePlaybackUri(testSong);
+      expect(uri, startsWith('https://prod-1.storage.jamendo.com'));
+    });
+
+    test('MusicSourceType enum maps jamendo correctly', () {
+      expect(MusicSourceType.jamendo.id, equals('jamendo'));
+      expect(MusicSourceType.jamendo.displayName, contains('Jamendo'));
+      expect(MusicSourceType.fromString('jamendo'), equals(MusicSourceType.jamendo));
+      expect(MusicSourceType.fromString('JAMENDO'), equals(MusicSourceType.jamendo));
+    });
+
+    test('MusicSourceRepository registers JamendoMusicSource and resolves playback', () async {
+      final repo = MusicSourceRepository.instance;
+      final source = repo.getSource(MusicSourceType.jamendo);
+      expect(source, isNotNull);
+      expect(source, isA<JamendoMusicSource>());
+      expect(source!.isAvailable, isTrue);
+
+      final jamendoSong = SongModel(
+        id: 'jamendo_604014',
+        path: 'https://prod-1.storage.jamendo.com/?trackid=604014&format=mp31',
+        title: 'Bright days',
+        artist: 'Alexander Vikuloff',
+        album: 'My Songs',
+        durationMs: 107000,
+        dateAdded: DateTime.now(),
+        sourceType: 'jamendo',
+        sourceId: '604014',
+      );
+
+      final resolved = await repo.resolvePlayableSong(jamendoSong);
+      expect(resolved.path, startsWith('http'));
+      expect(resolved.isLocalFileAvailable, isTrue);
+    });
+
+    test('JamendoApiService diagnostics and error reporting handle missing or invalid keys', () {
+      final service = JamendoApiService.instance;
+      expect(service, isNotNull);
+
+      final validation = JamendoConfig.instance.validate();
+      expect(validation.isValid, isTrue);
+
+      // Verify masked client ID prevents secret leakage in logs
+      final masked = JamendoConfig.instance.maskedClientId;
+      expect(masked, contains('...'));
+      expect(masked.length, lessThanOrEqualTo(JamendoConfig.instance.clientId.length));
     });
   });
 }

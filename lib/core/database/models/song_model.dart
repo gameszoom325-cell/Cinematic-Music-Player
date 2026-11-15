@@ -93,12 +93,20 @@ class SongModel {
   bool get isCatalog => sourceType == 'catalog';
   bool get isExternal => sourceType == 'external';
   bool get isYouTube => sourceType == 'youtube';
+  bool get isJamendo => sourceType == 'jamendo';
+
+  /// Direct playable audio URL if available (e.g. for Jamendo, Cloud, or resolved stream)
+  String? get audioUrl => (path.startsWith('http://') || path.startsWith('https://'))
+      ? path
+      : externalUrl;
+
   bool get isRemoteStream =>
       isCloudSong ||
       isOnline ||
       isCatalog ||
       isExternal ||
       isYouTube ||
+      isJamendo ||
       (externalUrl != null && externalUrl!.isNotEmpty) ||
       path.startsWith('http://') ||
       path.startsWith('https://');

@@ -113,6 +113,9 @@ class PlayerNotifier extends StateNotifier<CinematicPlayerState> {
     // Filter queue to verified audio files
     final validQueue = queue.where((s) => s.isLocalFileAvailable).toList();
     final validIndex = validQueue.indexWhere((s) => s.id == targetSong.id);
+    if (validIndex >= 0) {
+      validQueue[validIndex] = targetSong;
+    }
 
     try {
       state = state.copyWith(

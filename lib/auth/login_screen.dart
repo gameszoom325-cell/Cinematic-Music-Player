@@ -290,6 +290,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: TextButton.icon(
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white54,
+                      ),
+                      onPressed: () async {
+                        final navigator = Navigator.of(context);
+                        await ref.read(authProvider.notifier).continueWithoutAccount();
+                        if (mounted) {
+                          navigator.pushAndRemoveUntil(
+                            MaterialPageRoute(builder: (_) => const AppShell()),
+                            (route) => false,
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+                      label: const Text("Continue in Local Mode (Offline)", style: TextStyle(fontSize: 13)),
+                    ),
+                  ),
                 ],
               ),
             ),

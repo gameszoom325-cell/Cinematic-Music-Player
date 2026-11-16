@@ -2,7 +2,7 @@
 ; Defines installer creation for Windows Desktop (x64)
 
 #define MyAppName "Cinematic Music Player"
-#define MyAppVersion "1.3.1"
+#define MyAppVersion "1.4.0"
 #define MyAppPublisher "Cinematic Audio Works"
 #define MyAppExeName "cinematic_music_player.exe"
 #define MyAppSourceDir "..\..\build\windows\x64\runner\Release"
@@ -16,7 +16,7 @@ DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 OutputDir=..\..\dist\windows
-OutputBaseFilename=CinematicMusicPlayerSetup-v1.3.1
+OutputBaseFilename=CinematicMusicPlayerSetup-v1.4.0
 SetupIconFile=..\runner\resources\app_icon.ico
 Compression=lzma2/ultra64
 SolidCompression=yes

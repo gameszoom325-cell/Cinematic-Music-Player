@@ -10,12 +10,27 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.3.1-gold.svg?style=flat-square" alt="Latest Release"></a>
+  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.4.0-gold.svg?style=flat-square" alt="Latest Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Android-success.svg?style=flat-square" alt="Platforms">
 </p>
 
 ---
+
+## What's New in v1.4.0 (Cross-Device Cloud Sync via Firebase)
+
+- **Firebase Cross-Device Cloud Sync**:
+  - Unified cloud architecture powered by Firebase Authentication, Cloud Firestore, and Firebase Storage.
+  - Enables syncing downloaded songs seamlessly between Android and Windows with a single login account.
+- **Mobile Upload Flow (Android)**:
+  - When an MP3 is downloaded from Pagalworld and the user is logged in, the `.mp3` file is automatically backed up to Firebase Storage at `users/{userId}/songs/{filename}`.
+  - Song metadata (Title, Artist, Firebase Storage URL, File Size) is recorded in Cloud Firestore at `users/{userId}/library`.
+- **Desktop Sync Flow (Windows)**:
+  - On Windows login or launch, the app reads the user's Cloud Firestore library and compares it to the local library.
+  - Prompts: *"You have {count} songs synced from your mobile account. Download to this PC?"*
+  - Automatically downloads missing songs into the local Windows music directory and indexes them in the local database.
+- **Offline & Local Mode Fallback**:
+  - Full local playback and offline library functionality remain intact without an account or when offline.
 
 ## What's New in v1.3.1 (UI Overflow Fixes, WebView Performance & Auto-Search Routing)
 

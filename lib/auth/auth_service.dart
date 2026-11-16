@@ -8,6 +8,7 @@ import 'user_model.dart';
 import 'session_manager.dart';
 import '../sync/cloud_database.dart';
 import '../core/services/supabase_backend_client.dart';
+import '../core/services/firebase_service.dart';
 
 /// Authentication service supporting real cloud backend authentication (Supabase GoTrue)
 /// with seamless local offline vault caching and offline login fallback.
@@ -65,21 +66,52 @@ class AuthService {
     UserModel? cloudUser;
     String? cloudError;
 
-    // 1. Attempt real cloud registration via Supabase
+    // 1. Attempt real cloud registration via Firebase Authentication
     try {
-      cloudUser = await SupabaseBackendClient.instance.signUp(
+      final fbCred = await FirebaseService.instance.signUpWithEmailPassword(
         email: cleanEmail,
         password: password,
         username: cleanUsername,
-        profileImage: profileImage,
       );
+      if (fbCred.user != null) {
+        final u = fbCred.user!;
+        cloudUser = UserModel(
+          userId: u.uid,
+          username: cleanUsername,
+          email: cleanEmail,
+          profileImage: profileImage ?? _getDefaultAvatar(cleanUsername),
+          createdDate: DateTime.now(),
+          token: 'fb_${u.uid}',
+          isGuest: false,
+          devices: const [],
+        );
+      }
     } catch (e) {
       cloudError = e.toString().replaceAll("Exception: ", "");
-      debugPrint("Supabase online registration notice: $cloudError");
-      // If error is duplicate user from Supabase, propagate error
-      if (cloudError.toLowerCase().contains("already registered") ||
+      debugPrint("Firebase registration notice: $cloudError");
+      if (cloudError.toLowerCase().contains("already-in-use") ||
+          cloudError.toLowerCase().contains("already in use") ||
           cloudError.toLowerCase().contains("already exists")) {
         throw Exception("An account with this email already exists");
+      }
+    }
+
+    // 2. Fallback attempt via Supabase if Firebase is unconfigured
+    if (cloudUser == null) {
+      try {
+        cloudUser = await SupabaseBackendClient.instance.signUp(
+          email: cleanEmail,
+          password: password,
+          username: cleanUsername,
+          profileImage: profileImage,
+        );
+      } catch (e) {
+        cloudError = e.toString().replaceAll("Exception: ", "");
+        debugPrint("Supabase online registration notice: $cloudError");
+        if (cloudError.toLowerCase().contains("already registered") ||
+            cloudError.toLowerCase().contains("already exists")) {
+          throw Exception("An account with this email already exists");
+        }
       }
     }
 
@@ -150,18 +182,50 @@ class AuthService {
     UserModel? cloudUser;
     String? cloudError;
 
-    // 1. Attempt real cloud login via Supabase
+    // 1. Attempt real cloud login via Firebase Authentication
     try {
-      cloudUser = await SupabaseBackendClient.instance.signIn(
+      final fbCred = await FirebaseService.instance.signInWithEmailPassword(
         email: cleanEmail,
         password: password,
       );
+      if (fbCred.user != null) {
+        final u = fbCred.user!;
+        cloudUser = UserModel(
+          userId: u.uid,
+          username: u.displayName ?? cleanEmail.split('@').first,
+          email: cleanEmail,
+          profileImage: u.photoURL,
+          createdDate: u.metadata.creationTime ?? DateTime.now(),
+          token: 'fb_${u.uid}',
+          isGuest: false,
+          devices: const [],
+        );
+      }
     } catch (e) {
       cloudError = e.toString().replaceAll("Exception: ", "");
-      debugPrint("Supabase cloud login notice: $cloudError");
-      if (cloudError.toLowerCase().contains("invalid login") ||
-          cloudError.toLowerCase().contains("invalid credentials")) {
+      debugPrint("Firebase cloud login notice: $cloudError");
+      if (cloudError.toLowerCase().contains("wrong-password") ||
+          cloudError.toLowerCase().contains("user-not-found") ||
+          cloudError.toLowerCase().contains("invalid-credential") ||
+          cloudError.toLowerCase().contains("invalid email or password")) {
         throw Exception("Invalid email or password");
+      }
+    }
+
+    // 2. Fallback attempt via Supabase if Firebase is unconfigured
+    if (cloudUser == null) {
+      try {
+        cloudUser = await SupabaseBackendClient.instance.signIn(
+          email: cleanEmail,
+          password: password,
+        );
+      } catch (e) {
+        cloudError = e.toString().replaceAll("Exception: ", "");
+        debugPrint("Supabase cloud login notice: $cloudError");
+        if (cloudError.toLowerCase().contains("invalid login") ||
+            cloudError.toLowerCase().contains("invalid credentials")) {
+          throw Exception("Invalid email or password");
+        }
       }
     }
 
@@ -264,6 +328,9 @@ class AuthService {
   /// Sign out the current user session
   Future<void> logout() async {
     final token = SessionManager.instance.token;
+    try {
+      await FirebaseService.instance.signOut();
+    } catch (_) {}
     try {
       await SupabaseBackendClient.instance.signOut(token);
     } catch (_) {}

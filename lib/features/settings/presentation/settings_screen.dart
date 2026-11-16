@@ -1,9 +1,12 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../visualizer/providers/visualizer_provider.dart';
 import '../../visualizer/models/visualizer_preset.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../sync/providers/sync_provider.dart';
+import '../../library/providers/library_provider.dart';
 import '../../../auth/user_model.dart';
 import '../../../auth/session_manager.dart';
 import '../../../auth/welcome_screen.dart';
@@ -13,6 +16,7 @@ import '../../../core/theme/cinematic_colors.dart';
 import '../../../core/theme/glassmorphism.dart';
 import '../../../core/theme/typography.dart';
 import '../../../core/services/update_service.dart';
+import '../../../core/services/firebase_service.dart';
 import '../../../core/config/supabase_config.dart';
 import '../../../core/services/supabase_backend_client.dart';
 import '../../cloud/presentation/admin_upload_screen.dart';
@@ -106,7 +110,7 @@ class SettingsScreen extends ConsumerWidget {
                     // 2. Cloud Synchronization Section
                     if (isLoggedIn) ...[
                       _buildSectionHeader("CLOUD SYNCHRONIZATION"),
-                      _buildSyncCard(context, syncMgr),
+                      _buildSyncCard(context, syncMgr, ref),
                       const SizedBox(height: 24),
 
                       // 3. Connected Devices Section
@@ -402,7 +406,7 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   // --- Cloud Sync Card ---
-  Widget _buildSyncCard(BuildContext context, SyncManager syncMgr) {
+  Widget _buildSyncCard(BuildContext context, SyncManager syncMgr, WidgetRef ref) {
     return CinematicGlassCard(
       padding: const EdgeInsets.all(18),
       borderRadius: 8,
@@ -474,6 +478,127 @@ class SettingsScreen extends ConsumerWidget {
             "Unified across devices: Playlists • Favorites • Recently Played • Audio Settings • Visualizer Presets",
             style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 11, height: 1.4),
           ),
+          if (!kIsWeb && Platform.isWindows) ...[
+            const Divider(color: Colors.white12, height: 24),
+            Row(
+              children: [
+                const Icon(Icons.cloud_download_rounded, size: 18, color: CinematicColors.primary),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Firebase Cross-Device Songs",
+                        style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        "Download mobile MP3s saved in Firebase Storage to this PC",
+                        style: TextStyle(color: Colors.white54, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: CinematicColors.primary,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  ),
+                  icon: const Icon(Icons.download_rounded, size: 14),
+                  label: const Text("Sync to PC", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  onPressed: () async {
+                    if (!FirebaseService.instance.isLoggedIn) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Please sign in to access your cloud library."),
+                          backgroundColor: Color(0xFF1B1B22),
+                        ),
+                      );
+                      return;
+                    }
+
+                    final missing = await FirebaseService.instance.findMissingSongsOnDesktop();
+                    if (missing.isEmpty) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Windows library is fully up-to-date with your mobile songs!"),
+                            backgroundColor: CinematicColors.primary,
+                          ),
+                        );
+                      }
+                      return;
+                    }
+
+                    if (!context.mounted) return;
+                    final shouldDownload = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        backgroundColor: const Color(0xFF141418),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        title: const Row(
+                          children: [
+                            Icon(Icons.cloud_download_rounded, color: CinematicColors.primary, size: 22),
+                            SizedBox(width: 8),
+                            Text("Download Mobile Songs?", style: TextStyle(color: Colors.white, fontSize: 16)),
+                          ],
+                        ),
+                        content: Text(
+                          "You have ${missing.length} songs synced from your mobile account. Download to this PC?",
+                          style: const TextStyle(color: Colors.white70, fontSize: 13),
+                        ),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Not Now")),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: CinematicColors.primary,
+                              foregroundColor: Colors.black,
+                            ),
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text("Yes, Download All"),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (shouldDownload == true && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              ),
+                              const SizedBox(width: 10),
+                              Text("Downloading ${missing.length} songs from Firebase Storage..."),
+                            ],
+                          ),
+                          backgroundColor: const Color(0xFF1B1B22),
+                        ),
+                      );
+
+                      final count = await FirebaseService.instance.downloadCloudSongsToLocal(songs: missing);
+                      ref.read(libraryProvider.notifier).refreshLibrary();
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Successfully synced $count songs to this PC!"),
+                            backgroundColor: CinematicColors.primary,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                ),
+              ],
+            ),
+          ],
           const Divider(color: Colors.white12, height: 24),
           Row(
             children: [

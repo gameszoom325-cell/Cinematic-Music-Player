@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-11-16
+
+### Added
+- v1.4.0: Cross-Device Cloud Sync via Firebase (Authentication, Cloud Firestore, and Firebase Storage).
+- Seamless Firebase Authentication supporting Email/Password login and signup with offline local vault fallback.
+- Mobile Upload Flow (Android): Automatically backs up Pagalworld downloaded MP3s to Firebase Storage (`users/{userId}/songs/{filename}`) and records song metadata in Cloud Firestore (`users/{userId}/library`).
+- Desktop Sync Flow (Windows): Automatically compares Firestore cloud library to the local Windows library on login, prompting: "You have {count} songs synced from your mobile account. Download to this PC?"
+- Desktop Auto-Downloader: Downloads missing audio files from Firebase Storage directly to the Windows Music directory and registers them in the local library.
+- Manual Cloud Sync Trigger: Added "Sync to PC" action in Settings for on-demand cloud synchronization.
+
 ## [1.3.1] - 2026-11-16
 
 ### Fixed

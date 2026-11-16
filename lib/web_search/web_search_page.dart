@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -16,6 +17,7 @@ import '../core/theme/cinematic_colors.dart';
 import '../features/player/providers/player_provider.dart';
 import '../features/library/providers/library_provider.dart';
 import '../core/services/scanner_service.dart';
+import '../core/services/firebase_service.dart';
 
 /// WebView-based MP3 search and download screen (Pagalworld) powered by flutter_inappwebview.
 ///
@@ -572,6 +574,37 @@ class _WebSearchPageState extends ConsumerState<WebSearchPage> {
       // 5. Crucial: Trigger a rescan of the local library so the downloaded song instantly appears in the user's Local Files tab
       await ScannerService.importFiles([targetFile]);
       ref.read(libraryProvider.notifier).refreshLibrary();
+
+      // 6. Mobile Upload Flow (Android) / Cross-Device Cloud Sync
+      // When a user downloads an MP3 from WebView (Pagalworld), and they are logged in:
+      // Upload the .mp3 file to Firebase Storage at users/{userId}/songs/{filename}.
+      // Save the song metadata (Title, Artist, Firebase Storage URL) to Firestore at users/{userId}/library.
+      if (FirebaseService.instance.isLoggedIn) {
+        unawaited(
+          FirebaseService.instance.uploadSongToCloud(
+            file: targetFile,
+            filename: filename,
+            title: songName,
+            artist: "Pagalworld",
+          ).then((metadata) {
+            if (metadata != null && mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Row(
+                    children: [
+                      Icon(Icons.cloud_done_rounded, color: Colors.white, size: 18),
+                      SizedBox(width: 8),
+                      Text("Synced song to your Cross-Device Cloud Library!"),
+                    ],
+                  ),
+                  backgroundColor: Color(0xFF8B5CF6),
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            }
+          }),
+        );
+      }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/cinematic_colors.dart';
 import 'core/services/update_service.dart';
 import 'core/services/scanner_service.dart';
+import 'core/services/firebase_service.dart';
 import 'features/home/presentation/home_screen.dart';
 import 'features/library/presentation/library_screen.dart';
 import 'features/library/presentation/music_search_screen.dart';
@@ -77,14 +78,134 @@ class _AppShellState extends ConsumerState<AppShell> {
       }
     });
 
-    // Check for updates 3 seconds after shell renders
+    // Check for updates & desktop cloud sync after shell renders
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(seconds: 3), () {
         if (mounted) {
           UpdateService.checkAndShowDialog(context, isManual: false);
         }
       });
+      Future.delayed(const Duration(seconds: 4), () {
+        if (mounted) {
+          _checkDesktopCloudSync();
+        }
+      });
     });
+  }
+
+  /// Desktop Sync Flow (Windows):
+  /// When the user logs in on the Windows app, read users/{userId}/library from Firestore.
+  /// Compare it to the local Windows library. If there are missing songs, show a dialog:
+  /// "You have {count} songs synced from your mobile account. Download to this PC?"
+  /// If the user clicks "Yes", download the files from Firebase Storage to the Windows
+  /// local music folder and add them to the local library database.
+  Future<void> _checkDesktopCloudSync({bool isManual = false}) async {
+    if (!Platform.isWindows) return;
+    if (!FirebaseService.instance.isLoggedIn) {
+      if (isManual && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Please sign in to sync your cloud songs to this PC."),
+            backgroundColor: Color(0xFF1B1B22),
+          ),
+        );
+      }
+      return;
+    }
+
+    try {
+      final missingSongs = await FirebaseService.instance.findMissingSongsOnDesktop();
+      if (missingSongs.isEmpty) {
+        if (isManual && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Your Windows library is already up to date with your cloud account!"),
+              backgroundColor: CinematicColors.primary,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (!mounted) return;
+
+      final shouldDownload = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: const Color(0xFF141418),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: const Row(
+            children: [
+              Icon(Icons.cloud_download_rounded, color: CinematicColors.primary, size: 24),
+              SizedBox(width: 10),
+              Text(
+                "Cross-Device Cloud Sync",
+                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: Text(
+            "You have ${missingSongs.length} song${missingSongs.length == 1 ? '' : 's'} synced from your mobile account. Download to this PC?",
+            style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text("Not Now", style: TextStyle(color: Colors.white54)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: CinematicColors.primary,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text("Yes, Download All", style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldDownload == true && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                ),
+                const SizedBox(width: 12),
+                Text("Downloading ${missingSongs.length} synced songs from cloud..."),
+              ],
+            ),
+            backgroundColor: const Color(0xFF1B1B22),
+            duration: const Duration(seconds: 15),
+          ),
+        );
+
+        final downloaded = await FirebaseService.instance.downloadCloudSongsToLocal(
+          songs: missingSongs,
+        );
+
+        ref.read(libraryProvider.notifier).refreshLibrary();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Successfully synced $downloaded songs to your Windows music library!"),
+              backgroundColor: CinematicColors.primary,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint("Desktop cloud sync notice: $e");
+    }
   }
 
   @override

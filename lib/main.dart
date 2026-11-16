@@ -10,6 +10,7 @@ import 'core/services/crash_logger.dart';
 import 'core/services/shader_capability_service.dart';
 import 'core/audio_engine/audio_engine.dart';
 import 'core/database/database_service.dart';
+import 'core/services/firebase_service.dart';
 import 'core/theme/cinematic_colors.dart';
 import 'auth/session_manager.dart';
 import 'auth/auth_service.dart';
@@ -141,6 +142,12 @@ void main() async {
     await DatabaseService.instance.init();
   } catch (e) {
     debugPrint("DatabaseService init note: $e");
+  }
+
+  try {
+    await FirebaseService.instance.init();
+  } catch (e) {
+    debugPrint("FirebaseService init note: $e");
   }
 
   try {

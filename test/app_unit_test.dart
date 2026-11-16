@@ -38,6 +38,8 @@ import 'package:cinematic_music_player/jamendo/jamendo_page.dart';
 import 'package:cinematic_music_player/jiosaavn/jiosaavn_service.dart';
 import 'package:cinematic_music_player/jiosaavn/jiosaavn_page.dart';
 import 'package:cinematic_music_player/core/config/youtube_config.dart';
+import 'package:cinematic_music_player/core/services/firebase_service.dart';
+import 'package:cinematic_music_player/firebase_options.dart';
 import 'package:cinematic_music_player/core/services/youtube_api_service.dart';
 import 'package:cinematic_music_player/core/sources/youtube_music_source.dart';
 import 'package:cinematic_music_player/core/config/jamendo_config.dart';
@@ -1446,8 +1448,8 @@ void main() {
       expect(WebSearchPage.isAllowedUrlScheme('tel:+123456789'), isFalse);
     });
 
-    test('UpdateService fallback URL points to valid v1.3.1 release tag', () {
-      expect(UpdateService.fallbackReleaseUrl, contains('v1.3.1'));
+    test('UpdateService fallback URL points to valid v1.4.0 release tag', () {
+      expect(UpdateService.fallbackReleaseUrl, contains('v1.4.0'));
     });
 
     test('WebSearchPage.computeInitialUrl immediately routes to search results on autoSubmit', () {
@@ -1509,6 +1511,50 @@ void main() {
       expect(WebSearchPage.isAdUrl('https://popcash.net/serve'), isTrue);
       expect(WebSearchPage.isAdUrl('https://parimatch.com/bet'), isTrue);
       expect(WebSearchPage.isAdUrl('https://pagalworld.is/files/download/id/123/song.mp3'), isFalse);
+    });
+  });
+
+  group('25. Firebase Cross-Device Cloud Sync Tests (v1.4.0)', () {
+    test('CloudSongMetadata serializes and deserializes accurately', () {
+      final now = DateTime.now();
+      const metadata = CloudSongMetadata(
+        id: 'song_123',
+        title: 'Raataan Lambiyan',
+        artist: 'Jubin Nautiyal',
+        album: 'Shershaah',
+        filename: 'Raataan_Lambiyan.mp3',
+        storageUrl: 'https://firebasestorage.googleapis.com/v0/b/app/o/song.mp3',
+        storagePath: 'users/usr_abc/songs/Raataan_Lambiyan.mp3',
+        fileSize: 4500000,
+      );
+
+      final map = metadata.toMap();
+      expect(map['title'], 'Raataan Lambiyan');
+      expect(map['artist'], 'Jubin Nautiyal');
+      expect(map['album'], 'Shershaah');
+      expect(map['filename'], 'Raataan_Lambiyan.mp3');
+      expect(map['storageUrl'], contains('firebasestorage.googleapis.com'));
+      expect(map['storagePath'], 'users/usr_abc/songs/Raataan_Lambiyan.mp3');
+      expect(map['fileSize'], 4500000);
+
+      final restored = CloudSongMetadata.fromMap(map, 'song_123');
+      expect(restored.id, 'song_123');
+      expect(restored.title, 'Raataan Lambiyan');
+      expect(restored.artist, 'Jubin Nautiyal');
+      expect(restored.album, 'Shershaah');
+      expect(restored.filename, 'Raataan_Lambiyan.mp3');
+      expect(restored.fileSize, 4500000);
+    });
+
+    test('DefaultFirebaseOptions provides platform configurations', () {
+      expect(DefaultFirebaseOptions.android.projectId, 'cinematic-music-player');
+      expect(DefaultFirebaseOptions.windows.projectId, 'cinematic-music-player');
+      expect(DefaultFirebaseOptions.currentPlatform, isNotNull);
+    });
+
+    test('FirebaseService instance is available as singleton', () {
+      expect(FirebaseService.instance, isNotNull);
+      expect(FirebaseService.instance.isLoggedIn, isFalse);
     });
   });
 }

@@ -218,6 +218,8 @@ class _PlaylistCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               "${playlist.songIds.length} tracks",
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(color: Colors.white54, fontSize: 12),
             ),
           ],

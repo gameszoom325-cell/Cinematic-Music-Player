@@ -129,7 +129,7 @@ class SpotifyNowPlayingBar extends ConsumerWidget {
                   children: [
                     Text(
                       song.title,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                     ),

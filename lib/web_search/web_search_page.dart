@@ -43,13 +43,29 @@ class WebSearchPage extends ConsumerStatefulWidget {
   final bool autoSubmit;
 
   static const String homeUrl = 'https://pagalworld.is/';
-  static const String searchBaseUrl = 'https://pagalworld.is/search?q=';
+  static const String searchBaseUrl = 'https://pagalworld.is/search/?s=';
+  static const String legacySearchBaseUrl = 'https://pagalworld.is/search?q=';
+
+  /// Sanitizes raw search queries by stripping redundant video noise (e.g. "Official Video", "[4K]", "| Artist").
+  static String cleanSearchQuery(String raw) {
+    var q = raw.trim();
+    q = q.replaceAll(
+      RegExp(r'\s*[\(\[][^\)\]]*(official|video|audio|lyrics?|4k|hd|remix|full\s*song|visualizer)[^\)\]]*[\)\]]', caseSensitive: false),
+      ' ',
+    );
+    if (q.contains('|')) {
+      q = q.split('|').first.trim();
+    }
+    q = q.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return q.isNotEmpty ? q : raw.trim();
+  }
 
   /// Computes the initial URL to load, ensuring search results are loaded immediately when autoSubmit is true.
   static String computeInitialUrl({String? initialQuery, bool autoSubmit = false}) {
     final query = initialQuery?.trim();
     if (autoSubmit && query != null && query.isNotEmpty) {
-      return '${WebSearchPage.searchBaseUrl}${Uri.encodeComponent(query)}';
+      final clean = cleanSearchQuery(query);
+      return '${WebSearchPage.searchBaseUrl}${Uri.encodeComponent(clean)}';
     }
     return WebSearchPage.homeUrl;
   }
@@ -307,27 +323,30 @@ class _WebSearchPageState extends ConsumerState<WebSearchPage> {
     ),
   ];
 
+  /// High-performance ad-blocking CSS stylesheet applied at document start.
+  static const String _adBlockCss = '''
+    .ad-container, .ad-banner, .popup-overlay, .adsbygoogle, [id^="google_ads"],
+    [id^="aswift_"], iframe[src*="doubleclick"], iframe[src*="googlesyndication"],
+    iframe[src*="ad"], iframe:not([src]), iframe[src="about:blank"],
+    .ad_box, .ad_wrapper, .ad-slot, .ads-wrapper, .banner-ad, .native-ad,
+    .sponsor, .sponsored, .popunder, .sticky-ad, .bottom-ad, .top-ad, .overlay-ad,
+    a[href*="bet365"], a[href*="1xbet"], a[href*="onclickpredictiv"], a[href*="adsterra"],
+    a[href*="popads"], a[href*="exoclick"], a[href*="trafficjunky"],
+    div[class*="ad_"], div[class*="advertisement"], div[id*="ad_"], div[id*="advertisement"],
+    div[id*="ad-"], div[class*="ad-"] {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      width: 0 !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+  ''';
+
   /// High-performance ad-blocking UserScript injected at document start.
   static const String _adBlockScript = '''
     (function() {
-      var css = `
-        .ad-container, .ad-banner, .popup-overlay, .adsbygoogle, [id^="google_ads"],
-        [id^="aswift_"], iframe[src*="doubleclick"], iframe[src*="googlesyndication"],
-        iframe[src*="ad"], iframe:not([src]), iframe[src="about:blank"],
-        .ad_box, .ad_wrapper, .ad-slot, .ads-wrapper, .banner-ad, .native-ad,
-        .sponsor, .sponsored, .popunder, .sticky-ad, .bottom-ad, .top-ad, .overlay-ad,
-        a[href*="bet365"], a[href*="1xbet"], a[href*="onclickpredictiv"], a[href*="adsterra"],
-        a[href*="popads"], a[href*="exoclick"], a[href*="trafficjunky"],
-        div[class*="ad_"], div[class*="advertisement"], div[id*="ad_"], div[id*="advertisement"],
-        div[id*="ad-"], div[class*="ad-"] {
-          display: none !important;
-          visibility: hidden !important;
-          height: 0 !important;
-          width: 0 !important;
-          opacity: 0 !important;
-          pointer-events: none !important;
-        }
-      `;
+      var css = `$_adBlockCss`;
 
       function injectStyle() {
         if (document.getElementById('cinematic-adblock-style')) return;
@@ -335,16 +354,22 @@ class _WebSearchPageState extends ConsumerState<WebSearchPage> {
         style.type = 'text/css';
         style.id = 'cinematic-adblock-style';
         style.appendChild(document.createTextNode(css));
-        if (document.head) {
-          document.head.appendChild(style);
-        } else if (document.documentElement) {
-          document.documentElement.appendChild(style);
+        var target = document.head || document.documentElement;
+        if (target) {
+          target.appendChild(style);
         }
       }
 
-      if (document.documentElement) {
+      if (document.head || document.documentElement) {
         injectStyle();
       } else {
+        var obs = new MutationObserver(function() {
+          if (document.head || document.documentElement) {
+            injectStyle();
+            obs.disconnect();
+          }
+        });
+        obs.observe(document, { childList: true, subtree: true });
         document.addEventListener('DOMContentLoaded', injectStyle);
       }
 
@@ -379,7 +404,7 @@ class _WebSearchPageState extends ConsumerState<WebSearchPage> {
       } else {
         purgeAds();
       }
-      setInterval(purgeAds, 800);
+      setInterval(purgeAds, 1200);
     })();
   ''';
 
@@ -428,7 +453,7 @@ class _WebSearchPageState extends ConsumerState<WebSearchPage> {
   }
 
   void _handleSearch(String query) {
-    final cleanQuery = query.trim();
+    final cleanQuery = WebSearchPage.cleanSearchQuery(query);
     if (cleanQuery.isEmpty) return;
 
     final targetUrl = '${WebSearchPage.searchBaseUrl}${Uri.encodeComponent(cleanQuery)}';
@@ -670,6 +695,8 @@ class _WebSearchPageState extends ConsumerState<WebSearchPage> {
               ),
             ]),
             initialSettings: InAppWebViewSettings(
+              cacheEnabled: true,
+              disableContextMenu: true,
               useShouldOverrideUrlLoading: true,
               useOnDownloadStart: true,
               javaScriptEnabled: true,
@@ -679,6 +706,10 @@ class _WebSearchPageState extends ConsumerState<WebSearchPage> {
               allowsInlineMediaPlayback: true,
               transparentBackground: false,
               useHybridComposition: true,
+              domStorageEnabled: true,
+              databaseEnabled: true,
+              clearCache: false,
+              preferredContentMode: UserPreferredContentMode.MOBILE,
               contentBlockers: _adBlockers,
             ),
             onWebViewCreated: (controller) {
@@ -689,9 +720,7 @@ class _WebSearchPageState extends ConsumerState<WebSearchPage> {
                   initialQuery: widget.initialQuery,
                   autoSubmit: true,
                 );
-                if (_currentUrl != targetUrl) {
-                  controller.loadUrl(urlRequest: URLRequest(url: WebUri(targetUrl)));
-                }
+                controller.loadUrl(urlRequest: URLRequest(url: WebUri(targetUrl)));
               }
             },
             onCreateWindow: (controller, createWindowAction) async {
@@ -700,6 +729,10 @@ class _WebSearchPageState extends ConsumerState<WebSearchPage> {
             },
             onLoadStart: (controller, url) {
               if (url != null) _currentUrl = url.toString();
+              // Inject CSS stylesheet as early as possible so ads never flash
+              try {
+                controller.injectCSSCode(source: _adBlockCss);
+              } catch (_) {}
               if (mounted) setState(() => _isLoading = true);
             },
             onLoadStop: (controller, url) async {
@@ -728,6 +761,16 @@ class _WebSearchPageState extends ConsumerState<WebSearchPage> {
               if (!WebSearchPage.isAllowedUrlScheme(urlStr)) {
                 debugPrint("WebSearchPage: Blocked non-http navigation scheme: $urlStr");
                 return NavigationActionPolicy.CANCEL;
+              }
+
+              // Intercept legacy or homepage query redirects (e.g. /?q= or /search?q=) and load proper search results
+              if (urlStr.startsWith('https://pagalworld.is/?q=') || urlStr.startsWith('https://pagalworld.is/search?q=')) {
+                final queryParam = uri.queryParameters['q'];
+                if (queryParam != null && queryParam.isNotEmpty) {
+                  final target = '${WebSearchPage.searchBaseUrl}${Uri.encodeComponent(WebSearchPage.cleanSearchQuery(queryParam))}';
+                  controller.loadUrl(urlRequest: URLRequest(url: WebUri(target)));
+                  return NavigationActionPolicy.CANCEL;
+                }
               }
 
               if (WebSearchPage.isAdUrl(urlStr)) {

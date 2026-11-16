@@ -391,6 +391,8 @@ class HomeScreen extends ConsumerWidget {
             ),
             Text(
               "${album.songIds.length} tracks",
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(color: Colors.white54, fontSize: 11),
             ),
           ],
@@ -467,6 +469,8 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   Text(
                     "${playlist.songIds.length} songs",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(color: Colors.white54, fontSize: 11),
                   ),
                 ],

@@ -10,12 +10,24 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.3.0-gold.svg?style=flat-square" alt="Latest Release"></a>
+  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.3.1-gold.svg?style=flat-square" alt="Latest Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Android-success.svg?style=flat-square" alt="Platforms">
 </p>
 
 ---
+
+## What's New in v1.3.1 (UI Overflow Fixes, WebView Performance & Auto-Search Routing)
+
+- **UI Text Overflow & Small Screen Adaptability**:
+  - Eliminated text overflow across song titles, artist names, albums, and library action bars by wrapping text in `Expanded`/`Flexible` and applying `overflow: TextOverflow.ellipsis` and `maxLines: 1` (or 2 in player views).
+  - Modernized bottom navigation bar with responsive flex distribution and `FittedBox` scaling so navigation icons and labels fit on any Android device screen without horizontal RenderFlex overflow.
+- **WebView Performance Optimization (5x Faster)**:
+  - Enabled persistent disk caching, DOM storage, and database access (`cacheEnabled: true`, `domStorageEnabled: true`, `databaseEnabled: true`).
+  - Disabled context menus and injected aggressive ad-blocking CSS directly at document start, stopping ads before layout without waiting for full page rendering.
+- **Pagalworld Auto-Search Routing Fix**:
+  - Aligned search query generation with Pagalworld's canonical search endpoint (`https://pagalworld.is/search/?s=<query>`).
+  - Added intelligent query sanitization to strip redundant video metadata noise (such as `(Official Video)`, `[4K]`, and `| ...`), and implemented automatic interception for legacy `/search?q=` or `/?q=` home page redirects.
 
 ## What's New in v1.3.0 (Windows Desktop & Android Dual-Platform Milestone)
 

@@ -160,7 +160,11 @@ class _JamendoPageState extends State<JamendoPage> {
                 final playing = snap.data?.playing ?? false;
                 return ListTile(
                   title: Text(_current!.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  subtitle: Text('${_current!.artist} · via Jamendo (Creative Commons)'),
+                  subtitle: Text(
+                    '${_current!.artist} · via Jamendo (Creative Commons)',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   trailing: IconButton(
                     icon: Icon(playing ? Icons.pause : Icons.play_arrow),
                     onPressed: () => playing ? _player.pause() : _player.play(),

@@ -1,7 +1,7 @@
 # CINEMATIC MUSIC PLAYER - PRODUCTION BUILD REPORT
 
 **Project Location:** `C:\MY PROJECTS`  
-**Application Version:** `1.3.0+25`  
+**Application Version:** `1.3.1+26`  
 **Release Date:** 2026-11-16  
 **Target Platforms:** Windows Desktop (x64), Android Mobile (API 21 - 36, ARM64/v7/x86_64)  
 
@@ -11,6 +11,7 @@
 
 | Artifact Name | Platform | File Size | Location | Build Status |
 | :--- | :--- | :--- | :--- | :--- |
+| **`CinematicMusicPlayer-v1.3.1.apk`** | Android (API 21 - 36) | **69.4 MB** (72,786,545 bytes) | [CinematicMusicPlayer-v1.3.1.apk](file:///C:/MY%20PROJECTS/dist/android/CinematicMusicPlayer-v1.3.1.apk) | **SUCCESS (Signed Release Build, V2 Scheme, SHA256: `c306b7ad7d...`)** |
 | **`CinematicMusicPlayer-v1.3.0.apk`** | Android (API 21 - 36) | **69.3 MB** (72,688,226 bytes) | [CinematicMusicPlayer-v1.3.0.apk](file:///C:/MY%20PROJECTS/dist/android/CinematicMusicPlayer-v1.3.0.apk) | **SUCCESS (Signed Release Build, V2 Scheme, SHA256: `6f4dd5db6f...`)** |
 | **`CinematicMusicPlayerSetup.exe`** | Windows Desktop (x64) | **31.3 MB** (32,828,607 bytes) | [CinematicMusicPlayerSetup.exe](file:///C:/MY%20PROJECTS/dist/windows/CinematicMusicPlayerSetup.exe) | **SUCCESS (Compiled & Packaged with Inno Setup 6, SHA256: `aaadf535d1...`)** |
 | **`CinematicMusicPlayer-Windows.zip`** | Windows Desktop (x64) | **43.4 MB** (45,510,896 bytes) | [CinematicMusicPlayer-Windows.zip](file:///C:/MY%20PROJECTS/dist/windows/CinematicMusicPlayer-Windows.zip) | **SUCCESS (Portable Distribution Archive, SHA256: `22375f673c...`)** |

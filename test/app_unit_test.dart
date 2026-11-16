@@ -887,10 +887,10 @@ void main() {
       expect(cachedDirect, contains('googlevideo.com'));
     });
 
-    test('Project version reflects v1.3.0 Build 25', () {
-      expect(AppVersion.current, '1.3.0');
-      expect(AppVersion.buildNumber, 25);
-      expect(AppVersion.compare('1.3.0', '1.2.7'), greaterThan(0));
+    test('Project version reflects v1.3.1 Build 26', () {
+      expect(AppVersion.current, '1.3.1');
+      expect(AppVersion.buildNumber, 26);
+      expect(AppVersion.compare('1.3.1', '1.3.0'), greaterThan(0));
     });
   });
 
@@ -1428,9 +1428,9 @@ void main() {
   group('24. WebView MP3 Search & Download (Pagalworld) Tests', () {
     test('WebSearchPage defines valid home and search base URLs', () {
       expect(WebSearchPage.homeUrl, 'https://pagalworld.is/');
-      expect(WebSearchPage.searchBaseUrl, 'https://pagalworld.is/search?q=');
+      expect(WebSearchPage.searchBaseUrl, 'https://pagalworld.is/search/?s=');
       final queryUrl = '${WebSearchPage.searchBaseUrl}${Uri.encodeComponent('Arijit Singh')}';
-      expect(queryUrl, 'https://pagalworld.is/search?q=Arijit%20Singh');
+      expect(queryUrl, 'https://pagalworld.is/search/?s=Arijit%20Singh');
     });
 
     test('WebSearchPage instantiates with const constructor', () {
@@ -1446,13 +1446,13 @@ void main() {
       expect(WebSearchPage.isAllowedUrlScheme('tel:+123456789'), isFalse);
     });
 
-    test('UpdateService fallback URL points to valid v1.3.0 release tag', () {
-      expect(UpdateService.fallbackReleaseUrl, contains('v1.3.0'));
+    test('UpdateService fallback URL points to valid v1.3.1 release tag', () {
+      expect(UpdateService.fallbackReleaseUrl, contains('v1.3.1'));
     });
 
     test('WebSearchPage.computeInitialUrl immediately routes to search results on autoSubmit', () {
       final autoUrl = WebSearchPage.computeInitialUrl(initialQuery: 'Kesariya', autoSubmit: true);
-      expect(autoUrl, 'https://pagalworld.is/search?q=Kesariya');
+      expect(autoUrl, 'https://pagalworld.is/search/?s=Kesariya');
 
       final homeUrl1 = WebSearchPage.computeInitialUrl(initialQuery: 'Kesariya', autoSubmit: false);
       expect(homeUrl1, WebSearchPage.homeUrl);
@@ -1462,6 +1462,12 @@ void main() {
 
       final homeUrl3 = WebSearchPage.computeInitialUrl(initialQuery: '   ', autoSubmit: true);
       expect(homeUrl3, WebSearchPage.homeUrl);
+    });
+
+    test('WebSearchPage.cleanSearchQuery strips video metadata noise', () {
+      expect(WebSearchPage.cleanSearchQuery('Kesariya (Official Video)'), 'Kesariya');
+      expect(WebSearchPage.cleanSearchQuery('Kesariya | Brahmastra | Arijit Singh'), 'Kesariya');
+      expect(WebSearchPage.cleanSearchQuery('Tum Hi Ho [4K Video]'), 'Tum Hi Ho');
     });
 
     test('WebSearchPage accepts optional initialQuery and autoSubmit parameters', () {

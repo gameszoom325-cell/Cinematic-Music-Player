@@ -391,7 +391,7 @@ class _CinematicPlayerScreenState extends ConsumerState<CinematicPlayerScreen> {
                     // Track Title & Artist
                     Text(
                       song?.title ?? "No Track Loaded",
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: CinematicTypography.headlineLarge.copyWith(
                         color: Colors.white,
@@ -523,7 +523,7 @@ class _CinematicPlayerScreenState extends ConsumerState<CinematicPlayerScreen> {
                   children: [
                     Text(
                       song?.title ?? "No Track Loaded",
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: CinematicTypography.headlineLarge.copyWith(
                         fontSize: 20,

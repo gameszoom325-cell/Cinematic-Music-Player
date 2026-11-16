@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2026-11-16
+
+### Fixed
+- v1.3.1: Fixed UI overflow, optimized WebView performance, and fixed auto-search routing.
+- Resolved UI text overflow across list tiles, artist cards, album cards, scanning banners, and the bottom navigation bar for small Android screens.
+- Enforced `overflow: TextOverflow.ellipsis` and `maxLines: 1` (or 2 for player) wrapped in `Expanded` or `Flexible`.
+- Optimized Pagalworld WebView loading performance: enabled cache, DOM storage, database, disabled context menu, and injected ad-blocker CSS at document start.
+- Fixed Pagalworld search routing by aligning with canonical search form endpoint (`https://pagalworld.is/search/?s=<query>`) and intercepting legacy `/search?q=` and `/?q=` home page redirects.
+
 ## [1.3.0] - 2026-11-16
 
 ### Added

@@ -412,68 +412,76 @@ class _AppShellState extends ConsumerState<AppShell> {
         color: const Color(0xFF0F0F12),
         border: Border(top: BorderSide(color: Colors.white.withOpacity(0.08))),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildMobileNavIcon(Icons.home_filled, "Home", 0),
-          _buildMobileNavIcon(Icons.search_rounded, "Search", 1),
-          _buildMobileNavIcon(Icons.library_music_rounded, "Library", 2),
-          _buildMobileNavIcon(Icons.music_video_rounded, "Bollywood", 8),
-          _buildMobileNavIcon(Icons.travel_explore_rounded, "Web MP3", 9),
-          Builder(
-            builder: (ctx) => GestureDetector(
-              onTap: () => Scaffold.of(ctx).openDrawer(),
-              behavior: HitTestBehavior.opaque,
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 10),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.menu_rounded,
-                      color: Colors.white38,
-                      size: 22,
-                    ),
-                    SizedBox(height: 3),
-                    Text(
-                      "More",
-                      style: TextStyle(
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            _buildMobileNavIcon(Icons.home_filled, "Home", 0),
+            _buildMobileNavIcon(Icons.search_rounded, "Search", 1),
+            _buildMobileNavIcon(Icons.library_music_rounded, "Library", 2),
+            _buildMobileNavIcon(Icons.music_video_rounded, "Bollywood", 8),
+            _buildMobileNavIcon(Icons.travel_explore_rounded, "Web MP3", 9),
+            Expanded(
+              child: Builder(
+                builder: (ctx) => InkWell(
+                  onTap: () => Scaffold.of(ctx).openDrawer(),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.menu_rounded,
                         color: Colors.white38,
-                        fontSize: 10,
+                        size: 20,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          "More",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.5),
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildMobileNavIcon(IconData icon, String label, int index) {
     final isSelected = _selectedIndex == index;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedIndex = index),
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+    return Expanded(
+      child: InkWell(
+        onTap: () => setState(() => _selectedIndex = index),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
               color: isSelected ? CinematicColors.primary : Colors.white38,
-              size: 22,
+              size: 20,
             ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? CinematicColors.primary : Colors.white38,
-                fontSize: 10,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            const SizedBox(height: 2),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isSelected ? CinematicColors.primary : Colors.white38,
+                  fontSize: 10,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ),
               ),
             ),
           ],

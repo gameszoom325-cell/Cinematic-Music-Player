@@ -353,14 +353,16 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Top Action Bar
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth >= 550;
+                  final titleWidget = Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         "Your Library",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 26,
@@ -370,24 +372,28 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       ),
                       Text(
                         "${libraryState.songs.length} tracks • ${allAlbums.length} albums • ${allArtists.length} artists",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
                       ),
                     ],
-                  ),
-                  Row(
+                  );
+
+                  final buttonsWidget = Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.white,
                           side: BorderSide(color: Colors.white.withOpacity(0.2)),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                         ),
                         onPressed: libraryState.isScanning ? null : () => libraryNotifier.rescanAll(),
                         icon: libraryState.isScanning
                             ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: CinematicColors.primary))
                             : const Icon(Icons.refresh_rounded, size: 16),
-                        label: Text(libraryState.isScanning ? "Scanning..." : "Rescan Library", style: const TextStyle(fontSize: 12)),
+                        label: Text(libraryState.isScanning ? "Scanning..." : "Rescan", style: const TextStyle(fontSize: 12)),
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton.icon(
@@ -395,15 +401,34 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                           backgroundColor: CinematicColors.primary,
                           foregroundColor: Colors.black87,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         ),
                         onPressed: _handleAddFolder,
                         icon: const Icon(Icons.create_new_folder_rounded, size: 16),
                         label: const Text("Add Folder", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       ),
                     ],
-                  ),
-                ],
+                  );
+
+                  if (isWide) {
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(child: titleWidget),
+                        buttonsWidget,
+                      ],
+                    );
+                  }
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      titleWidget,
+                      const SizedBox(height: 10),
+                      buttonsWidget,
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 14),
 
@@ -421,48 +446,82 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     children: [
                       const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: CinematicColors.primary)),
                       const SizedBox(width: 12),
-                      Text(
-                        libraryState.scanTotal > 0
-                            ? "Scanning library: ${libraryState.scanProgress} / ${libraryState.scanTotal} tracks..."
-                            : "Scanning audio files in your local music folders...",
-                        style: const TextStyle(color: CinematicColors.primary, fontSize: 12, fontWeight: FontWeight.w600),
+                      Expanded(
+                        child: Text(
+                          libraryState.scanTotal > 0
+                              ? "Scanning library: ${libraryState.scanProgress} / ${libraryState.scanTotal} tracks..."
+                              : "Scanning audio files in your local music folders...",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: CinematicColors.primary, fontSize: 12, fontWeight: FontWeight.w600),
+                        ),
                       ),
                     ],
                   ),
                 ),
 
               // Sub-Tabs Header (Songs, Albums, Artists, Folders)
-              Row(
-                children: [
-                  _buildTabChip("Songs (${libraryState.songs.length})", LibraryTab.songs),
-                  const SizedBox(width: 8),
-                  _buildTabChip("Albums (${allAlbums.length})", LibraryTab.albums),
-                  const SizedBox(width: 8),
-                  _buildTabChip("Artists (${allArtists.length})", LibraryTab.artists),
-                  const SizedBox(width: 8),
-                  _buildTabChip("Folders (${savedFolders.length})", LibraryTab.folders),
-                  const Spacer(),
-                  // Search within library
-                  SizedBox(
-                    width: 200,
-                    height: 34,
-                    child: TextField(
-                      controller: _searchCtrl,
-                      onChanged: (val) => libraryNotifier.setSearchQuery(val),
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
-                      decoration: InputDecoration(
-                        isDense: true,
-                        hintText: "Filter library...",
-                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.35), fontSize: 12),
-                        prefixIcon: const Icon(Icons.search_rounded, color: Colors.white38, size: 16),
-                        filled: true,
-                        fillColor: Colors.white.withOpacity(0.06),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide.none),
-                      ),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth >= 600;
+                  final chips = SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    child: Row(
+                      children: [
+                        _buildTabChip("Songs (${libraryState.songs.length})", LibraryTab.songs),
+                        const SizedBox(width: 8),
+                        _buildTabChip("Albums (${allAlbums.length})", LibraryTab.albums),
+                        const SizedBox(width: 8),
+                        _buildTabChip("Artists (${allArtists.length})", LibraryTab.artists),
+                        const SizedBox(width: 8),
+                        _buildTabChip("Folders (${savedFolders.length})", LibraryTab.folders),
+                      ],
                     ),
-                  ),
-                ],
+                  );
+
+                  Widget buildSearchField() => TextField(
+                    controller: _searchCtrl,
+                    onChanged: (val) => libraryNotifier.setSearchQuery(val),
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      hintText: "Filter library...",
+                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.35), fontSize: 12),
+                      prefixIcon: const Icon(Icons.search_rounded, color: Colors.white38, size: 16),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.06),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide.none),
+                    ),
+                  );
+
+                  if (isWide) {
+                    return Row(
+                      children: [
+                        Expanded(child: chips),
+                        const SizedBox(width: 12),
+                        SizedBox(
+                          width: 200,
+                          height: 34,
+                          child: buildSearchField(),
+                        ),
+                      ],
+                    );
+                  }
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      chips,
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 34,
+                        child: buildSearchField(),
+                      ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 14),
 

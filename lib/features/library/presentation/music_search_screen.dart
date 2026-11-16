@@ -430,10 +430,14 @@ class _MusicSearchScreenState extends ConsumerState<MusicSearchScreen> with Sing
           ),
           title: Text(
             artist.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
           ),
           subtitle: Text(
             "${artist.songCount} track(s)",
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: Colors.white38, fontSize: 12),
           ),
           trailing: const Icon(Icons.chevron_right_rounded, color: Colors.white24),
@@ -472,10 +476,14 @@ class _MusicSearchScreenState extends ConsumerState<MusicSearchScreen> with Sing
           ),
           title: Text(
             album.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
           ),
           subtitle: Text(
             "${album.artist} • ${album.songCount} tracks",
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: Colors.white38, fontSize: 12),
           ),
           trailing: const Icon(Icons.chevron_right_rounded, color: Colors.white24),

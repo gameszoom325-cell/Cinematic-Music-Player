@@ -887,10 +887,10 @@ void main() {
       expect(cachedDirect, contains('googlevideo.com'));
     });
 
-    test('Project version reflects v1.2.7 Build 23', () {
-      expect(AppVersion.current, '1.2.7');
-      expect(AppVersion.buildNumber, 23);
-      expect(AppVersion.compare('1.2.7', '1.2.6'), greaterThan(0));
+    test('Project version reflects v1.3.0 Build 25', () {
+      expect(AppVersion.current, '1.3.0');
+      expect(AppVersion.buildNumber, 25);
+      expect(AppVersion.compare('1.3.0', '1.2.7'), greaterThan(0));
     });
   });
 
@@ -1446,8 +1446,8 @@ void main() {
       expect(WebSearchPage.isAllowedUrlScheme('tel:+123456789'), isFalse);
     });
 
-    test('UpdateService fallback URL points to valid v1.2.7 release tag', () {
-      expect(UpdateService.fallbackReleaseUrl, contains('v1.2.7'));
+    test('UpdateService fallback URL points to valid v1.3.0 release tag', () {
+      expect(UpdateService.fallbackReleaseUrl, contains('v1.3.0'));
     });
 
     test('WebSearchPage.computeInitialUrl immediately routes to search results on autoSubmit', () {

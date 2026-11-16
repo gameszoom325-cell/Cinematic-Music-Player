@@ -10,12 +10,23 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.2.7-gold.svg?style=flat-square" alt="Latest Release"></a>
+  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.3.0-gold.svg?style=flat-square" alt="Latest Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Android-success.svg?style=flat-square" alt="Platforms">
 </p>
 
 ---
+
+## What's New in v1.3.0 (Windows Desktop & Android Dual-Platform Milestone)
+
+- **Dual-Platform Distribution**:
+  - Published official release builds for both **Android (`.apk`)** and **Windows Desktop (`Setup.exe` installer & portable `.zip`)**.
+  - Hot-patched Windows distribution runner updating compiled Flutter Dart assets while preserving existing native executable runtime.
+- **Desktop Adaptation & Platform Handling**:
+  - Configured graceful Windows Desktop handling for web portal browsing via system browser launch while maintaining deep in-app Android WebView integration.
+  - Retained high-performance audio engine with `just_audio_windows` and `just_audio` across both operating systems.
+- **Aggressive Ad-Blocker & MP3 Auto-Import**:
+  - Preserved multi-tier content blockers, document-start CSS purging, and native download interception with automatic local library indexing.
 
 ## What's New in v1.2.7 (Multi-Layer Ad-Blocker Upgrade & Anti-Popup Engine)
 

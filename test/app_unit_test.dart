@@ -887,10 +887,10 @@ void main() {
       expect(cachedDirect, contains('googlevideo.com'));
     });
 
-    test('Project version reflects v1.2.6 Build 22', () {
-      expect(AppVersion.current, '1.2.6');
-      expect(AppVersion.buildNumber, 22);
-      expect(AppVersion.compare('1.2.6', '1.2.5'), greaterThan(0));
+    test('Project version reflects v1.2.7 Build 23', () {
+      expect(AppVersion.current, '1.2.7');
+      expect(AppVersion.buildNumber, 23);
+      expect(AppVersion.compare('1.2.7', '1.2.6'), greaterThan(0));
     });
   });
 
@@ -1446,8 +1446,8 @@ void main() {
       expect(WebSearchPage.isAllowedUrlScheme('tel:+123456789'), isFalse);
     });
 
-    test('UpdateService fallback URL points to valid v1.2.6 release tag', () {
-      expect(UpdateService.fallbackReleaseUrl, contains('v1.2.6'));
+    test('UpdateService fallback URL points to valid v1.2.7 release tag', () {
+      expect(UpdateService.fallbackReleaseUrl, contains('v1.2.7'));
     });
 
     test('WebSearchPage.computeInitialUrl immediately routes to search results on autoSubmit', () {
@@ -1499,6 +1499,9 @@ void main() {
       expect(WebSearchPage.isAdUrl('https://pagead2.googlesyndication.com/ad'), isTrue);
       expect(WebSearchPage.isAdUrl('https://adsterra.com/popunder'), isTrue);
       expect(WebSearchPage.isAdUrl('https://doubleclick.net/tracker'), isTrue);
+      expect(WebSearchPage.isAdUrl('https://criteo.com/delivery'), isTrue);
+      expect(WebSearchPage.isAdUrl('https://popcash.net/serve'), isTrue);
+      expect(WebSearchPage.isAdUrl('https://parimatch.com/bet'), isTrue);
       expect(WebSearchPage.isAdUrl('https://pagalworld.is/files/download/id/123/song.mp3'), isFalse);
     });
   });

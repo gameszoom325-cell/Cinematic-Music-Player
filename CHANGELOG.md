@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.7] - 2026-11-16
+
+### Added
+- v1.2.7: Restored and massively upgraded the ad-blocker using native content blockers and CSS injection.
+- Injected `UserScript` at `AT_DOCUMENT_START` targeting Pagalworld ad containers (`.ad-container`, `.ad-banner`, `.popup-overlay`, empty iframes, and ad networks).
+- Enhanced `ContentBlockers` with multi-layer EasyList/AdGuard style rules covering 30+ major ad networks and adult/gambling redirect domains.
+- Disabled multiple windows and automated window popups (`supportMultipleWindows: false`, `javaScriptCanOpenWindowsAutomatically: false`, `onCreateWindow: false`).
+- Preserved native MP3 download interception and intent scheme blocking.
+
 ## [1.2.6] - 2026-11-15
 
 ### Fixed

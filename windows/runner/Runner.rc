@@ -3,8 +3,8 @@
 IDI_APP_ICON ICON "resources/app_icon.ico"
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION 1,2,6,22
-PRODUCTVERSION 1,2,6,22
+FILEVERSION 1,2,7,23
+PRODUCTVERSION 1,2,7,23
 FILEFLAGSMASK 0x3fL
 FILEFLAGS 0x0L
 FILEOS 0x40004L
@@ -17,12 +17,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Cinematic Music"
             VALUE "FileDescription", "Cinematic Music Player"
-            VALUE "FileVersion", "1.2.6.22"
+            VALUE "FileVersion", "1.2.7.23"
             VALUE "InternalName", "cinematic_music_player"
             VALUE "LegalCopyright", "Copyright (C) 2026. All rights reserved."
             VALUE "OriginalFilename", "cinematic_music_player.exe"
             VALUE "ProductName", "Cinematic Music Player"
-            VALUE "ProductVersion", "1.2.6.22"
+            VALUE "ProductVersion", "1.2.7.23"
         END
     END
     BLOCK "VarFileInfo"

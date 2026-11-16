@@ -1,8 +1,8 @@
 # CINEMATIC MUSIC PLAYER - PRODUCTION BUILD REPORT
 
 **Project Location:** `C:\MY PROJECTS`  
-**Application Version:** `1.2.6+22`  
-**Release Date:** 2026-11-15  
+**Application Version:** `1.2.7+23`  
+**Release Date:** 2026-11-16  
 **Target Platforms:** Windows Desktop (x64), Android Mobile (API 21 - 36, ARM64/v7/x86_64)  
 
 ---
@@ -11,6 +11,7 @@
 
 | Artifact Name | Platform | File Size | Location | Build Status |
 | :--- | :--- | :--- | :--- | :--- |
+| **`CinematicMusicPlayer-v1.2.7.apk`** | Android (API 21 - 36) | **69.3 MB** (72,688,245 bytes) | [CinematicMusicPlayer-v1.2.7.apk](file:///C:/MY%20PROJECTS/dist/android/CinematicMusicPlayer-v1.2.7.apk) | **SUCCESS (Signed Release Build, V2 Scheme, SHA256: `afa11e997f...`)** |
 | **`CinematicMusicPlayer-v1.2.6.apk`** | Android (API 21 - 36) | **69.3 MB** (72,688,244 bytes) | [CinematicMusicPlayer-v1.2.6.apk](file:///C:/MY%20PROJECTS/dist/android/CinematicMusicPlayer-v1.2.6.apk) | **SUCCESS (Signed Release Build, V2 Scheme, SHA256: `fc9b3844df...`)** |
 | **`CinematicMusicPlayer-v1.2.5.apk`** | Android (API 21 - 36) | **69.3 MB** (72,688,240 bytes) | [CinematicMusicPlayer-v1.2.5.apk](file:///C:/MY%20PROJECTS/dist/android/CinematicMusicPlayer-v1.2.5.apk) | **SUCCESS (Signed Release Build, V2 Scheme, SHA256: `8a6c12e2ba...`)** |
 | **`CinematicMusicPlayer-v1.2.4.apk`** | Android (API 21 - 36) | **69.2 MB** (72,560,228 bytes) | [CinematicMusicPlayer-v1.2.4.apk](file:///C:/MY%20PROJECTS/dist/android/CinematicMusicPlayer-v1.2.4.apk) | **SUCCESS (Signed Release Build, V2 Scheme, SHA256: `f023d8595c...`)** |

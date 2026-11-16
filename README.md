@@ -10,12 +10,22 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.2.6-gold.svg?style=flat-square" alt="Latest Release"></a>
+  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.2.7-gold.svg?style=flat-square" alt="Latest Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Android-success.svg?style=flat-square" alt="Platforms">
 </p>
 
 ---
+
+## What's New in v1.2.7 (Multi-Layer Ad-Blocker Upgrade & Anti-Popup Engine)
+
+- **Restored & Massively Upgraded Ad-Blocker**:
+  - Injected `UserScript` at `AT_DOCUMENT_START` applying CSS `display: none !important;` and automated purging of Pagalworld ad containers (`.ad-container`, `.ad-banner`, `.popup-overlay`, empty iframes, and third-party ad scripts).
+  - Multi-tier native `ContentBlockers` targeting 30+ major ad networks, popunders, and gambling/redirect services.
+  - Disabled window popups and multiple window creation (`javaScriptCanOpenWindowsAutomatically: false`, `supportMultipleWindows: false`, `onCreateWindow: false`).
+- **Preserved Native MP3 Interception & Security**:
+  - Maintained `onDownloadStartRequest` downloading directly to device Music storage and instantly refreshing the Local Files tab.
+  - Maintained `shouldOverrideUrlLoading` blocking of `intent://`, `market://`, and app-scheme crashes.
 
 ## What's New in v1.2.6 (Auto-Search Immediate Routing & Library Auto-Import)
 

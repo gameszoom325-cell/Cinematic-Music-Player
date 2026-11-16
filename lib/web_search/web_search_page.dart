@@ -20,7 +20,11 @@ import '../core/services/scanner_service.dart';
 /// WebView-based MP3 search and download screen (Pagalworld) powered by flutter_inappwebview.
 ///
 /// Features:
-/// - Loads https://pagalworld.is/ by default with integrated ad-blocking ContentBlockers.
+/// - Loads https://pagalworld.is/ with aggressive multi-layer ad-blocking:
+///   1. ContentBlocker rules blocking major advertising networks and tracking domains.
+///   2. ContentBlocker CSS_DISPLAY_NONE rules hiding known ad containers.
+///   3. UserScript injected at AT_DOCUMENT_START suppressing ad elements and neutralizing popups.
+///   4. Disabled multiple windows and automated window popups.
 /// - If autoSubmit is true and initialQuery is provided, loads search results immediately without loading home first.
 /// - Top search bar navigates to https://pagalworld.is/search?q=<encoded_query> on Enter.
 /// - Non-http/https schemes (intent://, market://) are blocked in shouldOverrideUrlLoading to prevent ERR_UNKNOWN_URL_SCHEME.
@@ -63,6 +67,8 @@ class WebSearchPage extends ConsumerStatefulWidget {
     const adKeywords = [
       'doubleclick.net',
       'googlesyndication.com',
+      'googleadservices.com',
+      'adservice.google',
       'adnxs.com',
       'popads.net',
       'adsterra.com',
@@ -72,11 +78,26 @@ class WebSearchPage extends ConsumerStatefulWidget {
       'trafficjunky.com',
       'onclickpredictiv.com',
       'syndication.exoclick.com',
-      'googleadservices.com',
-      'adservice.google',
-      '/popunder',
+      'criteo.com',
+      'outbrain.com',
+      'taboola.com',
+      'revcontent.com',
+      'mgid.com',
+      'smartadserver.com',
+      'popcash.net',
+      'adcash.com',
+      'infolinks.com',
+      'monetag.com',
+      'richads.com',
+      'trafficstars.com',
       'bet365',
       '1xbet',
+      'parimatch',
+      'stake.com',
+      '/popunder',
+      '/adserv',
+      '/adclick',
+      '/ads?',
     ];
     return adKeywords.any((kw) => lower.contains(kw));
   }
@@ -256,21 +277,111 @@ class _WebSearchPageState extends ConsumerState<WebSearchPage> {
   bool _isLoading = false;
   bool _isSupported = false;
 
+  /// High-performance EasyList/AdGuard style content blockers targeting ad networks and selectors.
   static final List<ContentBlocker> _adBlockers = [
+    // 1. Block major advertising and tracking network domains
     ContentBlocker(
       trigger: ContentBlockerTrigger(
         urlFilter:
-            r'.*(doubleclick\.net|googlesyndication\.com|adnxs\.com|popads\.net|adsterra\.com|propellerads\.com|exoclick\.com|juicyads\.com|trafficjunky\.com|onclickpredictiv\.com|bet365|1xbet).*',
+            r'.*(doubleclick\.net|googlesyndication\.com|googleadservices\.com|adservice\.google|adnxs\.com|popads\.net|adsterra\.com|propellerads\.com|exoclick\.com|juicyads\.com|trafficjunky\.com|onclickpredictiv\.com|criteo\.com|outbrain\.com|taboola\.com|revcontent\.com|mgid\.com|smartadserver\.com|popcash\.net|adcash\.com|infolinks\.com|monetag\.com|richads\.com|trafficstars\.com|bet365|1xbet|parimatch|stake\.com).*',
       ),
       action: ContentBlockerAction(type: ContentBlockerActionType.BLOCK),
     ),
+    // 2. Block common ad resource paths and scripts
     ContentBlocker(
       trigger: ContentBlockerTrigger(
-        urlFilter: r'.*(\/ads?\/|\/banner\/|\/popunder\/|ad_frame|\/adserv|\/advertisement).*',
+        urlFilter: r'.*(\/ads?\/|\/banner\/|\/popunder\/|ad_frame|\/adserv|\/advertisement|\/affiliate\/).*',
       ),
       action: ContentBlockerAction(type: ContentBlockerActionType.BLOCK),
     ),
+    // 3. CSS hide known ad containers, popups, and iframes across all pages
+    ContentBlocker(
+      trigger: ContentBlockerTrigger(
+        urlFilter: '.*',
+      ),
+      action: ContentBlockerAction(
+        type: ContentBlockerActionType.CSS_DISPLAY_NONE,
+        selector:
+            '.ad-container, .ad-banner, .popup-overlay, .adsbygoogle, [id^="google_ads"], [id^="aswift_"], iframe[src*="ad"], iframe:not([src]), .ad_box, .banner-ad, .sticky-ad, .bottom-ad, .top-ad, .overlay-ad, .popunder, a[href*="bet365"], a[href*="1xbet"], a[href*="adsterra"]',
+      ),
+    ),
   ];
+
+  /// High-performance ad-blocking UserScript injected at document start.
+  static const String _adBlockScript = '''
+    (function() {
+      var css = `
+        .ad-container, .ad-banner, .popup-overlay, .adsbygoogle, [id^="google_ads"],
+        [id^="aswift_"], iframe[src*="doubleclick"], iframe[src*="googlesyndication"],
+        iframe[src*="ad"], iframe:not([src]), iframe[src="about:blank"],
+        .ad_box, .ad_wrapper, .ad-slot, .ads-wrapper, .banner-ad, .native-ad,
+        .sponsor, .sponsored, .popunder, .sticky-ad, .bottom-ad, .top-ad, .overlay-ad,
+        a[href*="bet365"], a[href*="1xbet"], a[href*="onclickpredictiv"], a[href*="adsterra"],
+        a[href*="popads"], a[href*="exoclick"], a[href*="trafficjunky"],
+        div[class*="ad_"], div[class*="advertisement"], div[id*="ad_"], div[id*="advertisement"],
+        div[id*="ad-"], div[class*="ad-"] {
+          display: none !important;
+          visibility: hidden !important;
+          height: 0 !important;
+          width: 0 !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+        }
+      `;
+
+      function injectStyle() {
+        if (document.getElementById('cinematic-adblock-style')) return;
+        var style = document.createElement('style');
+        style.type = 'text/css';
+        style.id = 'cinematic-adblock-style';
+        style.appendChild(document.createTextNode(css));
+        if (document.head) {
+          document.head.appendChild(style);
+        } else if (document.documentElement) {
+          document.documentElement.appendChild(style);
+        }
+      }
+
+      if (document.documentElement) {
+        injectStyle();
+      } else {
+        document.addEventListener('DOMContentLoaded', injectStyle);
+      }
+
+      function purgeAds() {
+        var selectors = [
+          '.ad-container', '.ad-banner', '.popup-overlay', '.adsbygoogle',
+          'iframe[src*="doubleclick"]', 'iframe[src*="googlesyndication"]',
+          'iframe[src*="ad"]', 'iframe:not([src])', 'iframe[src="about:blank"]',
+          '.popunder', '.sticky-ad', 'a[href*="bet365"]', 'a[href*="1xbet"]',
+          'a[href*="onclickpredictiv"]', 'a[href*="adsterra"]', 'a[href*="popads"]'
+        ];
+        selectors.forEach(function(sel) {
+          var elems = document.querySelectorAll(sel);
+          for (var i = 0; i < elems.length; i++) {
+            try { elems[i].remove(); } catch(e) {}
+          }
+        });
+      }
+
+      // Neutralize aggressive popups
+      try {
+        window.open = function(url) {
+          if (url && (url.indexOf('.mp3') !== -1 || url.indexOf('pagalworld.is') !== -1)) {
+            window.location.href = url;
+          }
+          return null;
+        };
+      } catch(e) {}
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', purgeAds);
+      } else {
+        purgeAds();
+      }
+      setInterval(purgeAds, 800);
+    })();
+  ''';
 
   @override
   void initState() {
@@ -550,10 +661,20 @@ class _WebSearchPageState extends ConsumerState<WebSearchPage> {
         children: [
           InAppWebView(
             initialUrlRequest: URLRequest(url: WebUri(_initialUrl)),
+            initialUserScripts: UnmodifiableListView<UserScript>([
+              UserScript(
+                groupName: 'AdBlocker',
+                source: _adBlockScript,
+                injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+                forMainFrameOnly: false,
+              ),
+            ]),
             initialSettings: InAppWebViewSettings(
               useShouldOverrideUrlLoading: true,
               useOnDownloadStart: true,
               javaScriptEnabled: true,
+              javaScriptCanOpenWindowsAutomatically: false,
+              supportMultipleWindows: false,
               mediaPlaybackRequiresUserGesture: false,
               allowsInlineMediaPlayback: true,
               transparentBackground: false,
@@ -573,12 +694,20 @@ class _WebSearchPageState extends ConsumerState<WebSearchPage> {
                 }
               }
             },
+            onCreateWindow: (controller, createWindowAction) async {
+              // Block popups and new window creation
+              return false;
+            },
             onLoadStart: (controller, url) {
               if (url != null) _currentUrl = url.toString();
               if (mounted) setState(() => _isLoading = true);
             },
-            onLoadStop: (controller, url) {
+            onLoadStop: (controller, url) async {
               if (url != null) _currentUrl = url.toString();
+              // Re-inject stylesheet and element cleaner to ensure dynamic ads are purged
+              try {
+                await controller.evaluateJavascript(source: _adBlockScript);
+              } catch (_) {}
               if (mounted) {
                 setState(() {
                   _isLoading = false;

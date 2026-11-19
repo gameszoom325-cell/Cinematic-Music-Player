@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-11-19
+
+### Added
+- v1.5.0: Streamlined 4-Tab Navigation (Home, Library, Web MP3, Settings), direct browser launcher for updates, and enhanced background MP3 downloading.
+- Clean UI Overhaul: Removed unnecessary tabs (Bollywood Stream, Jamendo). Streamlined shell to strictly 4 focused views: Home, Library, Web MP3, and Settings.
+- Reliable Update Browser Launcher: Fixed update button click behavior with multi-tier OS fallback (LaunchMode.externalApplication, platformDefault, Windows `cmd /c start`, proactive clipboard copy, and SnackBar alerts), ensuring download links for Android APK and Windows EXE setup never fail silently.
+- Mock Update Check (v1.5.0): Built-in update check displaying the v1.5.0 release notification with direct platform-specific download links.
+- Local Library & MP3 Downloader: Complete workflow with local scanning, folder addition, built-in WebView Pagalworld MP3 download interception, automatic saving, and instant library refresh.
+- Production Dual-Platform Native Build: Compiled native 64-bit Windows Release EXE and Inno Setup installer, alongside release Android APK.
+
 ## [1.4.0] - 2026-11-16
 
 ### Added

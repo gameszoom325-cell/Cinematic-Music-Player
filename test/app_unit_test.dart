@@ -889,10 +889,10 @@ void main() {
       expect(cachedDirect, contains('googlevideo.com'));
     });
 
-    test('Project version reflects v1.3.1 Build 26', () {
-      expect(AppVersion.current, '1.3.1');
-      expect(AppVersion.buildNumber, 26);
-      expect(AppVersion.compare('1.3.1', '1.3.0'), greaterThan(0));
+    test('Project version reflects v1.5.0 Build 28', () {
+      expect(AppVersion.current, '1.5.0');
+      expect(AppVersion.buildNumber, 28);
+      expect(AppVersion.compare('1.5.0', '1.4.0'), greaterThan(0));
     });
   });
 
@@ -1448,8 +1448,8 @@ void main() {
       expect(WebSearchPage.isAllowedUrlScheme('tel:+123456789'), isFalse);
     });
 
-    test('UpdateService fallback URL points to valid v1.4.0 release tag', () {
-      expect(UpdateService.fallbackReleaseUrl, contains('v1.4.0'));
+    test('UpdateService fallback URL points to valid v1.5.0 release tag', () {
+      expect(UpdateService.fallbackReleaseUrl, contains('v1.5.0'));
     });
 
     test('WebSearchPage.computeInitialUrl immediately routes to search results on autoSubmit', () {
@@ -1555,6 +1555,34 @@ void main() {
     test('FirebaseService instance is available as singleton', () {
       expect(FirebaseService.instance, isNotNull);
       expect(FirebaseService.instance.isLoggedIn, isFalse);
+    });
+  });
+
+  group('26. v1.5.0 Streamlined Navigation & Mock Update System Tests', () {
+    test('UpdateService mock update check returns v1.5.0 update details', () async {
+      expect(UpdateService.enableMockUpdate, isTrue);
+
+      final mockInfo = UpdateService.getMockV150UpdateInfo();
+      expect(mockInfo.latestVersion, '1.5.0');
+      expect(mockInfo.hasUpdate, isTrue);
+      expect(mockInfo.htmlUrl, contains('v1.5.0'));
+      expect(mockInfo.directDownloadUrl, isNotNull);
+      expect(
+        mockInfo.directDownloadUrl!.endsWith('.apk') || mockInfo.directDownloadUrl!.endsWith('.exe'),
+        isTrue,
+      );
+    });
+
+    test('UpdateService.checkForUpdates returns mock update info when enabled', () async {
+      final info = await UpdateService.checkForUpdates();
+      expect(info, isNotNull);
+      expect(info!.latestVersion, '1.5.0');
+      expect(info.hasUpdate, isTrue);
+      expect(info.directDownloadUrl, isNotNull);
+    });
+
+    test('UpdateService fallback URL resolves to valid v1.5.0 release', () {
+      expect(UpdateService.fallbackReleaseUrl, 'https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/tag/v1.5.0');
     });
   });
 }

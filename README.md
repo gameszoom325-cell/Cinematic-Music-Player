@@ -10,12 +10,25 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.4.0-gold.svg?style=flat-square" alt="Latest Release"></a>
+  <a href="https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/latest"><img src="https://img.shields.io/badge/Release-v1.5.0-gold.svg?style=flat-square" alt="Latest Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/Platforms-Windows%20%7C%20Android-success.svg?style=flat-square" alt="Platforms">
 </p>
 
 ---
+
+## What's New in v1.5.0 (Streamlined UI & Direct Update Launcher)
+
+- **Streamlined 4-Tab Navigation**:
+  - Removed clutter and unused streaming tabs (Bollywood Stream, Jamendo).
+  - The UI now strictly focuses on 4 core experiences: **Home**, **Library**, **Web MP3**, and **Settings**.
+- **Bulletproof Browser Launcher for Updates**:
+  - When clicking "Update Now", the app directly triggers the system's default browser to download the exact binary for the user's platform (Android APK or Windows EXE setup).
+  - Multi-tier fallback architecture: `LaunchMode.externalApplication` -> `LaunchMode.platformDefault` -> Windows `cmd /c start` / Linux `xdg-open` / macOS `open` -> proactive clipboard copy with user feedback. Never fails silently.
+- **Mock Update Check (v1.5.0)**:
+  - Built-in update check displaying a polished glassmorphic popup for Version 1.5.0 with platform-tailored download links.
+- **Web MP3 Background Downloader**:
+  - Intercepts MP3 downloads from Pagalworld WebView, downloads audio bytes directly to the local storage, and automatically triggers a local library rescan so the new track appears immediately.
 
 ## What's New in v1.4.0 (Cross-Device Cloud Sync via Firebase)
 

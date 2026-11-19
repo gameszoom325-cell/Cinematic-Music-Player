@@ -8,14 +8,8 @@ import 'core/services/scanner_service.dart';
 import 'core/services/firebase_service.dart';
 import 'features/home/presentation/home_screen.dart';
 import 'features/library/presentation/library_screen.dart';
-import 'features/library/presentation/music_search_screen.dart';
 import 'features/library/providers/library_provider.dart';
-import 'features/cloud/presentation/cloud_library_screen.dart';
-import 'features/favorites/presentation/favorites_screen.dart';
-import 'features/playlists/presentation/playlist_screen.dart';
 import 'features/settings/presentation/settings_screen.dart';
-import 'jamendo/jamendo_page.dart';
-import 'jiosaavn/jiosaavn_page.dart';
 import 'web_search/web_search_page.dart';
 import 'features/legal/privacy_policy_page.dart';
 import 'features/legal/terms_condition_page.dart';
@@ -40,15 +34,9 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   final List<Widget> _screens = const [
     HomeScreen(),           // 0: Home
-    MusicSearchScreen(),    // 1: Search
-    LibraryScreen(),        // 2: Your Library
-    FavoritesScreen(),      // 3: Liked Songs
-    PlaylistScreen(),       // 4: Playlists
-    SettingsScreen(),       // 5: Settings
-    CloudLibraryScreen(),   // 6: Cloud Library
-    JamendoPage(),          // 7: Online (Jamendo)
-    JioSaavnPage(),         // 8: Bollywood (JioSaavn)
-    WebSearchPage(),        // 9: Web MP3 (Pagalworld)
+    LibraryScreen(),        // 1: Library
+    WebSearchPage(),        // 2: Web MP3 (Pagalworld)
+    SettingsScreen(),       // 3: Settings
   ];
 
   @override
@@ -431,30 +419,9 @@ class _AppShellState extends ConsumerState<AppShell> {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
                   _buildDrawerItem(Icons.home_filled, "Home", 0),
-                  _buildDrawerItem(Icons.search_rounded, "Search", 1),
-                  _buildDrawerItem(Icons.library_music_rounded, "Your Library", 2),
-                  _buildDrawerItem(Icons.favorite_rounded, "Liked Songs", 3),
-                  _buildDrawerItem(Icons.queue_music_rounded, "Playlists", 4),
-                  _buildDrawerItem(Icons.cloud_queue_rounded, "Cloud Library", 6),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Divider(color: Colors.white12, height: 1),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                    child: Text(
-                      "ONLINE & STREAMING",
-                      style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2),
-                    ),
-                  ),
-                  _buildDrawerItem(Icons.language_rounded, "Online (Jamendo)", 7),
-                  _buildDrawerItem(Icons.music_video_rounded, "Bollywood (JioSaavn)", 8),
-                  _buildDrawerItem(Icons.travel_explore_rounded, "Web MP3 (Pagalworld)", 9),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Divider(color: Colors.white12, height: 1),
-                  ),
-                  _buildDrawerItem(Icons.settings_rounded, "Settings", 5),
+                  _buildDrawerItem(Icons.library_music_rounded, "Library", 1),
+                  _buildDrawerItem(Icons.travel_explore_rounded, "Web MP3", 2),
+                  _buildDrawerItem(Icons.settings_rounded, "Settings", 3),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Divider(color: Colors.white12, height: 1),
@@ -538,40 +505,9 @@ class _AppShellState extends ConsumerState<AppShell> {
         child: Row(
           children: [
             _buildMobileNavIcon(Icons.home_filled, "Home", 0),
-            _buildMobileNavIcon(Icons.search_rounded, "Search", 1),
-            _buildMobileNavIcon(Icons.library_music_rounded, "Library", 2),
-            _buildMobileNavIcon(Icons.music_video_rounded, "Bollywood", 8),
-            _buildMobileNavIcon(Icons.travel_explore_rounded, "Web MP3", 9),
-            Expanded(
-              child: Builder(
-                builder: (ctx) => InkWell(
-                  onTap: () => Scaffold.of(ctx).openDrawer(),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.menu_rounded,
-                        color: Colors.white38,
-                        size: 20,
-                      ),
-                      const SizedBox(height: 2),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          "More",
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
-                            fontSize: 10,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            _buildMobileNavIcon(Icons.library_music_rounded, "Library", 1),
+            _buildMobileNavIcon(Icons.travel_explore_rounded, "Web MP3", 2),
+            _buildMobileNavIcon(Icons.settings_rounded, "Settings", 3),
           ],
         ),
       ),

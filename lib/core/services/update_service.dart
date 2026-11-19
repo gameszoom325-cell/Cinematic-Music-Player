@@ -11,8 +11,8 @@ import '../theme/glassmorphism.dart';
 
 /// Semantic version specification and comparison utilities
 class AppVersion {
-  static const String current = "1.4.0";
-  static const int buildNumber = 27;
+  static const String current = "1.5.0";
+  static const int buildNumber = 28;
   static const String releaseStage = "Release";
 
   /// Compares two semver strings (e.g. "1.1.3" and "1.1.2")
@@ -85,15 +85,44 @@ class UpdateService {
   static const String _prefKeyRemindUntil = "update_remind_later_until";
   static const String _prefKeySkipVersion = "update_skip_version";
 
-  /// Checks GitHub releases API for newer version
-  static Future<UpdateInfo?> checkForUpdates() async {
+  /// When true, provides the mock v1.5.0 update check for testing update popups and browser triggers
+  static bool enableMockUpdate = true;
+
+  /// Generates mock UpdateInfo for Version 1.5.0 with platform-specific download links
+  static UpdateInfo getMockV150UpdateInfo() {
+    final bool isAndroid = !kIsWeb && Platform.isAndroid;
+    final String directUrl = isAndroid
+        ? "https://github.com/$githubRepo/releases/download/v1.5.0/CinematicMusicPlayer-v1.5.0.apk"
+        : "https://github.com/$githubRepo/releases/download/v1.5.0/CinematicMusicPlayerSetup-v1.5.0.exe";
+
+    return UpdateInfo(
+      currentVersion: "1.4.0", // Shows upgrade path from installed 1.4.0 to new 1.5.0
+      latestVersion: "1.5.0",
+      releaseName: "Cinematic v1.5.0 - Streamlined UI & Direct Download Fix",
+      releaseNotes: "• Streamlined UI: Focused 4-tab layout (Home, Library, Web MP3, Settings)\n"
+          "• Web MP3: Pagalworld background MP3 downloads with auto-refreshing local library\n"
+          "• Direct Update Launcher: Reliable system browser invocation for APK & EXE setup\n"
+          "• Audio Engine: Zero dead-time gapless playback and cross-device sync",
+      htmlUrl: "https://github.com/$githubRepo/releases/tag/v1.5.0",
+      directDownloadUrl: directUrl,
+      publishedAt: DateTime.now(),
+      hasUpdate: true,
+    );
+  }
+
+  /// Checks GitHub releases API for newer version or returns mock v1.5.0 update
+  static Future<UpdateInfo?> checkForUpdates({bool forceMock = false}) async {
+    if (forceMock || enableMockUpdate) {
+      return getMockV150UpdateInfo();
+    }
+
     try {
       final uri = Uri.parse("https://api.github.com/repos/$githubRepo/releases/latest");
       final response = await http.get(
         uri,
         headers: {
           'Accept': 'application/vnd.github.v3+json',
-          'User-Agent': 'CinematicMusicPlayer-App/1.1.3',
+          'User-Agent': 'CinematicMusicPlayer-App/1.5.0',
         },
       ).timeout(const Duration(seconds: 6));
 
@@ -235,10 +264,11 @@ class UpdateService {
     }
   }
 
-  static const String fallbackReleaseUrl = "https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/tag/v1.4.0";
+  static const String fallbackReleaseUrl = "https://github.com/gameszoom325-cell/Cinematic-Music-Player/releases/tag/v1.5.0";
 
-  /// Launch GitHub release URL in external browser using LaunchMode.externalApplication.
-  /// If launch fails, displays a floating SnackBar containing the URL with a COPY action.
+  /// Launch download or release URL in external browser with multi-stage fallback.
+  /// Never fails silently: verifies launch status and falls back to OS shell execution,
+  /// followed by clipboard copy and clear UI SnackBar notification.
   static Future<bool> openReleaseUrl(
     String url, {
     BuildContext? context,
@@ -247,20 +277,90 @@ class UpdateService {
     final cleanUrl = url.trim().isNotEmpty ? url.trim() : fallbackReleaseUrl;
     final uri = Uri.parse(cleanUrl);
     bool launched = false;
+
+    // Stage 1: url_launcher LaunchMode.externalApplication (standard system browser intent)
     try {
-      launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (await canLaunchUrl(uri)) {
+        launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
     } catch (e) {
-      debugPrint("UpdateService: Could not launch update URL ($cleanUrl): $e");
-      launched = false;
+      debugPrint("UpdateService Stage 1 (externalApplication) error: $e");
     }
 
+    // Stage 2: url_launcher LaunchMode.platformDefault
     if (!launched) {
-      final msg = messenger ?? (context != null && context.mounted ? ScaffoldMessenger.maybeOf(context) : null);
+      try {
+        launched = await launchUrl(uri, mode: LaunchMode.platformDefault);
+      } catch (e) {
+        debugPrint("UpdateService Stage 2 (platformDefault) error: $e");
+      }
+    }
+
+    // Stage 3: OS native process shell invocation (Windows cmd start / Linux xdg-open / macOS open)
+    if (!launched && !kIsWeb) {
+      if (Platform.isWindows) {
+        try {
+          final result = await Process.run('cmd', ['/c', 'start', '', cleanUrl], runInShell: true);
+          if (result.exitCode == 0) {
+            launched = true;
+          }
+        } catch (e) {
+          debugPrint("UpdateService Windows cmd start error: $e");
+        }
+      } else if (Platform.isLinux) {
+        try {
+          final result = await Process.run('xdg-open', [cleanUrl]);
+          if (result.exitCode == 0) launched = true;
+        } catch (e) {
+          debugPrint("UpdateService Linux xdg-open error: $e");
+        }
+      } else if (Platform.isMacOS) {
+        try {
+          final result = await Process.run('open', [cleanUrl]);
+          if (result.exitCode == 0) launched = true;
+        } catch (e) {
+          debugPrint("UpdateService macOS open error: $e");
+        }
+      }
+    }
+
+    // Stage 4: If direct binary link failed on Android, launch the GitHub Release HTML page
+    if (!launched && !kIsWeb && Platform.isAndroid) {
+      try {
+        final fallbackUri = Uri.parse(fallbackReleaseUrl);
+        launched = await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
+      } catch (e) {
+        debugPrint("UpdateService Android release fallback error: $e");
+      }
+    }
+
+    // Proactive Feedback: Never fail silently
+    final msg = messenger ?? (context != null && context.mounted ? ScaffoldMessenger.maybeOf(context) : null);
+    if (launched) {
+      if (msg != null) {
+        msg.showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.open_in_browser_rounded, color: Colors.white, size: 18),
+                SizedBox(width: 10),
+                Text("Opening download link in default browser..."),
+              ],
+            ),
+            backgroundColor: Color(0xFF1B1B22),
+            duration: Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } else {
+      // Proactively copy link to clipboard so user never loses it
+      Clipboard.setData(ClipboardData(text: cleanUrl));
       if (msg != null) {
         msg.showSnackBar(
           SnackBar(
             content: SelectableText(
-              "Unable to open link in browser. Copy URL:\n$cleanUrl",
+              "Browser launch failed. Direct URL copied to clipboard:\n$cleanUrl",
               style: const TextStyle(color: Colors.white, fontSize: 13),
             ),
             backgroundColor: Colors.redAccent.shade700,
@@ -277,6 +377,7 @@ class UpdateService {
         );
       }
     }
+
     return launched;
   }
 
@@ -301,9 +402,10 @@ class CinematicUpdateDialog extends StatelessWidget {
     // Resolve target release URL: ensure it points to the GitHub release page
     String targetUrl = info.htmlUrl;
     if (targetUrl.isEmpty || !targetUrl.contains('github.com')) {
-      final tag = info.latestVersion.isNotEmpty ? 'v${info.latestVersion}' : 'v1.2.1';
+      final tag = info.latestVersion.isNotEmpty ? 'v${info.latestVersion}' : 'v1.5.0';
       targetUrl = 'https://github.com/${UpdateService.githubRepo}/releases/tag/$tag';
     }
+    final downloadUrl = info.directDownloadUrl ?? targetUrl;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -454,7 +556,7 @@ class CinematicUpdateDialog extends StatelessWidget {
                         final messenger = ScaffoldMessenger.of(context);
                         Navigator.pop(context);
                         await UpdateService.openReleaseUrl(
-                          targetUrl,
+                          downloadUrl,
                           messenger: messenger,
                         );
                       },
